@@ -13,8 +13,42 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up JDK 17
+      - name: Set up Java
         uses: actions/setup-java@v3
         with:
+          java-version: '17'
           distribution: 'zulu'
-          java-version: '17
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        # No inputs needed for this version for basic setup
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+        working-directory: ${{ github.workspace }}/android
+
+      - name: Build release APK
+        run: ./gradlew assembleRelease
+        working-directory: ${{ github.workspace }}/android
+
+      - name: Sign APK
+        run: |
+          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 --decode > ${{ github.workspace }}/android/release-key.jks
+          /opt/android/sdk/build-tools/$(ls /opt/android/sdk/build-tools | sort -V | tail -1)/jarsigner \
+            -verbose \
+            -sigalg SHA1withRSA \
+            -digestalg SHA1 \
+            -keystore ${{ github.workspace }}/android/release-key.jks \
+            -storepass ${{ secrets.SIGNING_KEYSTORE_PASSWORD }} \
+            ${{ github.workspace }}/android/app/build/outputs/apk/release/app-release-unsigned.apk \
+            ${{ secrets.SIGNING_KEY_ALIAS }}
+          
+          /opt/android/sdk/build-tools/$(ls /opt/android/sdk/build-tools | sort -V | tail -1)/zipalign -v 4 \
+            ${{ github.workspace }}/android/app/build/outputs/apk/release/app-release-unsigned.apk \
+            ${{ github.workspace }}/android/app/build/outputs/apk/release/app-release-signed.apk
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: ${{ github.workspace }}/android/app/build/outputs/apk/release/app-release-signed.apk
