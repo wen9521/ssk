@@ -20,9 +20,8 @@ jobs:
           java-version: '17'
 
       - name: Set up Android SDK
-        # Ensure correct YAML syntax for this step, including an empty 'with:' if necessary based on action documentation.
         uses: android-actions/setup-android@v3
-        with: {}
+        with: {} # Empty with block for v3
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
@@ -31,6 +30,9 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew assembleRelease
         working-directory: ./android
+
+      - name: Add Android Build Tools to PATH
+        run: echo "$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)" >> $GITHUB_PATH
 
       - name: Sign APK
         run: |
@@ -44,5 +46,3 @@ jobs:
         with:
           name: release-apk
           path: ./android/app/build/outputs/apk/release/app-release-signed.apk
-
-
