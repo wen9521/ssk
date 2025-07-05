@@ -13,37 +13,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Java
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
           distribution: 'zulu'
+          java-version: '17'
 
       - name: Set up Android SDK
+        # Ensure correct YAML syntax for this step, including an empty 'with:' if necessary based on action documentation.
         uses: android-actions/setup-android@v3
-        with:
-          # v3 might not require explicit api-level/build-tools inputs,
-          # but an empty 'with:' ensures correct syntax for potential future options.
-          # The action should add necessary tools to PATH.
+        with: {}
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
-        working-directory: ./android
+        working-directory: android
 
-      - name: Build Release APK
+      - name: Build with Gradle
         run: ./gradlew assembleRelease
         working-directory: ./android
 
       - name: Sign APK
         run: |
           echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 --decode > release-key.jks
-          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore release-key.jks -storepass ${{ secrets.SIGNING_KEYSTORE_PASSWORD }} ./app/build/outputs/apk/release/app-release-unsigned.apk ${{ secrets.SIGNING_KEY_ALIAS }}
-          zipalign -v 4 ./app/build/outputs/apk/release/app-release-unsigned.apk ./app/build/outputs/apk/release/app-release-signed.apk
-        working-directory: ./android
+          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore release-key.jks -storepass ${{ secrets.SIGNING_KEYSTORE_PASSWORD }} ./android/app/build/outputs/apk/release/app-release-unsigned.apk ${{ secrets.SIGNING_KEY_ALIAS }}
+          zipalign -v 4 ./android/app/build/outputs/apk/release/app-release-unsigned.apk ./android/app/build/outputs/apk/release/app-release-signed.apk
+        shell: bash
 
-      - name: Upload Release APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: ./android/app/build/outputs/apk/release/app-release-signed.apk
+
 
