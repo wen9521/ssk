@@ -17,4 +17,39 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version:
+          java-version: '17.0.10' # Ensure this is present
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3 # Using v3 now
+        # Removed api-level and build-tools inputs for v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x android/gradlew # Added 'android/' assuming gradlew is in android dir
+
+      - name: Build with Gradle
+        run: ./android/gradlew assembleRelease # Added 'android/' assuming gradlew is in android dir
+
+      - name: Sign release APK
+        run: |
+          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
+          -keystore <(echo ${{ secrets.SIGNING_KEYSTORE_BASE64 }} | base64 --decode) \
+          -storepass ${{ secrets.SIGNING_KEYSTORE_PASSWORD }} \
+          android/app/build/outputs/apk/release/app-release-unsigned.apk \
+          ${{ secrets.SIGNING_KEY_ALIAS }} <<EOF
+          ${{ secrets.SIGNING_KEY_PASSWORD }}
+          EOF
+        # NOTE: Assumes unsigned APK is generated at android/app/build/outputs/apk/release/app-release-unsigned.apk
+        # And uses jarsigner which might be deprecated. Consider apksigner.
+        # Keystore decoding requires base64 which is available on ubuntu-latest.
+        # Ensure your APK path and alias match your build.gradle config.
+
+      - name: Align and verify APK (Optional - jarsigner might not need this with modern builds)
+        run: |
+          zipalign -v 4 android/app/build/outputs/apk/release/app-release-unsigned.apk android/app/build/outputs/apk/release/app-release-signed.apk
+          # apksigner verify android/app/build/outputs/apk/release/app-release-signed.apk # Use apksigner verify if using apksigner for signing
+
+      - name: Upload signed APK
+        uses: actions/upload-artifact@v4 # Using v4 now
+        with:
+          name: release-apk
+          path: android/app/build/outputs/apk/release/app-release-signed.apk # Ensure this path is correct for the signed APK
