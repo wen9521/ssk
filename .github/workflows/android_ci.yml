@@ -21,11 +21,11 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-        with: {} # Added an empty with block to ensure correct YAML structure
+        # No 'with' block needed for api-level and build-tools in v3
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
-        working-directory: ./android # Ensure working directory is set for gradlew
+        working-directory: android
 
       - name: Build with Gradle
         run: ./gradlew assembleRelease
@@ -34,14 +34,14 @@ jobs:
       - name: Sign APK
         run: |
           echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 --decode > release-key.jks
-          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore release-key.jks -storepass ${{ secrets.SIGNING_KEYSTORE_PASSWORD }} ./android/app/build/outputs/apk/release/app-release-unsigned.apk ${{ secrets.SIGNING_KEY_ALIAS }}
-          /opt/android/sdk/build-tools/$(ls /opt/android/sdk/build-tools | sort -V | tail -1)/zipalign -v 4 ./android/app/build/outputs/apk/release/app-release-unsigned.apk ./android/app/build/outputs/apk/release/app-release-signed.apk
+          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore release-key.jks -storepass ${{ secrets.SIGNING_KEYSTORE_PASSWORD }} ./app/build/outputs/apk/release/app-release-unsigned.apk ${{ secrets.SIGNING_KEY_ALIAS }}
+          /opt/android/sdk/build-tools/$(ls /opt/android/sdk/build-tools | sort -V | tail -1)/zipalign -v 4 ./app/build/outputs/apk/release/app-release-unsigned.apk ./app/build/outputs/apk/release/app-release-signed.apk
         shell: bash
-        working-directory: ./android # Ensure working directory is set for signing
+        working-directory: android # Run signing steps within the android directory
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: ./android/app/build/outputs/apk/release/app-release-signed.apk
-        working-directory: ./android # Ensure working directory is set for uploading
+
