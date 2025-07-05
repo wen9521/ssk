@@ -26,22 +26,23 @@ jobs:
           build-tools: 29.0.3
 
       - name: Grant execute permission for gradlew
-        run: chmod +x ./android/gradlew
+        run: chmod +x android/gradlew
 
       - name: Build with Gradle
         run: ./android/gradlew assembleRelease
 
-      - name: Sign APK
-        uses: r0adkll/sign-android-release@v1
-        with:
-          releaseDirectory: android/app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
-          alias: ${{ secrets.SIGNING_KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      - name: Sign Release APK
+        run: |
+          # Create keystore file
+          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 --decode > release-key.jks
+          # Sign the APK
+          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore release-key.jks -storepass ${{ secrets.SIGNING_KEYSTORE_PASSWORD }} ./android/app/build/outputs/apk/release/app-release-unsigned.apk ${{ secrets.SIGNING_KEY_ALIAS }}
+          # Align the APK
+          zipalign -v 4 ./android/app/build/outputs/apk/release/app-release-unsigned.apk ./android/app/build/outputs/apk/release/app-release.apk
+        working-directory: ${{ github.workspace }}
 
-      - name: Upload signed APK
-        uses: actions/upload-artifact@v3
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: release-apk
-          path: android/app/build/outputs/apk/release/app-release-signed.apk
+          path: ./android/app/build/outputs/apk/release/app-release.apk
