@@ -19,6 +19,8 @@ public class MainActivity extends AppCompatActivity {
         webView = findViewById(R.id.webview); // Assuming your layout file has a WebView with id 'webview'
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true); // Enable JavaScript
-        webView.loadUrl("file:///android_asset/index.html"); // Load the HTML file from assets
+
+        webView.setWebViewClient(new WebViewClient()); // Set a WebViewClient to handle redirects within the WebView
+        webView.loadUrl("https://kk.9521.ip-ddns.com"); // Load the URL from Cloudflare Pages
     }
 }
