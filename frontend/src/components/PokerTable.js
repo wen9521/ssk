@@ -55,28 +55,7 @@ export default function TryPlay() {
         { name: AI_NAMES[2], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
       ]);
       // 只缓存我的5分法
-      setTimeout(() => {
-        // const splits = getPlayerSmartSplits(myHand); // TODO: Replace with backend hand data
-        // setMySplits(splits);
-        // setSplitIndex(0);
-      }, 0);
-
-      // 依次异步处理AI理牌
-      // aiHands.forEach((hand, idx) => { // TODO: Replace with backend hand data
-      //   setTimeout(() => {
-      //     setAiPlayers(old => {
-      //       const newAis = [...old];
-      //       const split = aiSmartSplit(hand);
-      //       newAis[idx] = { ...newAis[idx], ...split, processed: true };
-      //       return newAis;
-      //     });
-          setAiProcessed(proc => {
-            const arr = [...proc];
-            arr[idx] = true;
-            return arr;
-          });
-        }, 400 + idx * 350); // 小明最快，后两个延迟处理
-      });
+      // TODO: Implement backend communication to get initial hands and AI splits
     }  else {
       // 取消准备
       setHead([]); setMiddle([]); setTail([]);
