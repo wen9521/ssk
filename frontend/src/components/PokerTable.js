@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { aiSmartSplit, getPlayerSmartSplits } from './SmartSplit';
 import { calcSSSAllScores } from './sssScore';
-import { getShuffledDeck, dealHands } from './DealCards';
 import './Play.css';
 import { isFoul } from './sssScore';
 
@@ -41,12 +40,6 @@ export default function TryPlay() {
 
   function handleReady() {
     if (!isReady) {
-      // 发牌
-      const deck = getShuffledDeck();
-      const [myHand, ...aiHands] = dealHands(deck);
-      setHead(myHand.slice(0, 3));
-      setMiddle(myHand.slice(3, 8));
-      setTail(myHand.slice(8, 13));
       setIsReady(true);
       setHasCompared(false);
       setMsg('');
@@ -58,25 +51,25 @@ export default function TryPlay() {
       setAiProcessed([false, false, false]);
       setAiPlayers([
         { name: AI_NAMES[0], isAI: true, cards13: aiHands[0], head: aiHands[0].slice(0,3), middle: aiHands[0].slice(3,8), tail: aiHands[0].slice(8,13), processed: false },
-        { name: AI_NAMES[1], isAI: true, cards13: aiHands[1], head: aiHands[1].slice(0,3), middle: aiHands[1].slice(3,8), tail: aiHands[1].slice(8,13), processed: false },
-        { name: AI_NAMES[2], isAI: true, cards13: aiHands[2], head: aiHands[2].slice(0,3), middle: aiHands[2].slice(3,8), tail: aiHands[2].slice(8,13), processed: false },
+        { name: AI_NAMES[1], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
+        { name: AI_NAMES[2], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
       ]);
       // 只缓存我的5分法
       setTimeout(() => {
-        const splits = getPlayerSmartSplits(myHand);
-        setMySplits(splits);
-        setSplitIndex(0);
+        // const splits = getPlayerSmartSplits(myHand); // TODO: Replace with backend hand data
+        // setMySplits(splits);
+        // setSplitIndex(0);
       }, 0);
 
       // 依次异步处理AI理牌
-      aiHands.forEach((hand, idx) => {
-        setTimeout(() => {
-          setAiPlayers(old => {
-            const newAis = [...old];
-            const split = aiSmartSplit(hand);
-            newAis[idx] = { ...newAis[idx], ...split, processed: true };
-            return newAis;
-          });
+      // aiHands.forEach((hand, idx) => { // TODO: Replace with backend hand data
+      //   setTimeout(() => {
+      //     setAiPlayers(old => {
+      //       const newAis = [...old];
+      //       const split = aiSmartSplit(hand);
+      //       newAis[idx] = { ...newAis[idx], ...split, processed: true };
+      //       return newAis;
+      //     });
           setAiProcessed(proc => {
             const arr = [...proc];
             arr[idx] = true;
@@ -84,7 +77,7 @@ export default function TryPlay() {
           });
         }, 400 + idx * 350); // 小明最快，后两个延迟处理
       });
-    } else {
+    }  else {
       // 取消准备
       setHead([]); setMiddle([]); setTail([]);
       setAiPlayers([
@@ -528,9 +521,3 @@ export default function TryPlay() {
     </div>
   );
 }
-
-// 导出isFoul供外部引用（如有TreeShaking可忽略）
-export { isFoul } from './sssScore';
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { aiSmartSplit, getPlayerSmart
