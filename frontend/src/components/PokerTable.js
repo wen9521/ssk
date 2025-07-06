@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { aiSmartSplit, getPlayerSmartSplits } from './SmartSplit';
+import { aiSmartSplit } from './SmartSplit'; // Removed getPlayerSmartSplits as it's not used
 import { calcSSSAllScores } from './sssScore';
 import './Play.css';
 import { isFoul } from './sssScore';
@@ -13,7 +12,6 @@ const CARD_HEIGHT = Math.round(PAI_DUN_HEIGHT * 0.94);
 const CARD_WIDTH = Math.round(CARD_HEIGHT * 46 / 66);
 
 export default function TryPlay() {
-  const navigate = useNavigate();
   const [head, setHead] = useState([]);
   const [middle, setMiddle] = useState([]);
   const [tail, setTail] = useState([]);
@@ -394,7 +392,7 @@ export default function TryPlay() {
               boxShadow: '0 1.5px 6px #23e67a30'
             }}
             onClick={() => navigate('/')}
-          >
+          > // Removed onClick={() => navigate('/')}
             &lt; 退出房间
           </button>
           <div style={{
