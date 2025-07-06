@@ -528,9 +528,3 @@ export default function TryPlay() {
     </div>
   );
 }
-
-// 导出isFoul供外部引用（如有TreeShaking可忽略）
-export { isFoul } from './sssScore';
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { aiSmartSplit, getPlayerSmart

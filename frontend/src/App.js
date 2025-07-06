@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Hand from './components/Hand';
 import usePollingGameState from './hooks/usePollingGameState';
 import ArrangeArea from './components/ArrangeArea';
+import TryPlay from './components/PokerTable';
 
 const FRONTEND_DOMAIN = "https://kk.wenge.ip-ddns.com";
 const BACKEND_DOMAIN = "https://9525.ip-ddns.com";
@@ -12,6 +13,7 @@ export default function App() {
   const [joined, setJoined] = useState(false);
   const [playersCount, setPlayersCount] = useState(4);
   const [msg, setMsg] = useState('');
+  const [isTryingPlay, setIsTryingPlay] = useState(false);
   const gameState = usePollingGameState(roomId);
 
   // 创建房间
@@ -64,6 +66,7 @@ export default function App() {
       body: `room_id=${newRoomId}&player_count=4`
     });
     setMsg("试玩房间已准备好，可以理牌！");
+    setIsTryingPlay(true);
   };
 
   // 发牌
@@ -95,55 +98,61 @@ export default function App() {
 
   return (
     <div style={{ padding: 20 }}>
-      <h2>十三水多人房间游戏</h2>
-      {!joined ? (
-        <div>
-          <button onClick={createRoom}>创建房间</button>
-          <button onClick={tryPlay} style={{marginLeft:8}}>试玩（和3个AI玩）</button>
-          <div style={{ margin: "10px 0" }}>
-            <input placeholder="房间号" value={roomId} onChange={e=>setRoomId(e.target.value)} />
-            <button onClick={joinRoom}>加入房间</button>
-          </div>
-        </div>
+      {isTryingPlay ? (
+        <TryPlay />
       ) : (
         <div>
-          <div>房间号: {roomId}</div>
-          <div>你的座位号: {playerIdx}</div>
-          <button onClick={startGame}>发牌</button>
+          <h2>十三水多人房间游戏</h2>
+          {!joined ? (
+            <div>
+              <button onClick={createRoom}>创建房间</button>
+              <button onClick={tryPlay} style={{marginLeft:8}}>试玩（和3个AI玩）</button>
+              <div style={{ margin: "10px 0" }}>
+                <input placeholder="房间号" value={roomId} onChange={e=>setRoomId(e.target.value)} />
+                <button onClick={joinRoom}>加入房间</button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div>房间号: {roomId}</div>
+              <div>你的座位号: {playerIdx}</div>
+              <button onClick={startGame}>发牌</button>
+            </div>
+          )}
+          <div style={{color:"red"}}>{msg}</div>
+          <hr />
+          <h3>玩家手牌</h3>
+          <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
+            {gameState && gameState.players && gameState.players.map((p, idx) => (
+              <div key={idx}>
+                {getPlayerName(idx)}: <Hand hand={p.hand} />
+              </div>
+            ))}
+          </div>
+          {/* 理牌区 */}
+          {joined && myPlayer && myPlayer.hand && myPlayer.hand.length === 13 && !myPlayer.dun && (
+            <>
+              <h3>理牌区</h3>
+              <ArrangeArea hand={myPlayer.hand} onSubmit={submitDun} />
+            </>
+          )}
+          {/* 展示各玩家牌墩 */}
+          <hr />
+          <h3>各玩家牌墩</h3>
+          <div>
+            {gameState && gameState.players.map((p, idx) => (
+              <div key={idx}>
+                {getPlayerName(idx)}：
+                {p.dun ? p.dun.map((dun, i) => (
+                  <span key={i}>
+                    [{dun && dun.length > 0 ? dun.join(', ') : ''}]
+                  </span>
+                )) : '未提交'}
+              </div>
+            ))}
+          </div>
         </div>
       )}
-      <div style={{color:"red"}}>{msg}</div>
-      <hr />
-      <h3>玩家手牌</h3>
-      <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
-        {gameState && gameState.players && gameState.players.map((p, idx) => (
-          <div key={idx}>
-            {getPlayerName(idx)}: <Hand hand={p.hand} />
-          </div>
-        ))}
-      </div>
-      {/* 理牌区 */}
-      {joined && myPlayer && myPlayer.hand && myPlayer.hand.length === 13 && !myPlayer.dun && (
-        <>
-          <h3>理牌区</h3>
-          <ArrangeArea hand={myPlayer.hand} onSubmit={submitDun} />
-        </>
-      )}
-      {/* 展示各玩家牌墩 */}
-      <hr />
-      <h3>各玩家牌墩</h3>
-      <div>
-        {gameState && gameState.players.map((p, idx) => (
-          <div key={idx}>
-            {getPlayerName(idx)}：
-            {p.dun ? p.dun.map((dun, i) => (
-              <span key={i}>
-                [{dun && dun.length > 0 ? dun.join(', ') : ''}]
-              </span>
-            )) : '未提交'}
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
