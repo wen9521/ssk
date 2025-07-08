@@ -164,10 +164,12 @@ export default function App() {
           </div>
           {/* 理牌区 */}
           {isTryingPlay && humanPlayerHand.length === 13 && !playerDuns?.[playerIdx]?.dun && (
-            <>
+            <div> {/* Wrap content with a div */}
               <h3>你的手牌 (请理牌)</h3>
-              <ArrangeArea hand={humanPlayerHand} onSubmit={(duns) => { const newPlayerDuns = [...playerDuns]; newPlayerDuns[playerIdx] = duns; setPlayerDuns(newPlayerDuns); setMsg("理牌已提交！"); }} />
-            </>
+              <ArrangeArea hand={humanPlayerHand} onSubmit={(duns) => {
+                const newPlayerDuns = [...playerDuns]; newPlayerDuns[playerIdx] = duns; setPlayerDuns(newPlayerDuns); setMsg("理牌已提交！");
+              }} />
+            </div> {/* Close the div */}
           )}
           {/* 展示各玩家牌墩 */}
           <hr />
