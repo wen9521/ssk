@@ -119,6 +119,12 @@ export default function App() {
     });
   };
 
+  const handleSubmitDun = (duns) => {
+    const newPlayerDuns = [...playerDuns];
+    newPlayerDuns[playerIdx] = duns;
+    setPlayerDuns(newPlayerDuns);
+    setMsg("理牌已提交！");
+  };
   // In try play mode, myPlayer hand comes from playerDuns state
   // In try play, the hand is the initial hand for arrangement
   // In normal multiplayer mode, it comes from gameState.
@@ -168,7 +174,7 @@ export default function App() {
           {isTryingPlay && humanPlayerHand.length === 13 && !playerDuns?.[playerIdx]?.dun && (
             <div> {/* Wrap content with a div */}
               <h3>你的手牌 (请理牌)</h3>
-              <ArrangeArea hand={humanPlayerHand} onSubmit={(duns) => { const newPlayerDuns = [...playerDuns]; newPlayerDuns[playerIdx] = duns; setPlayerDuns(newPlayerDuns); setMsg("理牌已提交！"); }} />
+              <ArrangeArea hand={humanPlayerHand} onSubmit={handleSubmitDun} />
             </div> {/* Close the div */}
           )}
           {/* 展示各玩家牌墩 */}
