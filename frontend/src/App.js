@@ -3,7 +3,7 @@ import Hand from './components/Hand';
 import usePollingGameState from './hooks/usePollingGameState';
 import ArrangeArea from './components/ArrangeArea';
 import TryPlay from './components/PokerTable';
-import { createDeck, shuffleDeck, dealCards } from './utils/cardUtils';
+import { createDeck, shuffleDeck } from './utils/cardUtils';
 const FRONTEND_DOMAIN = "https://kk.wenge.ip-ddns.com";
 const BACKEND_DOMAIN = "https://9525.ip-ddns.com";
 
@@ -15,6 +15,7 @@ export default function App() {
   const [msg, setMsg] = useState('');
   const [isTryingPlay, setIsTryingPlay] = useState(false);
   const [playerDuns, setPlayerDuns] = useState(null); // New state for player duns in try play
+  const [humanPlayerHand, setHumanPlayerHand] = useState([]); // State for human player's initial hand in try play
   const gameState = usePollingGameState(roomId);
 
   // 创建房间
@@ -56,24 +57,24 @@ export default function App() {
     setJoined(true);
 
     // 3. AI加入（3次）
-    await fetch(`${BACKEND_DOMAIN}/api/join-room.php?room_id=${newRoomId}`, { method: "POST" });
-    await fetch(`${BACKEND_DOMAIN}/api/join-room.php?room_id=${newRoomId}`, { method: "POST" });
-    await fetch(`${BACKEND_DOMAIN}/api/join-room.php?room_id=${newRoomId}`, { method: "POST" });
+    // Removed backend AI join calls
 
     // 4. 前端发牌 for try play
     const deck = createDeck();
     const shuffledDeck = shuffleDeck(deck);
-    const dealtDuns = [];
+    const allPlayersDuns = Array(4).fill(null); // Initialize duns array for all players
     let currentDeck = [...shuffledDeck]; // Use a copy to deal cards from
-    for (let i = 0; i < 4; i++) {
-      const playerHand = currentDeck.splice(0, 13);
-      dealtDuns.push(dealCards(playerHand)); // Use dealCards to get the three duns
-    }
-    setPlayerDuns(dealtDuns);
 
-    setMsg("试玩房间已准备好，可以理牌！");
-    setIsTryingPlay(true);
-  };
+    for (let i = 0; i < playersCount; i++) { // Use playersCount for flexibility
+      const playerHand = currentDeck.splice(0, 13);
+      if (i === 0) {
+        setHumanPlayerHand(playerHand); // Store human player's initial hand
+      } else {
+        // Assuming you have arrangeCardsForAI in ./utils/aiPlayer.js
+        import { arrangeCardsForAI } from './utils/aiPlayer';
+        allPlayersDuns[i] = arrangeCardsForAI(playerHand); // AI arranges cards immediately
+      }
+    }
 
   const startGame = async () => {
     await fetch(`${BACKEND_DOMAIN}/api/start-game.php`, {
@@ -95,8 +96,11 @@ export default function App() {
   };
 
   // In try play mode, myPlayer hand comes from playerDuns state
-  // In normal multiplayer mode, it comes from gameState
-  const myHand = isTryingPlay && playerDuns ? playerDuns[playerIdx]?.hand : (myPlayer?.hand || []);
+  // In try play, the hand is the initial hand for arrangement
+  // In normal multiplayer mode, it comes from gameState.
+  // After arrangement in try play, the duns are in playerDuns state.
+  const myHandForArrange = isTryingPlay ? humanPlayerHand : (myPlayer?.hand || []);
+  const displayedDuns = isTryingPlay ? playerDuns : (gameState?.players || []).map(p => p.dun);
   const myPlayer = gameState && gameState.players && gameState.players[playerIdx] ? gameState.players[playerIdx] : null;
 
   // AI名称映射
@@ -131,16 +135,16 @@ export default function App() {
           <h3>玩家手牌</h3>
           <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
             {gameState && gameState.players && gameState.players.map((p, idx) => (
-              <div key={idx}>
-                {getPlayerName(idx)}: <Hand hand={p.hand} />
+              <div key={`hand-${idx}`}>
+                {getPlayerName(idx)}: {isTryingPlay ? "已发牌" : <Hand hand={p.hand} />}
               </div>
             ))}
           </div>
           {/* 理牌区 */}
-          {joined && myPlayer && myPlayer.hand && myPlayer.hand.length === 13 && !myPlayer.dun && (
+          {isTryingPlay && humanPlayerHand.length === 13 && !playerDuns?.[playerIdx]?.dun && (
             <>
               <h3>理牌区</h3>
-              <ArrangeArea hand={myPlayer.hand} onSubmit={submitDun} />
+              <ArrangeArea hand={humanPlayerHand} onSubmit={(duns) => { const newPlayerDuns = [...playerDuns]; newPlayerDuns[playerIdx] = duns; setPlayerDuns(newPlayerDuns); setMsg("理牌已提交！"); }} />
             </>
           )}
           {/* 展示各玩家牌墩 */}
@@ -150,7 +154,7 @@ export default function App() {
             {gameState && gameState.players.map((p, idx) => (
               <div key={idx}>
                 {getPlayerName(idx)}：
-                {p.dun ? p.dun.map((dun, i) => (
+                {displayedDuns?.[idx] ? displayedDuns[idx].map((dun, i) => (
                   <span key={i}>
                     [{dun && dun.length > 0 ? dun.join(', ') : ''}]
                   </span>
