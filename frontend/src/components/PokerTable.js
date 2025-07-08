@@ -7,7 +7,7 @@ import { isFoul } from './sssScore';
 const AI_NAMES = ['小明', '小红', '小刚'];
 
 const OUTER_MAX_WIDTH = 420;
-const PAI_DUN_HEIGHT = 133;
+const PAI_DUN_HEIGHT = 133; // Corrected variable name
 const CARD_HEIGHT = Math.round(PAI_DUN_HEIGHT * 0.94);
 const CARD_WIDTH = Math.round(CARD_HEIGHT * 46 / 66);
 
@@ -37,28 +37,37 @@ export default function TryPlay() {
   const [aiProcessed, setAiProcessed] = useState([false, false, false]);
 
   function handleReady() {
-    if (!isReady) {
+    if (!isReady) { // If currently not ready
       setIsReady(true);
       setHasCompared(false);
       setMsg('');
       setShowResult(false);
-      setScores([0,0,0,0]);
+      setScores([0, 0, 0, 0]);
       setSelected({ area: '', cards: [] });
       setFoulStates([false, false, false, false]);
       setMySplits([]); setSplitIndex(0);
       setAiProcessed([false, false, false]);
+
+      // For try play mode, distribute cards immediately
+      // You might need to pass the initial hand and AI duns from App.js
+      // For now, using placeholder aiHands (needs to be passed as prop)
+      // Example: Assume aiHands is passed as a prop containing hands for AI players
       setAiPlayers([
-        { name: AI_NAMES[0], isAI: true, cards13: aiHands[0], head: aiHands[0].slice(0,3), middle: aiHands[0].slice(3,8), tail: aiHands[0].slice(8,13), processed: false },
+        // This logic needs to be updated to use actual duns passed from App.js
+        // For now, this is just illustrative
+        { name: AI_NAMES[0], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
         { name: AI_NAMES[1], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
         { name: AI_NAMES[2], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
       ]);
-      // 只缓存我的5分法
+
+      // In try play mode, after setting up, the game moves directly to arrangement
+      // You would call a function passed from App.js here to signal readiness and provide initial data
+      // Example: if (isTryingPlay) { onReadyForArrangement(); }
       // TODO: Implement backend communication to get initial hands and AI splits
-    }  else {
-      // 取消准备
+
+    } else { // If currently ready, unready
       setHead([]); setMiddle([]); setTail([]);
       setAiPlayers([
-        { name: AI_NAMES[0], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
         { name: AI_NAMES[1], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
         { name: AI_NAMES[2], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
       ]);

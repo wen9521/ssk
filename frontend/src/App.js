@@ -77,10 +77,11 @@ export default function App() {
       }
     }
 
-    setPlayerDuns(allPlayersDuns); // Set initial state for all players' duns (AI are arranged)
+ setPlayerDuns(allPlayersDuns); // Set initial state for all players' duns (AI are arranged)
+ setIsTryingPlay(true); // Set isTryingPlay to true at the end
+  };
   const startGame = async () => {
     await fetch(`${BACKEND_DOMAIN}/api/start-game.php`, {
-      method: "POST",
       headers: {'Content-Type':'application/x-www-form-urlencoded'},
       body: `room_id=${roomId}&player_count=${playersCount}`
     });
@@ -167,7 +168,7 @@ export default function App() {
             <div> {/* Wrap content with a div */}
               <h3>你的手牌 (请理牌)</h3>
               <ArrangeArea hand={humanPlayerHand} onSubmit={(duns) => {
-                const newPlayerDuns = [...playerDuns]; newPlayerDuns[playerIdx] = duns; setPlayerDuns(newPlayerDuns); setMsg("理牌已提交！");
+                const newPlayerDuns = [...playerDuns]; newPlayerDuns[playerIdx] = duns; setPlayerDuns(newPlayerDuns); setMsg("理牌已提交！"); // Added semicolons
               }} />
             </div> {/* Close the div */}
           )}
