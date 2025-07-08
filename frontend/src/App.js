@@ -169,7 +169,10 @@ export default function App() {
             <div> {/* Wrap content with a div */}
               <h3>你的手牌 (请理牌)</h3>
               <ArrangeArea hand={humanPlayerHand} onSubmit={(duns) => {
-                const newPlayerDuns = [...playerDuns]; newPlayerDuns[playerIdx] = duns; setPlayerDuns(newPlayerDuns); setMsg("理牌已提交！"); // Added semicolons
+                const newPlayerDuns = [...playerDuns];
+ newPlayerDuns[playerIdx] = duns;
+ setPlayerDuns(newPlayerDuns);
+ setMsg("理牌已提交！"); // Added semicolons
               }} />
             </div> {/* Close the div */}
           )}
