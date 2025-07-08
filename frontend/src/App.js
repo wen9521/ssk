@@ -77,7 +77,7 @@ export default function App() {
       }
     }
 
- setPlayerDuns(allPlayersDuns); // Set initial state for all players' duns (AI are arranged)
+ setPlayerDuns(allPlayersDuns); // Set initial state for all players' duns (AI are arranged);
  setIsTryingPlay(true); // Set isTryingPlay to true at the end
   };
   const startGame = async () => {
