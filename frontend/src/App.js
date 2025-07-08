@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import Hand from './components/Hand';
 import usePollingGameState from './hooks/usePollingGameState';
-import ArrangeArea from './components/ArrangeArea';
+import ArrangeArea from '/home/runner/work/ssk/ssk/frontend/src/components/ArrangeArea.js';
 import TryPlay from './components/PokerTable';
-import { createDeck, shuffleDeck } from './utils/cardUtils';
+import { createDeck, shuffleDeck } from '/home/runner/work/ssk/ssk/frontend/src/utils/cardUtils.js';
+import { arrangeCardsForAI } from '/home/runner/work/ssk/ssk/frontend/src/utils/aiPlayer.js';
+import { compareDuns } from '/home/runner/work/ssk/ssk/frontend/src/utils/compareCards.js'; // Import compareDuns
 const FRONTEND_DOMAIN = "https://kk.wenge.ip-ddns.com";
 const BACKEND_DOMAIN = "https://9525.ip-ddns.com";
 
@@ -71,11 +73,11 @@ export default function App() {
         setHumanPlayerHand(playerHand); // Store human player's initial hand
       } else {
         // Assuming you have arrangeCardsForAI in ./utils/aiPlayer.js
-        import { arrangeCardsForAI } from './utils/aiPlayer';
         allPlayersDuns[i] = arrangeCardsForAI(playerHand); // AI arranges cards immediately
       }
     }
 
+    setPlayerDuns(allPlayersDuns); // Set initial state for all players' duns (AI are arranged)
   const startGame = async () => {
     await fetch(`${BACKEND_DOMAIN}/api/start-game.php`, {
       method: "POST",
@@ -87,12 +89,32 @@ export default function App() {
 
   // 提交理牌
   const submitDun = async (duns) => {
+    // In try play mode, update frontend state directly
+    if (isTryingPlay) {
+      const newPlayerDuns = [...playerDuns];
+      newPlayerDuns[playerIdx] = duns;
+      setPlayerDuns(newPlayerDuns);
+      setMsg("理牌已提交！");
+      // Start comparison logic in try play mode
+      const humanDuns = duns; // Your submitted duns
+      for (let aiPlayerIndex = 1; aiPlayerIndex <= 3; aiPlayerIndex++) {
+        const aiDuns = playerDuns[aiPlayerIndex];
+        // Compare duns
+        const headResult = compareDuns(humanDuns.dun1, aiDuns.dun1, 'head');
+        const middleResult = compareDuns(humanDuns.dun2, aiDuns.dun2, 'middle');
+        const tailResult = compareDuns(humanDuns.dun3, aiDuns.dun3, 'tail');
+
+        // Log comparison results for this AI player
+        console.log(`Vs AI ${aiPlayerIndex}: Head Dun: ${headResult}, Middle Dun: ${middleResult}, Tail Dun: ${tailResult}`);
+        // Comparison logic will be added here
+      }
+    }
+    // In normal multiplayer mode, send to backend
     await fetch(`${BACKEND_DOMAIN}/api/set-dun.php`, {
       method: "POST",
       headers: {'Content-Type':'application/x-www-form-urlencoded'},
       body: `room_id=${roomId}&player_idx=${playerIdx}&dun=${encodeURIComponent(JSON.stringify(duns))}`
     });
-    setMsg("理牌已提交！");
   };
 
   // In try play mode, myPlayer hand comes from playerDuns state
@@ -110,7 +132,7 @@ export default function App() {
   return (
     <div style={{ padding: 20 }}>
       {isTryingPlay ? (
-        <TryPlay />
+        null // Hide other UI elements in try play for now
       ) : (
         <div>
           <h2>十三水多人房间游戏</h2>
@@ -136,14 +158,14 @@ export default function App() {
           <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
             {gameState && gameState.players && gameState.players.map((p, idx) => (
               <div key={`hand-${idx}`}>
-                {getPlayerName(idx)}: {isTryingPlay ? "已发牌" : <Hand hand={p.hand} />}
+                {getPlayerName(idx)}: {isTryingPlay && idx === 0 ? "已发牌" : <Hand hand={p.hand} />} {/* Only show "已发牌" for human in try play */}
               </div>
             ))}
           </div>
           {/* 理牌区 */}
           {isTryingPlay && humanPlayerHand.length === 13 && !playerDuns?.[playerIdx]?.dun && (
             <>
-              <h3>理牌区</h3>
+              <h3>你的手牌 (请理牌)</h3>
               <ArrangeArea hand={humanPlayerHand} onSubmit={(duns) => { const newPlayerDuns = [...playerDuns]; newPlayerDuns[playerIdx] = duns; setPlayerDuns(newPlayerDuns); setMsg("理牌已提交！"); }} />
             </>
           )}
