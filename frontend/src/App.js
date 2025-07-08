@@ -3,7 +3,7 @@ import Hand from './components/Hand';
 import usePollingGameState from './hooks/usePollingGameState';
 import ArrangeArea from './components/ArrangeArea';
 import TryPlay from './components/PokerTable';
-
+import { createDeck, shuffleDeck, dealCards } from './utils/cardUtils';
 const FRONTEND_DOMAIN = "https://kk.wenge.ip-ddns.com";
 const BACKEND_DOMAIN = "https://9525.ip-ddns.com";
 
@@ -14,6 +14,7 @@ export default function App() {
   const [playersCount, setPlayersCount] = useState(4);
   const [msg, setMsg] = useState('');
   const [isTryingPlay, setIsTryingPlay] = useState(false);
+  const [playerDuns, setPlayerDuns] = useState(null); // New state for player duns in try play
   const gameState = usePollingGameState(roomId);
 
   // 创建房间
@@ -59,17 +60,21 @@ export default function App() {
     await fetch(`${BACKEND_DOMAIN}/api/join-room.php?room_id=${newRoomId}`, { method: "POST" });
     await fetch(`${BACKEND_DOMAIN}/api/join-room.php?room_id=${newRoomId}`, { method: "POST" });
 
-    // 4. 发牌
-    await fetch(`${BACKEND_DOMAIN}/api/start-game.php`, {
-      method: "POST",
-      headers: {'Content-Type':'application/x-www-form-urlencoded'},
-      body: `room_id=${newRoomId}&player_count=4`
-    });
+    // 4. 前端发牌 for try play
+    const deck = createDeck();
+    const shuffledDeck = shuffleDeck(deck);
+    const dealtDuns = [];
+    let currentDeck = [...shuffledDeck]; // Use a copy to deal cards from
+    for (let i = 0; i < 4; i++) {
+      const playerHand = currentDeck.splice(0, 13);
+      dealtDuns.push(dealCards(playerHand)); // Use dealCards to get the three duns
+    }
+    setPlayerDuns(dealtDuns);
+
     setMsg("试玩房间已准备好，可以理牌！");
     setIsTryingPlay(true);
   };
 
-  // 发牌
   const startGame = async () => {
     await fetch(`${BACKEND_DOMAIN}/api/start-game.php`, {
       method: "POST",
@@ -89,7 +94,9 @@ export default function App() {
     setMsg("理牌已提交！");
   };
 
-  // 当前玩家理牌状态
+  // In try play mode, myPlayer hand comes from playerDuns state
+  // In normal multiplayer mode, it comes from gameState
+  const myHand = isTryingPlay && playerDuns ? playerDuns[playerIdx]?.hand : (myPlayer?.hand || []);
   const myPlayer = gameState && gameState.players && gameState.players[playerIdx] ? gameState.players[playerIdx] : null;
 
   // AI名称映射
