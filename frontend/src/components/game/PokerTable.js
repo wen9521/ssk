@@ -221,7 +221,8 @@ export default function PokerTable({ onExit }) {
         boxSizing: 'border-box',
         overflow: 'visible'
       }}>
-        {arr.map((card, idx) => {
+        {/* Render the list of cards inside the div */}
+        {arr && arr.map((card, idx) => {
           const isSelected = selected.area === area && selected.cards.includes(card);
           return (
             <img
