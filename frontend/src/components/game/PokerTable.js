@@ -77,7 +77,7 @@ export default function PokerTable({ onExit }) {
         }, 400 + idx * 350);
       });
     } else {
-      // 取消准备
+      // 取消准备 或 再来一局
       setHead([]); setMiddle([]); setTail([]);
       setAiPlayers([
         { name: AI_NAMES[0], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
@@ -155,7 +155,6 @@ export default function PokerTable({ onExit }) {
     ];
     
     const fouls = allPlayers.map(p => isFoul(p.head, p.middle, p.tail));
-    
     const resScores = calcSSSAllScores(allPlayers.map((p, i) => ({ ...p, isFoul: fouls[i] })));
 
     setScores(resScores);
@@ -172,7 +171,6 @@ export default function PokerTable({ onExit }) {
       <div
         key={name}
         className="play-seat"
-        // ✅ 此处的 style 对象已恢复为正确的语法
         style={{
           border: 'none',
           borderRadius: 10,
@@ -192,7 +190,7 @@ export default function PokerTable({ onExit }) {
       >
         <div>{name}</div>
         <div style={{ marginTop: 4, fontSize: 13, fontWeight: 400 }}>
-          {isMe && !isReady && !hasCompared ? '准备中' : isMe && isReady ? '理牌中' : (aiDone ? '已理牌' : '理牌中…')}
+          { isMe && hasCompared ? '已比牌' : isMe && !isReady ? '准备中' : isMe && isReady ? '理牌中' : (aiDone ? '已理牌' : '理牌中…')}
         </div>
       </div>
     );
@@ -256,6 +254,7 @@ export default function PokerTable({ onExit }) {
     );
   }
 
+  // ✅ 此函数已彻底修复
   function renderPaiDun(arr, label, area, color) {
     return (
       <div
@@ -363,7 +362,7 @@ export default function PokerTable({ onExit }) {
             </div>
           ))}
           <button style={{
-            position: 'absolute', right: 18, top: 12, background: 'transparent', border: 'none', fontSize: 22, color: '#888', cursor: 'pointer'
+            position: 'absolute', right: 18, top: 12, background: 'transparent', border: 'none', fontSize: 22, color: '#aaa', cursor: 'pointer'
           }} onClick={() => setShowResult(false)}>×</button>
         </div>
       </div>
