@@ -1,11 +1,11 @@
-// frontend/src/App.js
+// frontend/src/App.js (已修正 SmartSplit.js 的导入路径)
 
 import React, { useState, useEffect } from 'react';
 import usePollingGameState from './hooks/usePollingGameState';
 import PokerTable from './components/PokerTable';
 import { createDeck, shuffleDeck } from './utils/cardUtils.js';
-import { aiSmartSplit } from './utils/SmartSplit.js'; // 使用真正的智能AI
-import { calcSSSAllScores } from './utils/sssScore.js'; // 使用最终的计分规则
+import { aiSmartSplit } from './components/SmartSplit.js'; // <--- 已修正路径
+import { calcSSSAllScores } from './utils/sssScore.js'; // 假设 sssScore.js 在 utils 目录
 
 const BACKEND_DOMAIN = "https://9525.ip-ddns.com"; // 您的后端域名
 
@@ -71,7 +71,9 @@ export default function App() {
       if (i === 0) { // 人类玩家
         return { hand, dun: null };
       } else { // AI玩家
-        return { hand, dun: aiSmartSplit(hand) }; // AI立即理牌
+        // 确保 SmartSplit.js 返回的格式是 { head, middle, tail }
+        const splitResult = aiSmartSplit(hand); 
+        return { hand, dun: { dun1: splitResult.head, dun2: splitResult.middle, dun3: splitResult.tail } };
       }
     });
     
@@ -90,14 +92,19 @@ export default function App() {
   };
 
   // 提交理牌 (统一处理)
-  const submitDun = async (duns) => {
+  const submitDun = async (duns) => { // duns 格式是 { dun1, dun2, dun3 }
     setMsg("理牌已提交，等待其他玩家...");
     if (isTryPlay) {
         const updatedPlayers = [...localGameState.players];
         updatedPlayers[playerIdx].dun = duns;
 
         // 所有人都理好牌了，开始计分
-        const scores = calcSSSAllScores(updatedPlayers);
+        const playerHandsForScoring = updatedPlayers.map(p => ({
+          head: p.dun.dun1,
+          middle: p.dun.dun2,
+          tail: p.dun.dun3
+        }));
+        const scores = calcSSSAllScores(playerHandsForScoring);
         setLocalGameState({ players: updatedPlayers, status: 'finished', scores });
         setMsg("比牌完成！");
 
