@@ -1,4 +1,3 @@
-jsx
 // frontend/src/App.js (已修正 sssScore.js 和 SmartSplit.js 的导入路径)
 
 import React, { useState, useEffect } from 'react';
