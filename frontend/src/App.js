@@ -1,214 +1,155 @@
-import React, { useState } from 'react';
-import Hand from './components/Hand';
-import usePollingGameState from './hooks/usePollingGameState';
-import ArrangeArea from './components/ArrangeArea'; // 修复了路径
-// import TryPlay from './components/PokerTable'; // PokerTable 组件未被使用，可以注释或删除
-import { createDeck, shuffleDeck } from './utils/cardUtils.js'; // 修复了路径
-import { arrangeCardsForAI } from './utils/aiPlayer.js';
-import { compareDuns } from './utils/compareCards.js'; // Import compareDuns
+// frontend/src/App.js
 
-const FRONTEND_DOMAIN = "https://kk.wenge.ip-ddns.com"; // 您的前端域名
-const BACKEND_DOMAIN = "https://9525.ip-ddns.com";    // 您的后端域名
+import React, { useState, useEffect } from 'react';
+import usePollingGameState from './hooks/usePollingGameState';
+import PokerTable from './components/PokerTable';
+import { createDeck, shuffleDeck } from './utils/cardUtils.js';
+import { aiSmartSplit } from './utils/SmartSplit.js'; // 使用真正的智能AI
+import { calcSSSAllScores } from './utils/sssScore.js'; // 使用最终的计分规则
+
+const BACKEND_DOMAIN = "https://9525.ip-ddns.com"; // 您的后端域名
 
 export default function App() {
   const [roomId, setRoomId] = useState('');
-  const [playerIdx, setPlayerIdx] = useState(null); // 初始为 null
-  const [joined, setJoined] = useState(false);
-  const [playersCount, setPlayersCount] = useState(4);
-  const [msg, setMsg] = useState('');
-  const [isTryingPlay, setIsTryingPlay] = useState(false);
-  const [playerDuns, setPlayerDuns] = useState(null); // 试玩模式下所有玩家的牌墩
-  const [humanPlayerHand, setHumanPlayerHand] = useState([]); // 试玩模式下人类玩家的初始手牌
+  const [playerIdx, setPlayerIdx] = useState(null);
+  const [view, setView] = useState('lobby'); // 'lobby' 或 'game'
+  const [isTryPlay, setIsTryPlay] = useState(false);
+  const [msg, setMsg] = useState('欢迎来到十三水游戏');
   
-  const gameState = usePollingGameState(roomId, isTryingPlay ? null : 1500); // 试玩模式下停止轮询
+  // 游戏状态
+  const [localGameState, setLocalGameState] = useState(null);
+  const onlineGameState = usePollingGameState(roomId, isTryPlay ? null : 1500);
+  const gameState = isTryPlay ? localGameState : onlineGameState;
 
-  // 创建房间
-  const createRoom = async () => {
-    try {
-      setMsg("正在创建房间...");
-      const res = await fetch(`${BACKEND_DOMAIN}/api/create-room.php`, { method: "POST" });
-      const data = await res.json();
-      if (data.room_id) {
-        setRoomId(data.room_id);
-        setPlayerIdx('0');
-        setJoined(true);
-        setMsg(`房间已创建，等待其他玩家加入。房间号: ${data.room_id}`);
-      } else {
-        setMsg("创建房间失败，请重试。");
-      }
-    } catch (error) {
-      setMsg("网络错误，创建房间失败。");
-    }
+  // 统一的重置函数
+  const resetToLobby = () => {
+    setRoomId('');
+    setPlayerIdx(null);
+    setView('lobby');
+    setIsTryPlay(false);
+    setLocalGameState(null);
+    setMsg('欢迎来到十三水游戏');
   };
 
-  // 加入房间
+  // 创建房间 (联机)
+  const createRoom = async () => {
+    setMsg("正在创建房间...");
+    const res = await fetch(`${BACKEND_DOMAIN}/api/create-room.php`, { method: "POST" });
+    const data = await res.json();
+    setRoomId(data.room_id);
+    setPlayerIdx('0');
+    setIsTryPlay(false);
+    setView('game');
+    setMsg(`房间已创建: ${data.room_id}，等待其他玩家加入...`);
+  };
+
+  // 加入房间 (联机)
   const joinRoom = async () => {
     if (!roomId) return setMsg("请输入房间号");
-    try {
-      setMsg("正在加入房间...");
-      const res = await fetch(`${BACKEND_DOMAIN}/api/join-room.php?room_id=${roomId}`, { method: "POST" });
-      const data = await res.json();
-      if (data.error) return setMsg(data.error);
-      
-      setPlayerIdx(data.player_idx.toString());
-      setJoined(true);
-      setMsg(`成功加入房间，你是座位 ${data.player_idx}。等待房主发牌。`);
-    } catch (error) {
-      setMsg("网络错误，加入房间失败。");
-    }
+    setMsg("正在加入房间...");
+    const res = await fetch(`${BACKEND_DOMAIN}/api/join-room.php?room_id=${roomId}`, { method: "POST" });
+    const data = await res.json();
+    if (data.error) return setMsg(data.error);
+    setPlayerIdx(data.player_idx.toString());
+    setIsTryPlay(false);
+    setView('game');
+    setMsg(`成功加入房间，你是座位 ${data.player_idx}。`);
   };
 
-  // 试玩：一键创建房间+自己+3个AI
-  const tryPlay = async () => {
-    setIsTryingPlay(true);
-    setJoined(true);
-    setMsg('欢迎来到试玩模式！请理牌。');
+  // 开始试玩 (单机)
+  const startTryPlay = () => {
+    setMsg('试玩模式已开始，请理牌。');
+    setIsTryPlay(true);
     setPlayerIdx('0');
 
-    // 前端直接发牌
     const deck = createDeck();
     const shuffledDeck = shuffleDeck(deck);
-    const allPlayersDuns = Array(4).fill(null); // 初始化所有玩家的牌墩为null
     let currentDeck = [...shuffledDeck];
 
-    for (let i = 0; i < playersCount; i++) {
-      const playerHand = currentDeck.splice(0, 13);
-      if (i === 0) {
-        setHumanPlayerHand(playerHand); // 存储人类玩家的初始手牌
-      } else {
-        // 使用简单的AI理牌逻辑 (aiPlayer.js)
-        allPlayersDuns[i] = arrangeCardsForAI(playerHand);
+    const players = Array(4).fill(null).map((_, i) => {
+      const hand = currentDeck.splice(0, 13);
+      if (i === 0) { // 人类玩家
+        return { hand, dun: null };
+      } else { // AI玩家
+        return { hand, dun: aiSmartSplit(hand) }; // AI立即理牌
       }
-    }
-    setPlayerDuns(allPlayersDuns); // 设置所有玩家的牌墩初始状态
+    });
+    
+    setLocalGameState({ players, status: 'playing', scores: [0,0,0,0] });
+    setView('game');
   };
-
-  // 开始游戏 (仅限联机模式)
+  
+  // 发牌 (联机)
   const startGame = async () => {
     setMsg("正在发牌...");
     await fetch(`${BACKEND_DOMAIN}/api/start-game.php`, {
-      method: 'POST', // 明确指定POST方法
+      method: 'POST',
       headers: {'Content-Type':'application/x-www-form-urlencoded'},
-      body: `room_id=${roomId}&player_count=${playersCount}` // 确保 player_count 被传递
+      body: `room_id=${roomId}`
     });
-    setMsg("已发牌！请理牌。");
   };
 
-  // 提交理牌 (统一处理试玩和联机模式)
+  // 提交理牌 (统一处理)
   const submitDun = async (duns) => {
-    // 试玩模式: 直接更新前端状态并进行前端比牌
-    if (isTryingPlay) {
-      const newPlayerDuns = [...playerDuns];
-      newPlayerDuns[playerIdx] = duns; // duns 的格式应为 {dun1, dun2, dun3}
-      setPlayerDuns(newPlayerDuns);
-      setMsg("理牌已提交！正在前端进行比牌...");
+    setMsg("理牌已提交，等待其他玩家...");
+    if (isTryPlay) {
+        const updatedPlayers = [...localGameState.players];
+        updatedPlayers[playerIdx].dun = duns;
 
-      // 前端比牌逻辑
-      const humanDuns = duns;
-      let comparisonMsg = "比牌结果：\n";
-      for (let aiPlayerIndex = 1; aiPlayerIndex <= 3; aiPlayerIndex++) {
-        if (newPlayerDuns[aiPlayerIndex]) {
-          const aiDuns = newPlayerDuns[aiPlayerIndex];
-          const headResult = compareDuns(humanDuns.dun1, aiDuns.dun1);
-          const middleResult = compareDuns(humanDuns.dun2, aiDuns.dun2);
-          const tailResult = compareDuns(humanDuns.dun3, aiDuns.dun3);
-          comparisonMsg += `你 vs AI${aiPlayerIndex}: 头墩(${headResult}), 中墩(${middleResult}), 尾墩(${tailResult})\n`;
-        }
-      }
-      console.log(comparisonMsg); // 在控制台输出详细比牌结果
-      setMsg("比牌完成！详情请查看控制台。");
-    }
-    // 联机模式: 发送数据到后端
-    else {
-      setMsg("正在提交理牌结果...");
+        // 所有人都理好牌了，开始计分
+        const scores = calcSSSAllScores(updatedPlayers);
+        setLocalGameState({ players: updatedPlayers, status: 'finished', scores });
+        setMsg("比牌完成！");
+
+    } else {
       await fetch(`${BACKEND_DOMAIN}/api/set-dun.php`, {
         method: "POST",
         headers: {'Content-Type':'application/x-www-form-urlencoded'},
         body: `room_id=${roomId}&player_idx=${playerIdx}&dun=${encodeURIComponent(JSON.stringify(duns))}`
       });
-      setMsg("理牌已提交，等待其他玩家...");
     }
   };
 
-  // 根据模式选择要显示的手牌/牌墩
-  const myPlayer = gameState && gameState.players && gameState.players[playerIdx] ? gameState.players[playerIdx] : null;
-  const myHand = isTryingPlay ? humanPlayerHand : (myPlayer?.hand || []);
-  const allPlayers = isTryingPlay 
-    ? Array(playersCount).fill({}).map((_, i) => ({
-        dun: playerDuns?.[i] || null, // 显示AI和玩家的牌墩
-        hand: i.toString() === playerIdx ? humanPlayerHand : [] // 只显示自己的手牌
-      }))
-    : (gameState?.players || []);
-  
-  // 判断是否轮到我理牌
-  const showArrangeArea = (
-    (isTryingPlay && myHand.length === 13 && !playerDuns?.[playerIdx]) ||
-    (!isTryingPlay && myPlayer?.hand?.length === 13 && !myPlayer?.dun)
-  );
-  
-  const getPlayerName = (idx) => {
-    if (isTryingPlay) {
-        return idx.toString() === playerIdx ? "你 (试玩)" : `AI ${idx}`;
-    }
-    return idx.toString() === playerIdx ? `你 (座位${idx})` : `玩家 ${idx}`;
+  // 再来一局 (联机)
+  const resetGame = async () => {
+    setMsg("正在准备新一局...");
+    await fetch(`${BACKEND_DOMAIN}/api/reset-room.php`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        body: `room_id=${roomId}`
+    });
   };
+
+  // 渲染大厅
+  const renderLobby = () => (
+    <div style={{ padding: 20, maxWidth: '400px', margin: 'auto', textAlign: 'center' }}>
+      <h1>十三水</h1>
+      <div style={{ color: "red", minHeight: '20px', marginBottom: '10px' }}>{msg}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <button onClick={startTryPlay}>单机试玩 (vs 3 AI)</button>
+        <hr/>
+        <button onClick={createRoom}>创建多人房间</button>
+        <div>
+          <input placeholder="输入房间号加入" value={roomId} onChange={e => setRoomId(e.target.value)} style={{ marginRight: '8px' }} />
+          <button onClick={joinRoom}>加入房间</button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div style={{ padding: 20, maxWidth: '800px', margin: 'auto', fontFamily: 'sans-serif' }}>
-      <h2>十三水多人房间游戏</h2>
-      
-      {!joined ? (
-        <div>
-          <button onClick={createRoom}>创建房间</button>
-          <button onClick={tryPlay} style={{marginLeft: 8}}>单机试玩</button>
-          <div style={{ margin: "10px 0" }}>
-            <input placeholder="输入房间号加入" value={roomId} onChange={e=>setRoomId(e.target.value)} />
-            <button onClick={joinRoom}>加入房间</button>
-          </div>
-        </div>
-      ) : (
-        <div>
-          <div>房间号: {roomId || '试玩模式'}</div>
-          {playerIdx !== null && <div>你的座位号: {playerIdx}</div>}
-          {!isTryingPlay && playerIdx === '0' && (
-            <button onClick={startGame} disabled={gameState?.players.length < 2}>发牌</button>
-          )}
-        </div>
-      )}
-
-      <div style={{color: "red", marginTop: '10px', minHeight: '20px'}}>{msg}</div>
-      <hr />
-
-      {joined && (
-        <div>
-          <h3>玩家列表与状态</h3>
-          <div style={{display:'flex', flexDirection:'column', gap:'20px'}}>
-            {allPlayers.map((p, idx) => (
-              <div key={`player-${idx}`}>
-                <b>{getPlayerName(idx)}:</b>
-                {p.dun ? (
-                  <div>
-                    <div>头墩: <Hand hand={p.dun.dun1} /></div>
-                    <div>中墩: <Hand hand={p.dun.dun2} /></div>
-                    <div>尾墩: <Hand hand={p.dun.dun3} /></div>
-                  </div>
-                ) : (
-                  (idx.toString() === playerIdx && p.hand?.length > 0) 
-                  ? <span>已发牌，等待理牌...</span> 
-                  : <span>等待中...</span>
-                )}
-              </div>
-            ))}
-          </div>
-          
-          {showArrangeArea && (
-            <div>
-              <hr style={{ margin: '20px 0' }} />
-              <h3>请理牌</h3>
-              <ArrangeArea hand={myHand} onSubmit={submitDun} />
-            </div>
-          )}
-        </div>
+    <div>
+      <button onClick={resetToLobby} style={{ position: 'absolute', top: 10, left: 10 }}>返回大厅</button>
+      {view === 'lobby' || !gameState ? renderLobby() : (
+        <PokerTable
+          isTryPlay={isTryPlay}
+          gameState={gameState}
+          playerIdx={playerIdx}
+          onSubmitDun={submitDun}
+          onStartGame={startGame}
+          onResetGame={isTryPlay ? startTryPlay : resetGame} // 试玩模式重置是开始新的一局
+          msg={msg}
+        />
       )}
     </div>
   );
