@@ -3,7 +3,9 @@
  * 同花顺/同花先比最大花色，花色相同则比两手牌最大单张归属
  */
 
-const VALUE_ORDER = {
+import { getRank } from '../ai/aiPlayer'; // Corrected import path
+
+ const VALUE_ORDER = {
   '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
   '10': 10, 'jack': 11, 'queen': 12, 'king': 13, 'ace': 14
 };

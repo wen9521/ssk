@@ -1,5 +1,5 @@
 import React from 'react';
-import { getCardImageUrl } from '../utils/cardImage';
+import { getCardImageUrl } from '../../utils/game/cardImage';
 
 export default function Card({ card }) {
   return (

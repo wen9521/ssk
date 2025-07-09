@@ -1,6 +1,6 @@
 // frontend/src/utils/compareCards.js
 
-import { getRank } from './aiPlayer'; // Assuming getRank is in aiPlayer.js or similar
+import { getRank } from '../ai/aiPlayer'; // Assuming getRank is in aiPlayer.js or similar
 
 function getSuit(card) {
   return card.slice(-1);
