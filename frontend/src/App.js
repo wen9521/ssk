@@ -1,11 +1,11 @@
-// frontend/src/App.js (已修正 SmartSplit.js 的导入路径)
+// frontend/src/App.js (已修正 sssScore.js 和 SmartSplit.js 的导入路径)
 
 import React, { useState, useEffect } from 'react';
 import usePollingGameState from './hooks/usePollingGameState';
 import PokerTable from './components/PokerTable';
 import { createDeck, shuffleDeck } from './utils/cardUtils.js';
-import { aiSmartSplit } from './components/SmartSplit.js'; // <--- 已修正路径
-import { calcSSSAllScores } from './utils/sssScore.js'; // 假设 sssScore.js 在 utils 目录
+import { aiSmartSplit } from './components/SmartSplit.js';     // <--- 路径指向 components
+import { calcSSSAllScores } from './components/sssScore.js';   // <--- 已修正路径
 
 const BACKEND_DOMAIN = "https://9525.ip-ddns.com"; // 您的后端域名
 
@@ -71,7 +71,6 @@ export default function App() {
       if (i === 0) { // 人类玩家
         return { hand, dun: null };
       } else { // AI玩家
-        // 确保 SmartSplit.js 返回的格式是 { head, middle, tail }
         const splitResult = aiSmartSplit(hand); 
         return { hand, dun: { dun1: splitResult.head, dun2: splitResult.middle, dun3: splitResult.tail } };
       }
@@ -98,15 +97,20 @@ export default function App() {
         const updatedPlayers = [...localGameState.players];
         updatedPlayers[playerIdx].dun = duns;
 
-        // 所有人都理好牌了，开始计分
-        const playerHandsForScoring = updatedPlayers.map(p => ({
-          head: p.dun.dun1,
-          middle: p.dun.dun2,
-          tail: p.dun.dun3
-        }));
-        const scores = calcSSSAllScores(playerHandsForScoring);
-        setLocalGameState({ players: updatedPlayers, status: 'finished', scores });
-        setMsg("比牌完成！");
+        // 检查是否所有人都已理牌
+        const allPlayersReady = updatedPlayers.every(p => p.dun !== null);
+        if (allPlayersReady) {
+            const playerHandsForScoring = updatedPlayers.map(p => ({
+              head: p.dun.dun1,
+              middle: p.dun.dun2,
+              tail: p.dun.dun3
+            }));
+            const scores = calcSSSAllScores(playerHandsForScoring);
+            setLocalGameState({ players: updatedPlayers, status: 'finished', scores });
+            setMsg("比牌完成！");
+        } else {
+            setLocalGameState({ ...localGameState, players: updatedPlayers });
+        }
 
     } else {
       await fetch(`${BACKEND_DOMAIN}/api/set-dun.php`, {
@@ -154,7 +158,7 @@ export default function App() {
           playerIdx={playerIdx}
           onSubmitDun={submitDun}
           onStartGame={startGame}
-          onResetGame={isTryPlay ? startTryPlay : resetGame} // 试玩模式重置是开始新的一局
+          onResetGame={isTryPlay ? startTryPlay : resetGame}
           msg={msg}
         />
       )}
