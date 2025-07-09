@@ -1,6 +1,21 @@
+// frontend/src/utils/cardUtils.js
+
+const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const suits = ['♠', '♥', '♦', '♣'];
+
+// 牌面英文映射 (用于图片)
+const rankMap = {
+  'A': 'ace', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', '10': '10', 'J': 'jack', 'Q': 'queen', 'K': 'king'
+};
+const suitMap = {
+  '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs'
+};
+
+/**
+ * 创建一副标准的52张扑克牌。
+ * @returns {string[]} e.g., ["A♠", "K♠", ...]
+ */
 export function createDeck() {
-  const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-  const suits = ['♠', '♥', '♦', '♣'];
   const deck = [];
   for (const rank of ranks) {
     for (const suit of suits) {
@@ -10,6 +25,11 @@ export function createDeck() {
   return deck;
 }
 
+/**
+ * 洗牌算法 (Fisher-Yates shuffle)。
+ * @param {string[]} deck - 牌组.
+ * @returns {string[]} 洗过的牌组.
+ */
 export function shuffleDeck(deck) {
   const shuffled = [...deck];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -19,20 +39,47 @@ export function shuffleDeck(deck) {
   return shuffled;
 }
 
-export function dealCards(shuffledDeck) {
-  if (shuffledDeck.length < 13) {
-    console.error("Shuffled deck must contain at least 13 cards to deal a hand.");
-    return null;
+/**
+ * 获取卡牌的点数值。
+ * @param {string} card - e.g., 'A♠', '10♥'.
+ * @returns {number} Rank value (2-14, 14 for Ace).
+ */
+export function getRank(card) {
+  if (!card || typeof card !== 'string' || card.length < 2) return 0;
+  const rankStr = card.length > 2 ? card.substring(0, 2) : card.substring(0, 1);
+  switch (rankStr) {
+    case 'A': return 14;
+    case 'K': return 13;
+    case 'Q': return 12;
+    case 'J': return 11;
+    default: return parseInt(rankStr, 10) || 0;
   }
+}
 
-  const playerHand = shuffledDeck.slice(0, 13);
-  const dun1 = playerHand.slice(0, 3);
-  const dun2 = playerHand.slice(3, 8);
-  const dun3 = playerHand.slice(8, 13);
+/**
+ * 获取卡牌的花色。
+ * @param {string} card - e.g., 'A♠'
+ * @returns {string} Suit symbol e.g., '♠'
+ */
+export function getSuit(card) {
+    if (!card || typeof card !== 'string' || card.length < 2) return '';
+    return card.slice(-1);
+}
 
-  return {
-    dun1,
-    dun2,
-    dun3
-  };
+/**
+ * 根据卡牌字符串获取对应的图片URL。
+ * @param {string} card - e.g., "A♠", "10♣"
+ * @returns {string} 图片路径 e.g., "/cards/ace_of_spades.svg"
+ */
+export function getCardImageUrl(card) {
+  if (!card || card.length < 2) return '/cards/red_joker.svg'; // 返回一个默认背面图
+  const rankStr = card.length > 2 ? card.substring(0, 2) : card.substring(0, 1);
+  const suitStr = card.slice(-1);
+
+  const rank = rankMap[rankStr];
+  const suit = suitMap[suitStr];
+
+  if (!rank || !suit) return '/cards/red_joker.svg';
+
+  return `/cards/${rank}_of_${suit}.svg`;
 }
