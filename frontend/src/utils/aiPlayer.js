@@ -5,7 +5,11 @@
  * @param {string} card - Card string (e.g., 'A♠', '10♥').
  * @returns {number} Rank value (2-14, 14 for Ace).
  */
-function getRank(card) {
+export function getRank(card) { // <--- 添加了 export
+  if (!card || typeof card !== 'string' || card.length < 2) {
+    // 添加健壮性检查，防止处理无效的 card 字符串
+    return 0; 
+  }
   const rank = card.substring(0, card.length - 1);
   switch (rank) {
     case 'A':
@@ -17,7 +21,7 @@ function getRank(card) {
     case 'J':
       return 11;
     default:
-      return parseInt(rank, 10);
+      return parseInt(rank, 10) || 0; // 保证返回一个数字
   }
 }
 
@@ -26,8 +30,8 @@ function getRank(card) {
  * @param {string[]} cards - Array of card strings.
  * @returns {boolean} True if a pair is present, false otherwise.
  */
-function isPair(cards) {
-  if (cards.length < 2) return false;
+export function isPair(cards) { // <--- 添加了 export
+  if (!cards || cards.length < 2) return false;
   const ranks = cards.map(getRank);
   const rankCounts = {};
   for (const rank of ranks) {
@@ -42,8 +46,8 @@ function isPair(cards) {
  * @param {string[]} cards - Array of card strings.
  * @returns {boolean} True if three of a kind is present, false otherwise.
  */
-function isThreeOfAKind(cards) {
-  if (cards.length < 3) return false;
+export function isThreeOfAKind(cards) { // <--- 添加了 export
+  if (!cards || cards.length < 3) return false;
   const ranks = cards.map(getRank);
   const rankCounts = {};
   for (const rank of ranks) {
@@ -55,7 +59,7 @@ function isThreeOfAKind(cards) {
 
 /**
  * Arranges a 13-card hand into three duns (3, 5, 5) for an AI player.
- *
+ * This is a very basic "dummy" AI.
  * @param {string[]} hand - An array of 13 card strings.
  * @returns {{dun1: string[], dun2: string[], dun3: string[]}} An object containing the three duns.
  */
@@ -66,6 +70,7 @@ export function arrangeCardsForAI(hand) {
     return { dun1: [], dun2: [], dun3: [] };
   }
 
+  // A very simple arrangement: just slice the array.
   const dun1 = hand.slice(0, 3);
   const dun2 = hand.slice(3, 8);
   const dun3 = hand.slice(8, 13);
