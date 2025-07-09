@@ -1,3 +1,4 @@
+jsx
 // frontend/src/App.js (已修正 sssScore.js 和 SmartSplit.js 的导入路径)
 
 import React, { useState, useEffect } from 'react';
@@ -5,7 +6,7 @@ import usePollingGameState from './hooks/usePollingGameState';
 import PokerTable from './components/game/PokerTable';
 import { createDeck, shuffleDeck } from './utils/game/cardUtils.js';
 import { aiSmartSplit } from './utils/ai/SmartSplit.js';
-import { calcSSSAllScores } from './components/sssScore.js';   // <--- 已修正路径
+import { calcSSSAllScores } from './utils/game/sssScore.js';   // <--- 已修正路径
 
 const BACKEND_DOMAIN = "https://9525.ip-ddns.com"; // 您的后端域名
 
@@ -15,7 +16,7 @@ export default function App() {
   const [view, setView] = useState('lobby'); // 'lobby' 或 'game'
   const [isTryPlay, setIsTryPlay] = useState(false);
   const [msg, setMsg] = useState('欢迎来到十三水游戏');
-  
+
   // 游戏状态
   const [localGameState, setLocalGameState] = useState(null);
   const onlineGameState = usePollingGameState(roomId, isTryPlay ? null : 1500);
@@ -71,15 +72,15 @@ export default function App() {
       if (i === 0) { // 人类玩家
         return { hand, dun: null };
       } else { // AI玩家
-        const splitResult = aiSmartSplit(hand); 
+        const splitResult = aiSmartSplit(hand);
         return { hand, dun: { dun1: splitResult.head, dun2: splitResult.middle, dun3: splitResult.tail } };
       }
     });
-    
+
     setLocalGameState({ players, status: 'playing', scores: [0,0,0,0] });
     setView('game');
   };
-  
+
   // 发牌 (联机)
   const startGame = async () => {
     setMsg("正在发牌...");
