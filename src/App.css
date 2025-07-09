@@ -1,0 +1,145 @@
+/* 应用容器 */
+.app-container {
+  position: relative;
+  min-height: 100vh;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.back-button {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  padding: 8px 15px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #23e67a;
+  z-index: 10;
+}
+
+/* 大厅样式 */
+.lobby-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  padding: 20px;
+  text-align: center;
+}
+
+.game-title {
+  margin-bottom: 30px;
+}
+
+.game-title h1 {
+  font-size: 42px;
+  color: #23e67a;
+  margin-bottom: 5px;
+  text-shadow: 0 0 10px rgba(35, 230, 122, 0.5);
+}
+
+.subtitle {
+  font-size: 18px;
+  color: #aaa;
+}
+
+.message {
+  color: #23e67a;
+  min-height: 25px;
+  margin: 10px 0 30px;
+  font-weight: bold;
+}
+
+.game-options {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.option-button {
+  background: rgba(35, 230, 122, 0.15);
+  border: 2px solid #23e67a;
+  padding: 20px;
+  border-radius: 20px;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.option-button:hover {
+  background: rgba(35, 230, 122, 0.25);
+  transform: translateY(-3px);
+}
+
+.option-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: #23e67a;
+}
+
+.option-desc {
+  font-size: 16px;
+  color: #aaa;
+  margin-top: 5px;
+}
+
+.option-divider {
+  color: #555;
+  font-size: 16px;
+  position: relative;
+}
+
+.option-divider::before,
+.option-divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: #555;
+}
+
+.option-divider::before {
+  left: 0;
+}
+
+.option-divider::after {
+  right: 0;
+}
+
+.join-room {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.join-room input {
+  width: 100%;
+}
+
+.join-room button {
+  width: 100%;
+}
+
+/* 响应式调整 */
+@media (max-width: 480px) {
+  .game-title h1 {
+    font-size: 36px;
+  }
+
+  .subtitle {
+    font-size: 16px;
+  }
+
+  .option-button {
+    padding: 15px;
+  }
+
+  .option-title {
+    font-size: 20px;
+  }
+}
