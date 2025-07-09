@@ -184,7 +184,7 @@ export default function App() {
             {gameState && gameState.players.map((p, idx) => (
               <div key={idx}>
                 {getPlayerName(idx)}：
-                {displayedDuns?.[idx] ? displayedDuns[idx].map((dun, i) => (
+                {displayedDuns?.[idx] ? displayedDuns[idx]?.map((dun, i) => (
                   <span key={i}>
                     [{dun && dun.length > 0 ? dun.join(', ') : ''}]
                   </span>
