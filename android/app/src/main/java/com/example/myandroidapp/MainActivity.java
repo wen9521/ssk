@@ -45,6 +45,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }); // Set a WebViewClient to handle redirects within the WebView
 
-        webView.loadUrl("https://kk.9521.ip-ddns.com"); // Load the URL from Cloudflare Pages
+        webView.loadUrl("https://gewe.dpdns.org"); // Load the URL from gewedpdns.org
     }
 }
