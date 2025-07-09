@@ -1,6 +1,6 @@
 jsx
 import React from 'react';
-import { getCardImageUrl } from '../../utils/game/cardImage';
+import { getCardImageUrl } from '../../utils/game/cardImage'; // 修复路径
 
 export default function Card({ card }) {
   // 响应式卡片尺寸

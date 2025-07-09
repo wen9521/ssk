@@ -1,7 +1,7 @@
 jsx
 import React, { useState } from 'react';
 import Hand from './Hand';
-import './Play.css';
+import './Play.css'; // 修复为相对路径
 
 export default function ArrangeArea({ hand, onSubmit }) {
   const [duns, setDuns] = useState([[], [], []]);

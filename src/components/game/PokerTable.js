@@ -3,7 +3,7 @@ import React from 'react';
 import Hand from './Hand';
 import ArrangeArea from './ArrangeArea';
 import './Play.css';
-
+ 
 const PokerTable = ({
   isTryPlay,
   gameState,
