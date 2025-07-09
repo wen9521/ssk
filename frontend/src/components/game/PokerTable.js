@@ -1,4 +1,4 @@
-// frontend/src/components/game/PokerTable.js (已修正语法错误)
+// frontend/src/components/game/PokerTable.js (已修正所有语法错误)
 
 import React, { useState } from 'react';
 import { aiSmartSplit, getPlayerSmartSplits } from '../../utils/ai/SmartSplit';
@@ -156,7 +156,6 @@ export default function PokerTable({ onExit }) {
     
     const fouls = allPlayers.map(p => isFoul(p.head, p.middle, p.tail));
     
-    // ✅ 将倒水状态传入计分函数
     const resScores = calcSSSAllScores(allPlayers.map((p, i) => ({ ...p, isFoul: fouls[i] })));
 
     setScores(resScores);
@@ -200,7 +199,6 @@ export default function PokerTable({ onExit }) {
   }
 
   function renderPaiDunCards(arr, area, cardSize) {
-    // ✅ 此函数已恢复为正确的代码
     if (!arr) return null;
     const paddingX = 16;
     const maxWidth = OUTER_MAX_WIDTH - 2 * paddingX - 70;
@@ -359,7 +357,7 @@ export default function PokerTable({ onExit }) {
               <div style={{ marginBottom: 3 }}>
                 {renderPaiDunCards(p.middle, 'result', { width: cardW, height: cardH })}
               </div>
-              <div style={{}}>
+              <div>
                 {renderPaiDunCards(p.tail, 'result', { width: cardW, height: cardH })}
               </div>
             </div>
@@ -393,19 +391,12 @@ export default function PokerTable({ onExit }) {
         minHeight: 650,
         boxSizing: 'border-box'
       }}>
-        {/* 头部：退出房间+积分 */}
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
           <button
             style={{
               background: 'linear-gradient(90deg,#fff 60%,#e0fff1 100%)',
-              color: '#234',
-              fontWeight: 'bold',
-              border: 'none',
-              borderRadius: 9,
-              padding: '7px 22px',
-              cursor: 'pointer',
-              marginRight: 18,
-              fontSize: 17,
+              color: '#234', fontWeight: 'bold', border: 'none', borderRadius: 9,
+              padding: '7px 22px', cursor: 'pointer', marginRight: 18, fontSize: 17,
               boxShadow: '0 1.5px 6px #23e67a30'
             }}
             onClick={onExit}
@@ -413,29 +404,21 @@ export default function PokerTable({ onExit }) {
             < 退出房间
           </button>
           <div style={{
-            flex: 1,
-            textAlign: 'right',
-            color: '#23e67a',
-            fontWeight: 900,
-            fontSize: 21,
-            letterSpacing: 2,
-            marginRight: 8,
+            flex: 1, textAlign: 'right', color: '#23e67a', fontWeight: 900,
+            fontSize: 21, letterSpacing: 2, marginRight: 8,
             textShadow: '0 2px 7px #23e67a44'
           }}>
             <span role="img" aria-label="coin" style={{ fontSize: 18, marginRight: 4 }}>🪙</span>
             积分：100
           </div>
         </div>
-        {/* 玩家区 */}
         <div style={{ display: 'flex', marginBottom: 18, gap: 8 }}>
           {renderPlayerSeat('你', 0, true)}
           {aiPlayers.map((ai, idx) => renderPlayerSeat(ai.name, idx + 1, false))}
         </div>
-        {/* 牌墩区域 */}
         {renderPaiDun(head, '头道', 'head', '#23e67a')}
         {renderPaiDun(middle, '中道', 'middle', '#23e67a')}
         {renderPaiDun(tail, '尾道', 'tail', '#23e67a')}
-        {/* 按钮区 */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 0, marginTop: 14 }}>
           <button
             style={{
