@@ -38,6 +38,9 @@ public class MainActivity extends AppCompatActivity {
                 // Depending on your security requirements, you might want to handle this differently.
                 // For development purposes, you might proceed: handler.proceed();
                 // For production, you would likely want to cancel or show a warning: handler.cancel();
+
+                // Proceed with loading the page despite SSL errors (use with caution in production!)
+                handler.proceed();
                 super.onReceivedSslError(view, handler, error);
             }
         }); // Set a WebViewClient to handle redirects within the WebView
