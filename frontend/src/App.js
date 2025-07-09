@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import usePollingGameState from './hooks/usePollingGameState';
 import PokerTable from './components/game/PokerTable';
-import { createDeck, shuffleDeck } from './utils/cardUtils.js';
-import { aiSmartSplit } from './utils/ai/SmartSplit.js';     // <--- 路径指向 components
+import { createDeck, shuffleDeck } from './utils/game/cardUtils.js';
+import { aiSmartSplit } from './utils/ai/SmartSplit.js';
 import { calcSSSAllScores } from './components/sssScore.js';   // <--- 已修正路径
 
 const BACKEND_DOMAIN = "https://9525.ip-ddns.com"; // 您的后端域名
