@@ -1,4 +1,4 @@
-// frontend/src/utils/cardUtils.js
+// frontend/src/utils/game/cardUtils.js
 
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const suits = ['♠', '♥', '♦', '♣'];
@@ -82,4 +82,32 @@ export function getCardImageUrl(card) {
   if (!rank || !suit) return '/cards/red_joker.svg';
 
   return `/cards/${rank}_of_${suit}.svg`;
+}
+
+
+/**
+ * 【新增的发牌模块】
+ * 创建、清洗并向指定数量的玩家发牌。
+ * @param {number} numPlayers - 玩家数量.
+ * @returns {{fullDeck: string[], playerHands: string[][]}} 返回包含完整牌组和每个玩家手牌的对象
+ */
+export function dealCards(numPlayers = 4) {
+  const deck = createDeck();
+  const shuffledDeck = shuffleDeck(deck);
+  let currentDeck = [...shuffledDeck];
+  
+  const playerHands = Array(numPlayers).fill(null).map(() => []);
+
+  for (let i = 0; i < 13; i++) {
+    for (let j = 0; j < numPlayers; j++) {
+      if(currentDeck.length > 0) {
+        playerHands[j].push(currentDeck.pop());
+      }
+    }
+  }
+
+  return {
+    fullDeck: shuffledDeck, // 返回洗好的整副牌用于动画
+    playerHands: playerHands // 返回最终每个玩家的手牌
+  };
 }
