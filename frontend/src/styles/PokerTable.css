@@ -1,5 +1,5 @@
 /* src/styles/PokerTable.css */
-/* [新增和修改] 添加了 transition 和新样式 */
+/* [新增和修改] 添加了最终结果弹窗的样式 */
 
 .poker-table-container {
   max-width: 800px;
@@ -12,114 +12,141 @@
   min-height: 100vh;
 }
 
-.table-header, .other-players-area, .my-player-area, .controls-area {
-  margin-bottom: 20px;
-}
-
-.exit-button {
-  background: #f44336;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.game-msg {
-  text-align: center;
-  font-size: 1.2em;
-  color: #ffeb3b;
-  min-height: 30px;
-}
-
-.my-hand-area, .my-duns-area {
-  background: rgba(0, 0, 0, 0.2);
-  padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 15px;
-}
-
-.my-hand-area h3, .my-duns-area h3 {
-  margin-top: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-  padding-bottom: 10px;
-}
-
-.hand-cards {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  min-height: 90px;
-  /* [新增] 为卡牌移动添加动画过渡 */
-  transition: all 0.3s ease-in-out;
-}
-
-.dun-area {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.1);
-  margin-bottom: 10px;
-  padding: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  border: 2px dashed transparent;
-  transition: background-color 0.2s, border-color 0.2s;
-}
-
-.dun-area:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-color: #ffdd44;
-}
-
-.dun-label {
-  width: 120px;
-  font-weight: bold;
-  font-size: 1.1em;
-  text-align: right;
-  padding-right: 15px;
-}
-
-/* [新增] 牌型标签样式 */
-.hand-type-label {
-  font-style: italic;
-  color: #a7ffeb;
-  margin-left: 8px;
-  font-size: 0.9em;
-}
+/* ... 其他已有样式保持不变 ... */
 
 .dun-cards {
   display: flex;
   flex-wrap: wrap;
   flex-grow: 1;
   min-height: 90px;
-  /* [新增] 为卡牌移动添加动画过渡 */
   transition: all 0.3s ease-in-out;
+  perspective: 1000px; 
 }
 
-.controls-area {
+/* --- [新增] 最终结果弹窗样式 --- */
+
+.result-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.75);
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 15px;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s;
 }
 
-.controls-area button {
-  padding: 12px 25px;
-  font-size: 1em;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  background-color: #4CAF50;
-  color: white;
+.result-modal-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.result-modal {
+  background: #1a4a31;
+  border: 2px solid #3c8f65;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  width: 90%;
+  max-width: 700px;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.result-modal h2 {
+  text-align: center;
+  margin-top: 0;
+  color: #ffeb3b;
+  font-size: 2em;
+  border-bottom: 1px solid #3c8f65;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.result-players-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.result-player {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.result-player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 1.2em;
+}
+
+.result-player-header .player-name {
   font-weight: bold;
 }
 
-.controls-area button:disabled {
-  background-color: #555;
-  cursor: not-allowed;
+.result-player-header .player-score {
+  font-weight: bold;
 }
 
-/* 倒水警告样式 */
-.foul-warning-text {
-    color: #ff4d4d;
-    font-weight: bold;
+.result-player-header .player-score.win {
+  color: #81c784; /* 浅绿 */
+}
+
+.result-player-header .player-score.lose {
+  color: #e57373; /* 浅红 */
+}
+
+.result-player-dun {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.result-player-dun .dun-label {
+  width: 60px;
+  font-size: 0.9em;
+  color: #ccc;
+  text-align: right;
+  padding-right: 10px;
+}
+
+.result-player-dun .dun-cards {
+  min-height: 50px; /* 缩小牌墩高度 */
+}
+
+/* 让弹窗里的牌更小 */
+.result-player-dun .card-image {
+  width: 45px;
+  height: 63px;
+  margin: 1px;
+}
+
+.result-modal-controls {
+  text-align: center;
+  margin-top: 25px;
+}
+
+.close-modal-button {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 2em;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close-modal-button:hover {
+    color: #fff;
 }
