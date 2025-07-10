@@ -226,55 +226,56 @@ export default function MobileGameTable() {
     if (!showResult) return null;
     
     return (
-      <div className="result-modal-overlay">
-        <div className="result-modal">
-          <div className="result-grid">
-            {[0, 1, 2, 3].map(i => (
-              <div key={i} className="result-player-display">
-                <div className={`result-player-name ${i === 0 ? 'me' : 'ai'}`}>
-                  {i === 0 ? '你' : aiPlayers[i - 1].name}
-                  {foulStates[i] && (
-                    <span className="foul-text">（倒水）</span>
-                  )}
-                  <span className="player-score">（{scores[i]}分）</span>
+      <>
+        <div className="result-modal-overlay">
+          <div className="result-modal">
+            <div className="result-grid">
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} className="result-player-display">
+                  <div className={`result-player-name ${i === 0 ? 'me' : 'ai'}`}>
+                    {i === 0 ? '你' : aiPlayers[i - 1].name}
+                    {foulStates[i] && (
+                      <span className="foul-text">（倒水）</span>
+                    )}
+                    <span className="player-score">（{scores[i]}分）</span>
+                  </div>
+                  <div className="result-dun-row">
+                    <div className="dun-label">头道</div>
+                    {i === 0
+                      ? renderPaiDunCards(head, 'head')
+                      : renderPaiDunCards(aiPlayers[i - 1].head, 'head')}
+                  </div>
+                  <div className="result-dun-row">
+                    <div className="dun-label">中道</div>
+                    {i === 0
+                      ? renderPaiDunCards(middle, 'middle')
+                      : renderPaiDunCards(aiPlayers[i - 1].middle, 'middle')}
+                  </div>
+                  <div className="result-dun-row">
+                    <div className="dun-label">尾道</div>
+                    {i === 0
+                      ? renderPaiDunCards(tail, 'tail')
+                      : renderPaiDunCards(aiPlayers[i - 1].tail, 'tail')}
+                  </div>
                 </div>
-              </div>
-              <div className="result-dun-row">
-                <div className="dun-label">头道</div>
-                {i === 0
-                  ? renderPaiDunCards(head, 'head')
-                  : renderPaiDunCards(aiPlayers[i - 1].head, 'head')}
-              </div>
-              <div className="result-dun-row">
-                <div className="dun-label">中道</div>
-                {i === 0
-                  ? renderPaiDunCards(middle, 'middle')
-                  : renderPaiDunCards(aiPlayers[i - 1].middle, 'middle')}
-              </div>
-              <div className="result-dun-row">
-                <div className="dun-label">尾道</div>
-                {i === 0
-                  ? renderPaiDunCards(tail, 'tail')
-                  : renderPaiDunCards(aiPlayers[i - 1].tail, 'tail')}
-              </div>
+              ))}
             </div>
-          ))}
+            <div className="result-modal-actions">
+              <button 
+                className="action-button ready-button"
+                onClick={() => setShowResult(false)}
+              >
+                关闭
+              </button>
+              <button 
+                className="action-button restart-button"
+                onClick={handleReady}
+              >
+                再来一局
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="result-modal-actions">
-          <button 
-            className="action-button ready-button"
-            onClick={() => setShowResult(false)}
-          >
-            关闭
-          </button>
-          <button 
-            className="action-button restart-button"
-            onClick={handleReady}
-          >
-            再来一局
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+      </>
+    );
 }
