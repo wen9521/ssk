@@ -5,10 +5,26 @@
   "dependencies": {
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
+    "react-router-dom": "^6.18.0",
     "react-scripts": "5.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build"
+    "build": "react-scripts build",
+    "audit:fix": "npm audit fix --force"
+  },
+  "overrides": {
+    "rollup-plugin-terser": {
+      "replace": "@rollup/plugin-terser@^4.0.0"
+    },
+    "workbox-google-analytics": {
+      "replace": "workbox-google-analytics@^7.0.0"
+    },
+    "eslint": {
+      "replace": "eslint@^9.0.0"
+    },
+    "svgo": {
+      "replace": "svgo@^3.0.0"
+    }
   }
 }
