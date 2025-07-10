@@ -4,6 +4,99 @@
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K'];
 const SUITS = ['S', 'H', 'D', 'C']; // Use single letters for suits for simplicity
 
+const COMPACT_RANK_TO_VERBOSE = {
+  'A': 'ace',
+  '2': '2',
+  '3': '3',
+  '4': '4',
+  '5': '5',
+  '6': '6',
+  '7': '7',
+  '8': '8',
+  '9': '9',
+  'T': '10',
+  'J': 'jack',
+  'Q': 'queen',
+  'K': 'king'
+};
+
+const VERBOSE_RANK_TO_COMPACT = {
+  'ace': 'A',
+  '2': '2',
+  '3': '3',
+  '4': '4',
+  '5': '5',
+  '6': '6',
+  '7': '7',
+  '8': '8',
+  '9': '9',
+  '10': 'T',
+  'jack': 'J',
+  'queen': 'Q',
+  'king': 'K'
+};
+
+const COMPACT_SUIT_TO_VERBOSE = {
+  'S': 'spades',
+  'H': 'hearts',
+  'D': 'diamonds',
+  'C': 'clubs'
+};
+
+const VERBOSE_SUIT_TO_COMPACT = {
+  'spades': 'S',
+  'hearts': 'H',
+  'diamonds': 'D',
+  'clubs': 'C'
+};
+
+/**
+ * Converts a compact card format (e.g., "S2", "HT") to a verbose format (e.g., "2_of_spades", "10_of_hearts").
+ * @param {string} compactCard - The card in compact format.
+ * @returns {string} The card in verbose format, or an empty string if invalid.
+ */
+export function convertCompactToVerbose(compactCard) {
+  if (!compactCard || typeof compactCard !== 'string' || compactCard.length < 2) return '';
+
+  let rankCompact = compactCard.slice(0, -1);
+  let suitCompact = compactCard.slice(-1);
+
+  // Handle '10' rank
+  if (compactCard.length === 3 && compactCard.startsWith('10')) {
+    rankCompact = 'T'; // Map '10' to 'T' for consistent lookup
+    suitCompact = compactCard.slice(2);
+  }
+
+  const verboseRank = COMPACT_RANK_TO_VERBOSE[rankCompact.toUpperCase()];
+  const verboseSuit = COMPACT_SUIT_TO_VERBOSE[suitCompact.toUpperCase()];
+
+  if (!verboseRank || !verboseSuit) return '';
+
+  return `${verboseRank}_of_${verboseSuit}`;
+}
+
+/**
+ * Converts a verbose card format (e.g., "ace_of_spades") to a compact format (e.g., "AS").
+ * @param {string} verboseCard - The card in verbose format.
+ * @returns {string} The card in compact format, or an empty string if invalid.
+ */
+export function convertVerboseToCompact(verboseCard) {
+  if (!verboseCard || typeof verboseCard !== 'string' || !verboseCard.includes('_of_')) return '';
+
+  const parts = verboseCard.split('_of_');
+  if (parts.length !== 2) return '';
+
+  const verboseRank = parts[0];
+  const verboseSuit = parts[1];
+
+  const compactRank = VERBOSE_RANK_TO_COMPACT[verboseRank.toLowerCase()];
+  const compactSuit = VERBOSE_SUIT_TO_COMPACT[verboseSuit.toLowerCase()];
+
+  if (!compactRank || !compactSuit) return '';
+
+  return `${compactRank}${compactSuit}`;
+}
+
 /**
  * Creates a standard 52-card deck.
  * @returns {string[]} e.g., ["AS", "KS", ...]

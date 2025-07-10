@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getCardImageUrl } from '../../utils/game/cardImage';
+import { convertCompactToVerbose } from '../../utils/game/cardUtils'; // 导入转换函数
 import '../../styles/Game.css';
 
 const OUTER_MAX_WIDTH = 420;
@@ -138,6 +139,23 @@ const Game = ({
     );
   }
 
+  const handleSmartSplitClick = () => {
+    // 收集 tempDuns 中所有13张牌（它们是紧凑型格式）
+    const allCurrentCardsCompact = [
+      ...tempDuns.head,
+      ...tempDuns.middle,
+      ...tempDuns.tail
+    ];
+
+    // 将它们转换为 SmartSplit.js 所需的详细格式
+    const allCurrentCardsVerbose = allCurrentCardsCompact.map(card => convertCompactToVerbose(card));
+
+    // 调用 onSmartSplit prop，并传入详细格式的牌
+    if (onSmartSplit && isReady) {
+      onSmartSplit(allCurrentCardsVerbose);
+    }
+  };
+
   return (
     <div className="game-container-background">
       <div className="game-outer-container">
@@ -176,7 +194,7 @@ const Game = ({
           <button className={`control-button ${isReady ? 'cancel-button' : 'ready-button'}`} onClick={onReady}>
             {isReady ? '取消准备' : '开始游戏'}
           </button>
-          <button className="control-button smart-split-button" onClick={onSmartSplit} disabled={!isReady}>
+          <button className="control-button smart-split-button" onClick={handleSmartSplitClick} disabled={!isReady}>
             智能分牌
           </button>
           <button className="control-button compare-button" onClick={onStartCompare} disabled={!isReady || !players.every(p => p.processed)}>
