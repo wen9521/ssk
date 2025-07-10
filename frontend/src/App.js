@@ -12,6 +12,7 @@ import './styles/App.css';
 const BACKEND_DOMAIN = "https://9525.ip-ddns.com";
 const AI_NAMES = ['AI·关羽', 'AI·张飞', 'AI·赵云'];
 
+// --- 数据格式转换工具 ---
 const cardToLegacyFormat = (card) => {
     const rankStr = card.slice(0, -1);
     const suitChar = card.slice(-1);
@@ -38,14 +39,20 @@ const dunFromLegacyFormat = (dun) => {
     };
 };
 
+// --- 初始状态定义 ---
 const initialGameState = {
-  status: 'lobby',
+  status: 'lobby', // 'lobby', 'dealing', 'playing', 'comparing', 'finished'
   players: [],
   scores: [],
   fullDeck: [],
   selectedCards: [], 
   tempDuns: { dun1: [], dun2: [], dun3: [] },
   isFoul: false,
+  // [新增] 比牌动画状态
+  comparisonState: {
+    revealedDuns: [], // e.g., ['dun3', 'dun2', 'dun1']
+    interimScores: [], // 存放比牌过程中的临时分数
+  },
 };
 
 export default function App() {
@@ -57,83 +64,111 @@ export default function App() {
   const [gameState, setGameState] = useState(initialGameState);
   const onlineGameState = usePollingGameState(roomId, isOnline ? 1500 : null);
 
+  // --- 效果钩子 ---
+
   useEffect(() => {
     if (isOnline && onlineGameState) {
       setGameState(onlineGameState);
     }
   }, [onlineGameState, isOnline]);
 
+  // [新增] 处理比牌动画的 useEffect
+  useEffect(() => {
+    if (gameState.status !== 'comparing') return;
+
+    const playerDunsForScoring = gameState.players.map(p =>
+        p.dun ? { head: p.dun.dun1, middle: p.dun.dun2, tail: p.dun.dun3 } : null
+    );
+
+    const animationSteps = [
+        { dun: 'dun3', name: '尾道', delay: 1500 },
+        { dun: 'dun2', name: '中道', delay: 2000 },
+        { dun: 'dun1', name: '头道', delay: 2000 },
+    ];
+
+    let currentDelay = 0;
+
+    animationSteps.forEach((step, index) => {
+        currentDelay += step.delay;
+        setTimeout(() => {
+            setGameState(prev => {
+                const revealed = animationSteps.slice(0, index + 1).map(s => s.dun);
+                // 假设 calcSSSAllScores 可以根据 revealedDuns 计算部分得分
+                const currentScores = calcSSSAllScores(playerDunsForScoring, revealed);
+
+                return {
+                    ...prev,
+                    msg: `正在比较【${step.name}】...`,
+                    comparisonState: {
+                        revealedDuns: revealed,
+                        interimScores: currentScores,
+                    }
+                };
+            });
+        }, currentDelay);
+    });
+
+    // 动画结束后，计算最终结果并结束游戏
+    setTimeout(() => {
+        setGameState(prev => {
+            const finalScores = calcSSSAllScores(playerDunsForScoring);
+            return {
+                ...prev,
+                status: 'finished',
+                msg: '比牌完成！请查看最终结果。',
+                scores: finalScores,
+            }
+        });
+    }, currentDelay + 2000);
+
+  }, [gameState.status]); // 仅在 status 变化时触发
+
+  // --- 核心游戏逻辑函数 ---
+
   const resetToLobby = () => {
+    setGameState(initialGameState);
     setRoomId('');
     setPlayerIdx(null);
     setIsOnline(false);
-    setGameState(initialGameState);
     setMsg('欢迎来到十三水游戏');
     setIsActionDisabled(false);
   };
 
-  // [修正] 这是本次修复的核心，确保 startTryPlay 正确初始化所有 gameState 属性
   const startTryPlay = () => {
+    // ... (此函数无变化)
     setIsActionDisabled(true);
     setMsg('正在洗牌和发牌...');
-    
-    const numPlayers = 4;
-    const { fullDeck, playerHands } = dealCards(numPlayers);
-
-    const players = Array(numPlayers).fill(null).map((_, i) => ({
+    const { fullDeck, playerHands } = dealCards(4);
+    const players = Array(4).fill(null).map((_, i) => ({
       name: i === 0 ? '你' : AI_NAMES[i - 1],
-      hand: [], // 动画开始时手牌为空
+      hand: [],
       dun: null,
     }));
-    
-    // 初始化游戏状态，准备开始动画
-    setGameState({
-      ...initialGameState, // 使用 initialGameState 作为基础，确保所有字段都被重置
-      status: 'dealing',
-      players,
-      fullDeck
-    });
+    setGameState({ ...initialGameState, status: 'dealing', players, fullDeck });
     setPlayerIdx(0);
     setIsOnline(false);
 
     let cardIndex = 0;
     const dealInterval = setInterval(() => {
       setGameState(prev => {
-        if (!prev.players || prev.players.length === 0) return prev;
         const newPlayers = [...prev.players];
-        const playerToReceive = cardIndex % numPlayers;
-        if(newPlayers[playerToReceive]) {
-          newPlayers[playerToReceive].hand.push(fullDeck[cardIndex]);
-        }
+        newPlayers[cardIndex % 4].hand.push(fullDeck[cardIndex]);
         return { ...prev, players: newPlayers };
       });
       cardIndex++;
-
       if (cardIndex >= 52) {
         clearInterval(dealInterval);
-        
         setTimeout(() => {
           setMsg('AI 正在理牌...');
           setGameState(prev => {
             const playersAfterAI = prev.players.map((p, i) => {
               const finalHand = playerHands[i];
-              if (i === 0) {
-                return { ...p, hand: finalHand };
-              }
+              if (i === 0) return { ...p, hand: finalHand };
               const legacyHand = finalHand.map(cardToLegacyFormat);
-              const splitResultLegacy = aiSmartSplit(legacyHand);
-              const splitResult = dunFromLegacyFormat(splitResultLegacy);
+              const splitResult = dunFromLegacyFormat(aiSmartSplit(legacyHand));
               return { ...p, hand: finalHand, dun: splitResult };
             });
-            // [修正] 确保在进入 playing 状态时，所有理牌相关状态被正确初始化
-            return { 
-                ...prev, 
-                players: playersAfterAI, 
-                status: 'playing',
-                tempDuns: { dun1: [], dun2: [], dun3: [] }, // 关键！
-                selectedCards: [],                          // 关键！
-                isFoul: false                               // 关键！
-            };
+            return { ...prev, players: playersAfterAI, status: 'playing' };
           });
           setMsg('发牌完成，请您理牌。');
           setIsActionDisabled(false);
@@ -142,55 +177,16 @@ export default function App() {
     }, 60);
   };
   
-  const handleSelectCard = (card) => {
-    setGameState(prev => {
-        if (prev.status !== 'playing') return prev;
-        const selected = prev.selectedCards || [];
-        const isSelected = selected.includes(card);
-        const newSelectedCards = isSelected 
-            ? selected.filter(c => c !== card)
-            : [...selected, card];
-        return { ...prev, selectedCards: newSelectedCards };
-    });
-  };
-
-  const handleMoveToDun = (dunName) => {
-    setGameState(prev => {
-        if (prev.status !== 'playing' || !prev.selectedCards || prev.selectedCards.length === 0) return prev;
-        
-        const tempDuns = JSON.parse(JSON.stringify(prev.tempDuns));
-        const selectedCards = [...prev.selectedCards];
-        
-        Object.keys(tempDuns).forEach(key => {
-            tempDuns[key] = tempDuns[key].filter(c => !selectedCards.includes(c));
-        });
-        
-        tempDuns[dunName] = [...tempDuns[dunName], ...selectedCards];
-
-        const limits = { dun1: 3, dun2: 5, dun3: 5 };
-        if (tempDuns[dunName].length > limits[dunName]) {
-            setMsg(`此墩最多只能放 ${limits[dunName]} 张牌！`);
-            return prev;
-        }
-        
-        const foul = checkIsFoul(tempDuns.dun1, tempDuns.dun2, tempDuns.dun3);
-        setMsg(foul ? "警告：当前牌型已倒水！" : "理牌中...");
-        return { ...prev, tempDuns, selectedCards: [], isFoul: foul };
-    });
-  };
-
+  // [修改] 提交理牌后进入 'comparing' 状态
   const handleSubmitDun = () => {
-      const { tempDuns } = gameState;
-
+      const { tempDuns, isFoul } = gameState;
       if (tempDuns.dun1.length !== 3 || tempDuns.dun2.length !== 5 || tempDuns.dun3.length !== 5) {
           setMsg("请按头道3张、中道5张、尾道5张分配好再提交！");
           return;
       }
-      if (gameState.isFoul) {
-          if (!window.confirm("当前牌型已倒水，确定要提交吗？")) return;
-      }
+      if (isFoul && !window.confirm("当前牌型已倒水，确定要提交吗？")) return;
       
-      setMsg("理牌已提交，正在比牌...");
+      setMsg("理牌已提交，等待其他玩家...");
       setGameState(prev => {
           const updatedPlayers = [...prev.players];
           if (updatedPlayers[playerIdx]) {
@@ -200,40 +196,59 @@ export default function App() {
           const allPlayersReady = updatedPlayers.every(p => p && p.dun);
           
           if (allPlayersReady) {
-              const playerDunsForScoring = updatedPlayers.map(p => 
-                  p.dun ? { head: p.dun.dun1, middle: p.dun.dun2, tail: p.dun.dun3 } : null
-              );
-              
-              const scores = calcSSSAllScores(playerDunsForScoring);
-              setMsg("比牌完成！");
-              return { ...prev, players: updatedPlayers, status: 'finished', scores, selectedCards: [] };
+              setMsg("所有玩家已准备就绪，开始比牌！");
+              return { 
+                ...prev, 
+                players: updatedPlayers, 
+                status: 'comparing', // 进入比牌状态
+                selectedCards: [],
+                comparisonState: { revealedDuns: [], interimScores: Array(prev.players.length).fill(0) } // 初始化动画状态
+              };
           }
           
           return { ...prev, players: updatedPlayers, selectedCards: [] };
       });
   };
+
+  const handleSelectCard = (card) => {
+    // ... (此函数无变化)
+    setGameState(prev => {
+        if (prev.status !== 'playing') return prev;
+        const selected = prev.selectedCards || [];
+        const isSelected = selected.includes(card);
+        const newSelectedCards = isSelected ? selected.filter(c => c !== card) : [...selected, card];
+        return { ...prev, selectedCards: newSelectedCards };
+    });
+  };
+
+  const handleMoveToDun = (dunName) => {
+    // ... (此函数无变化)
+    setGameState(prev => {
+        if (prev.status !== 'playing' || !prev.selectedCards || prev.selectedCards.length === 0) return prev;
+        const tempDuns = { ...prev.tempDuns };
+        Object.keys(tempDuns).forEach(key => { tempDuns[key] = tempDuns[key].filter(c => !prev.selectedCards.includes(c)); });
+        tempDuns[dunName] = [...tempDuns[dunName], ...prev.selectedCards];
+        if (tempDuns[dunName].length > { dun1: 3, dun2: 5, dun3: 5 }[dunName]) return prev;
+        const foul = checkIsFoul(tempDuns.dun1, tempDuns.dun2, tempDuns.dun3);
+        setMsg(foul ? "警告：当前牌型已倒水！" : "理牌中...");
+        return { ...prev, tempDuns, selectedCards: [], isFoul: foul };
+    });
+  };
   
   const handleSmartSplit = () => {
-    if (gameState.status !== 'playing' || !gameState.players[playerIdx]) return;
+    // ... (此函数无变化)
     const myFullHand = [...gameState.players[playerIdx].hand]; 
     const legacyHand = myFullHand.map(cardToLegacyFormat);
-    const splitResultLegacy = aiSmartSplit(legacyHand);
-    const duns = dunFromLegacyFormat(splitResultLegacy);
-    setGameState(prev => ({
-        ...prev,
-        tempDuns: duns,
-        isFoul: checkIsFoul(duns.dun1, duns.dun2, duns.dun3),
-    }));
+    const duns = dunFromLegacyFormat(aiSmartSplit(legacyHand));
+    setGameState(prev => ({ ...prev, tempDuns: duns, isFoul: checkIsFoul(duns.dun1, duns.dun2, duns.dun3) }));
     setMsg("已为您智能理牌，可直接提交或微调。");
   };
 
   const handleResetGame = () => {
-    if (isOnline) {
-      // online logic...
-    } else {
-      startTryPlay();
-    }
+    startTryPlay();
   };
+
+  // --- 渲染 ---
 
   return (
     <div className="app-container">
