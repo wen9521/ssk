@@ -435,3 +435,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* 在现有样式基础上添加 */
+.card-rank, .card-suit {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.card-suit-large {
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+
+.card-rank-large {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* 确保卡片有最小尺寸 */
+.card {
+  min-width: 50px;
+  min-height: 70px;
+}
