@@ -1,0 +1,24 @@
+/* src/styles/Card.css */
+
+.card-image {
+  width: 60px;
+  height: 84px;
+  margin: 2px;
+  border-radius: 5px;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  border: 2px solid transparent;
+  background-color: white; /* 确保图片加载失败时有白色背景 */
+}
+
+.card-image:hover {
+  transform: translateY(-5px);
+  box-shadow: 2px 6px 10px rgba(0, 0, 0, 0.3);
+}
+
+.card-image.selected {
+  border-color: #ffdd44;
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0px 8px 15px rgba(255, 221, 68, 0.5);
+}
