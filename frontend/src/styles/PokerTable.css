@@ -1,41 +1,125 @@
-/* This is a placeholder for PokerTable styles */
+/* src/styles/PokerTable.css */
+/* [新增和修改] 添加了 transition 和新样式 */
 
-.play-container {
-  max-width: 420px;
-  margin: 28px auto 0 auto;
-  background: #1a2a3a; /* 深蓝色 */
-  border-radius: 18px;
-  box-shadow: 0 8px 40px #23e67a50, 0 1.5px 5px #1a462a6a;
-  padding: 22px 12px 24px 12px;
-  text-align: center;
+.poker-table-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background: #0a3d24;
+  border-radius: 20px;
+  color: #fff;
+  font-family: sans-serif;
+  min-height: 100vh;
 }
-.cards-area {
+
+.table-header, .other-players-area, .my-player-area, .controls-area {
+  margin-bottom: 20px;
+}
+
+.exit-button {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.game-msg {
+  text-align: center;
+  font-size: 1.2em;
+  color: #ffeb3b;
+  min-height: 30px;
+}
+
+.my-hand-area, .my-duns-area {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+.my-hand-area h3, .my-duns-area h3 {
+  margin-top: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  padding-bottom: 10px;
+}
+
+.hand-cards {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px;
-  margin-bottom: 18px;
+  min-height: 90px;
+  /* [新增] 为卡牌移动添加动画过渡 */
+  transition: all 0.3s ease-in-out;
 }
-.card-img {
-  width: 55px;
-  height: 80px;
-  border-radius: 6px;
-  box-shadow: 0 4px 22px #23e67a44, 0 1.5px 5px #1a462a6a !important;
-  background: #fff;
-  object-fit: contain;
+
+.dun-area {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px dashed transparent;
+  transition: background-color 0.2s, border-color 0.2s;
 }
-.result-container {
-  max-width: 350px;
-  margin: 60px auto 0 auto;
-  background: #1a2a3a; /* 深蓝色 */
-  border-radius: 18px;
-  box-shadow: 0 8px 40px #23e67a50, 0 1.5px 5px #23e67a6a;
-  padding: 28px 24px 24px 24px;
-  text-align: center;
+
+.dun-area:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: #ffdd44;
 }
-/* 牌墩和seat的绿色暗影风格 */
-.play-seat, .play-seat.empty, .play-pai-dun {  
-  border: none !important;
-  box-shadow: 0 4px 22px #23e67a44, 0 1.5px 5px #1a462a6a !important;
-  background: #1a2a3a !important;
+
+.dun-label {
+  width: 120px;
+  font-weight: bold;
+  font-size: 1.1em;
+  text-align: right;
+  padding-right: 15px;
+}
+
+/* [新增] 牌型标签样式 */
+.hand-type-label {
+  font-style: italic;
+  color: #a7ffeb;
+  margin-left: 8px;
+  font-size: 0.9em;
+}
+
+.dun-cards {
+  display: flex;
+  flex-wrap: wrap;
+  flex-grow: 1;
+  min-height: 90px;
+  /* [新增] 为卡牌移动添加动画过渡 */
+  transition: all 0.3s ease-in-out;
+}
+
+.controls-area {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.controls-area button {
+  padding: 12px 25px;
+  font-size: 1em;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background-color: #4CAF50;
+  color: white;
+  font-weight: bold;
+}
+
+.controls-area button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+/* 倒水警告样式 */
+.foul-warning-text {
+    color: #ff4d4d;
+    font-weight: bold;
 }
