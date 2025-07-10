@@ -1,4 +1,3 @@
-/* MobileGameTable.css */
 :root {
   --primary: #1a936f;
   --primary-dark: #136f53;
@@ -22,13 +21,14 @@
 .mobile-game-container {
   display: flex;
   flex-direction: column;
-  min-height: 90vh; /* 修改整体高度为屏幕高度的90% */
+  min-height: 90vh;
   background: linear-gradient(135deg, var(--background) 0%, #0d3b4a 100%);
   color: var(--light-text);
   font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   padding: 16px;
   position: relative;
   overflow: hidden;
+  padding-bottom: 70px;
 }
 
 .mobile-game-container::before {
@@ -86,8 +86,8 @@
   padding: 10px 0;
   gap: 10px;
   margin-bottom: 15px;
-  max-height: 12vh; /* 调整玩家容器高度 */
   -webkit-overflow-scrolling: touch;
+  max-height: 12vh;
 }
 
 .players-container::-webkit-scrollbar {
@@ -128,14 +128,14 @@
 }
 
 .game-area {
-  flex-grow: 0.8; /* 调整游戏区域高度 */
-  max-height: 55vh; /* 调整游戏区域高度 */
-  overflow-y: auto;
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
   gap: 15px;
   margin-bottom: 15px;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  max-height: 55vh;
 }
 
 .dun-container {
@@ -144,143 +144,67 @@
   padding: 15px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-height: 28vh; /* 调整牌墩容器高度 */
+  min-height: 28vh;
   position: relative;
 }
 
 .dun-header {
-  position: absolute; /* 调整说明文字位置 */
-  top: 8px; /* 调整说明文字位置 */
-  right: 8px; /* 调整说明文字位置 */
-  background: rgba(0, 0, 0, 0.4); /* 调整说明文字位置 */
-  padding: 4px 8px; /* 调整说明文字位置 */
-  border-radius: 10px; /* 调整说明文字位置 */
-  opacity: 0.7; /* 调整说明文字位置 */
-  z-index: 1; /* 调整说明文字位置 */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 8px;
+  border-radius: 10px;
+  opacity: 0.7;
+  z-index: 1;
 }
 
 .dun-label {
   font-weight: 600;
-  font-size: 18px;
+  font-size: 14px;
   color: var(--accent);
 }
 
 .dun-count {
-  font-size: 14px;
+  font-size: 12px;
   opacity: 0.7;
 }
 
 .dun-content {
-  min-height: 26vh; /* 调整扑克牌高度 */
+  min-height: 26vh;
   display: flex;
   align-items: center;
+  justify-content: center;
+  padding-top: 30px;
 }
 
 .dun-cards-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  justify-content: center;
+  gap: 4px;
 }
 
 .dun-placeholder {
   width: 100%;
   text-align: center;
   color: rgba(255, 255, 255, 0.3);
-  font-size: 18px;
+  font-size: 16px;
   padding: 20px 0;
 }
 
-.card {
-  width: 60px;
-  height: 84px;
-  perspective: 1000px;
-  cursor: pointer;
-}
-
-.card-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: 8px;
-  background: white;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 5px;
-  color: #333;
-  font-weight: 600;
-}
-
-.card.selected .card-inner {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(255, 209, 102, 0.6);
-  border: 2px solid var(--accent);
-}
-
-.card-corner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-size: 12px;
-  line-height: 1.1;
-}
-
-.top-left {
-  align-self: flex-start;
-}
-
-.bottom-right {
-  align-self: flex-end;
-  transform: rotate(180deg);
-}
-
-.card-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex-grow: 1;
-}
-
-.card-suit-large {
-  font-size: 24px;
-  line-height: 1;
-}
-
-.card-rank-large {
-  font-size: 20px;
-  font-weight: 700;
-  margin-top: 3px;
-}
-
-.card-suit[data-suit="♥"],
-.card-suit[data-suit="♦"] {
-  color: #e74c3c;
-}
-
-.card-suit[data-suit="♠"],
-.card-suit[data-suit="♣"] {
-  color: #2c3e50;
-}
-
 .controls-container {
-  position: fixed; /* 调整控制栏位置 */
-  bottom: 0; /* 调整控制栏位置 */
-  left: 0; /* 调整控制栏位置 */
-  right: 0; /* 调整控制栏位置 */
-  padding: 8px; /* 调整控制栏位置 */
-  background: rgba(10, 40, 50, 0.95); /* 调整控制栏位置 */
-  z-index: 100; /* 调整控制栏位置 */
   display: flex;
   gap: 10px;
   margin-top: 10px;
   flex-wrap: wrap;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px;
+  background: rgba(10, 40, 50, 0.95);
+  z-index: 100;
 }
 
 .control-button {
@@ -329,6 +253,11 @@
   font-size: 14px;
   min-height: 20px;
   margin-top: 10px;
+  position: fixed;
+  bottom: 70px;
+  left: 0;
+  right: 0;
+  z-index: 99;
 }
 
 /* Result Modal */
@@ -353,25 +282,23 @@
   width: 100%;
   max-width: 500px;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .result-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 16px;
-  width: 100%;
+  grid-template-columns: 1fr;
+  gap: 20px;
 }
 
 .result-player-display {
-  text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  padding-bottom: 8px;
+  margin-bottom: 15px;
 }
 
 .result-player-name {
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -393,6 +320,11 @@
 
 .player-score {
   margin-top: 4px;
+  font-size: 14px;
+}
+
+.result-duns-container {
+  margin-top: 10px;
 }
 
 .result-dun-row {
@@ -406,12 +338,14 @@
   text-align: right;
   margin-right: 8px;
   opacity: 0.7;
+  font-size: 14px;
 }
 
-.result-dun-row .dun-cards-container {
-  flex-grow: 1;
+.result-modal-actions {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
 }
 
 .action-button {
@@ -435,17 +369,9 @@
 }
 
 @media (max-width: 480px) {
-  .card {
-    width: 50px;
-    height: 70px;
-  }
-  
-  .card-suit-large {
-    font-size: 18px;
-  }
-  
-  .card-rank-large {
-    font-size: 16px;
+  .card-image {
+    width: 40px;
+    height: 56px;
   }
   
   .control-button {
@@ -454,63 +380,32 @@
     padding: 10px 0;
   }
   
-  .result-grid {
-    grid-template-columns: 1fr;
+  .result-dun-row .dun-label {
+    min-width: 40px;
+    font-size: 12px;
   }
-}
-
-/* 修改整体高度为屏幕高度的90% */
-.mobile-game-container {
-  min-height: 90vh;
-}
-
-/* 调整游戏区域高度 */
-.game-area {
-  flex-grow: 0.8;
-  max-height: 55vh;
-  overflow-y: auto;
-}
-
-/* 调整牌墩容器高度 */
-.dun-container {
-  min-height: 28vh;
-  position: relative;
-}
-
-/* 调整说明文字位置 */
-.dun-header {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 4px 8px;
-  border-radius: 10px;
-  opacity: 0.7;
-  z-index: 1;
-}
-
-/* 调整扑克牌高度 */
-.dun-content {
-  min-height: 26vh; /* 牌墩高度的94% */
-}
-
-/* 移除扑克牌圆角 */
-.card-image {
-  border-radius: 0 !important;
-}
-
-/* 调整玩家容器高度 */
-.players-container {
-  max-height: 12vh;
-}
-
-/* 调整控制栏位置 */
-.controls-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 8px;
-  background: rgba(10, 40, 50, 0.95);
-  z-index: 100;
+  
+  .result-player-name {
+    font-size: 14px;
+  }
+  
+  .player-score {
+    font-size: 12px;
+  }
+  
+  .dun-container {
+    padding: 10px;
+  }
+  
+  .dun-header {
+    padding: 3px 6px;
+  }
+  
+  .dun-label {
+    font-size: 12px;
+  }
+  
+  .dun-count {
+    font-size: 10px;
+  }
 }
