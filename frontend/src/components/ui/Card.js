@@ -1,8 +1,6 @@
-// src/components/ui/Card.js
-
 import React from 'react';
 import { getCardImageUrl } from '../../utils/game/cardImage';
-import '../../styles/Card.css'; // [修改] 引用新的样式文件
+import '../../styles/Card.css';
 
 const Card = ({ card, isSelected, onCardClick }) => {
   const classNames = `card-image ${isSelected ? 'selected' : ''}`;
