@@ -21,7 +21,7 @@
 .mobile-game-container {
   display: flex;
   flex-direction: column;
-  min-height: 90vh;
+  min-height: 90vh; /* 整体高度降低10% */
   background: linear-gradient(135deg, var(--background) 0%, #0d3b4a 100%);
   color: var(--light-text);
   font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
@@ -87,7 +87,6 @@
   gap: 10px;
   margin-bottom: 15px;
   -webkit-overflow-scrolling: touch;
-  max-height: 12vh;
 }
 
 .players-container::-webkit-scrollbar {
@@ -135,7 +134,6 @@
   margin-bottom: 15px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  max-height: 55vh;
 }
 
 .dun-container {
@@ -144,45 +142,36 @@
   padding: 15px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-height: 28vh;
-  position: relative;
 }
 
+/* 恢复牌墩原始布局 */
 .dun-header {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 4px 8px;
-  border-radius: 10px;
-  opacity: 0.7;
-  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
 .dun-label {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 18px;
   color: var(--accent);
 }
 
 .dun-count {
-  font-size: 12px;
+  font-size: 14px;
   opacity: 0.7;
 }
 
 .dun-content {
-  min-height: 26vh;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding-top: 30px;
 }
 
 .dun-cards-container {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px;
+  gap: 5px;
 }
 
 .dun-placeholder {
@@ -369,9 +358,20 @@
 }
 
 @media (max-width: 480px) {
-  .card-image {
-    width: 40px;
-    height: 56px;
+  .dun-container {
+    padding: 10px;
+  }
+  
+  .dun-header {
+    margin-bottom: 8px;
+  }
+  
+  .dun-label {
+    font-size: 16px;
+  }
+  
+  .dun-count {
+    font-size: 12px;
   }
   
   .control-button {
@@ -391,21 +391,5 @@
   
   .player-score {
     font-size: 12px;
-  }
-  
-  .dun-container {
-    padding: 10px;
-  }
-  
-  .dun-header {
-    padding: 3px 6px;
-  }
-  
-  .dun-label {
-    font-size: 12px;
-  }
-  
-  .dun-count {
-    font-size: 10px;
   }
 }
