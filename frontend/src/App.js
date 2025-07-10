@@ -53,6 +53,7 @@ export default function App() {
       currentDelay += step.delay;
       setTimeout(() => {
         setGameState(prev => {
+          if (prev.status !== 'comparing') return prev; // Prevent updates if state changed
           const revealed = animationSteps.slice(0, index + 1).map(s => s.dun);
           const interimScores = calcSSSAllScores(allFinalDuns.map(d => ({head: d.dun1, middle: d.dun2, tail: d.dun3})), revealed);
           return {
@@ -66,6 +67,7 @@ export default function App() {
 
     setTimeout(() => {
       setGameState(prev => {
+        if (prev.status !== 'comparing') return prev; // Prevent updates if state changed
         const finalScores = calcSSSAllScores(allFinalDuns.map(d => ({head: d.dun1, middle: d.dun2, tail: d.dun3})));
         return {
           ...prev, status: 'finished', msg: '比牌完成！请查看最终结果。',
@@ -89,7 +91,7 @@ export default function App() {
       setGameState(prev => ({ ...initialGameState, status: 'playing', msg: '正在发牌...' }));
 
       const {playerHands} = dealHands(4);
-      const myHand = playerHands[0];
+      const myHand = playerHands[0]; // Frontend format e.g. ['AS', 'TC']
       const aiHands = playerHands.slice(1);
       const initialDuns = { head: myHand.slice(0, 3), middle: myHand.slice(3, 8), tail: myHand.slice(8, 13) };
       
@@ -100,8 +102,10 @@ export default function App() {
         players: initialGameState.players.map((p, i) => ({ ...p, hand: aiHands[i] })),
       }));
       
+      // [FIXED] Convert hand to legacy format before getting splits
       setTimeout(() => {
-        const splits = getPlayerSmartSplits(myHand);
+        const legacyHand = myHand.map(cardToLegacyFormat);
+        const splits = getPlayerSmartSplits(legacyHand);
         setGameState(prev => ({ ...prev, mySplits: splits, splitIndex: 0 }));
       }, 0);
 
@@ -144,10 +148,22 @@ export default function App() {
 
   const handleSmartSplit = () => {
     setGameState(prev => {
-      if (!prev.mySplits.length) return { ...prev, msg: '智能分牌计算中…' };
+      if (!prev.mySplits || !prev.mySplits.length) {
+          return { ...prev, msg: '智能分牌计算中…' };
+      }
       const nextIdx = (prev.splitIndex + 1) % prev.mySplits.length;
-      const split = dunFromLegacyFormat(prev.mySplits[nextIdx]);
-      return { ...prev, splitIndex: nextIdx, tempDuns: { head: split.dun1, middle: split.dun2, tail: split.dun3 }, msg: `智能分牌 ${nextIdx + 1}/${prev.mySplits.length}` };
+      const splitInLegacyFormat = prev.mySplits[nextIdx];
+      const splitInFrontendFormat = dunFromLegacyFormat(splitInLegacyFormat);
+      return { 
+          ...prev, 
+          splitIndex: nextIdx, 
+          tempDuns: { 
+              head: splitInFrontendFormat.dun1, 
+              middle: splitInFrontendFormat.dun2, 
+              tail: splitInFrontendFormat.dun3 
+          }, 
+          msg: `智能分牌 ${nextIdx + 1}/${prev.mySplits.length}` 
+      };
     });
   };
 
@@ -167,7 +183,7 @@ export default function App() {
       return {
         ...prev,
         status: 'comparing',
-        players: [mePlayer, ...prev.players], // Correctly add the player data before animation starts
+        players: [mePlayer, ...prev.players],
         foulStates: finalFoulStates,
         msg: '所有玩家已准备就绪, 开始比牌！',
       };
