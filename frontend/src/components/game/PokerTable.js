@@ -95,6 +95,26 @@ const PokerTable = ({ gameState, playerIdx, msg, onResetGame, onSubmitDun, onSma
           // --- 视图 1: 玩家理牌中 ---
           <div className="my-player-area">
             {/* ... (理牌视图无变化) ... */}
+            <div className="my-hand-area">
+              <h3>未分配手牌 ({unallocatedHand.length})</h3>
+              <div className="hand-cards">
+                {unallocatedHand.map(card => 
+                  <Card 
+                    key={card} 
+                    card={card} 
+                    isSelected={(gameState.selectedCards || []).includes(card)} 
+                    onCardClick={onSelectCard}
+                  />
+                )}
+              </div>
+            </div>
+            
+            <div className="my-duns-area">
+              <h3>我的牌墩 (点击区域放置选中的牌)</h3>
+              {renderSingleDun({ dunCards: gameState.tempDuns.dun1, dunName: 'dun1', label: '头道', isInteractive: true, selectedCards: gameState.selectedCards })}
+              {renderSingleDun({ dunCards: gameState.tempDuns.dun2, dunName: 'dun2', label: '中道', isInteractive: true, selectedCards: gameState.selectedCards })}
+              {renderSingleDun({ dunCards: gameState.tempDuns.dun3, dunName: 'dun3', label: '尾道', isInteractive: true, selectedCards: gameState.selectedCards })}
+            </div>
           </div>
         ) : (
           // --- 视图 2: 等待、比牌、结束状态 ---
