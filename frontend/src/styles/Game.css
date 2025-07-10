@@ -1,0 +1,61 @@
+/* frontend/src/styles/Game.css */
+
+/* ... (previous styles) ... */
+
+/* Result Modal Enhancements */
+.result-modal-overlay {
+    /* ... (no changes) ... */
+}
+.result-modal {
+    background: #185a30;
+    border-radius: 15px;
+    padding: 24px;
+    width: 95%;
+    max-width: 500px;
+    box-shadow: 0 8px 40px #0002;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+.result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+}
+.result-player-display {
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    padding-bottom: 8px;
+}
+.result-player-name {
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+.result-player-name.me {
+    color: #23e67a;
+}
+.result-player-name.ai {
+    color: #4f8cff;
+}
+.foul-text {
+    color: red;
+    font-weight: 800;
+    margin-left: 6px;
+}
+.result-dun-row {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 3px;
+    height: 60px; /* Give it a fixed height */
+}
+.result-modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+/* ... (rest of the file) ... */

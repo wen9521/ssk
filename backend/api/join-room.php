@@ -1,35 +1,69 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: https://gewe.dpdns.org');
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// backend/api/join-room.php
 
+header('Content-Type: application/json');
 require_once '../db.php';
 
-$room_id = $_GET['room_id'] ?? '';
-if (!$room_id) {
-    echo json_encode(['error' => '缺少房间号']);
+$data = json_decode(file_get_contents('php://input'), true);
+$room_id = strtoupper($data['room_id'] ?? '');
+$player_name = $data['name'] ?? '玩家';
+
+if (empty($room_id)) {
+    http_response_code(400);
+    send_json_response(['success' => false, 'message' => '房间号不能为空']);
     exit;
 }
 
-// 检查房间存在
-$res = mysqli_query($conn, "SELECT * FROM rooms WHERE room_id='$room_id'");
-if (!$res || mysqli_num_rows($res) == 0) {
-    echo json_encode(['error' => '房间不存在']);
-    exit;
+// 开启事务
+$conn->begin_transaction();
+
+try {
+    // 1. 检查房间是否存在并锁定, 防止并发问题
+    $stmt = $conn->prepare("SELECT id FROM rooms WHERE room_id = ? FOR UPDATE");
+    $stmt->bind_param("s", $room_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows === 0) {
+        throw new Exception("房间不存在");
+    }
+    $stmt->close();
+    
+    // 2. 检查房间人数
+    $stmt = $conn->prepare("SELECT COUNT(id) as player_count FROM players WHERE room_id = ?");
+    $stmt->bind_param("s", $room_id);
+    $stmt->execute();
+    $player_count = $stmt->get_result()->fetch_assoc()['player_count'];
+    $stmt->close();
+    
+    if ($player_count >= 4) {
+        throw new Exception("房间已满");
+    }
+    
+    // 3. 添加新玩家
+    $player_id = uniqid('player_', true);
+    $stmt_player = $conn->prepare("INSERT INTO players (player_id, room_id, name) VALUES (?, ?, ?)");
+    $stmt_player->bind_param("sss", $player_id, $room_id, $player_name);
+    $stmt_player->execute();
+    $stmt_player->close();
+    
+    // 提交事务
+    $conn->commit();
+    
+    send_json_response([
+        'success' => true,
+        'room_id' => $room_id,
+        'player_id' => $player_id,
+        'player_name' => $player_name
+    ]);
+    
+} catch (Exception $e) {
+    $conn->rollback();
+    http_response_code(400); // Bad Request
+    send_json_response([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
 }
 
-// 获取当前玩家数，分配座位号
-$res2 = mysqli_query($conn, "SELECT MAX(player_idx) as max_idx FROM players WHERE room_id='$room_id'");
-$row = mysqli_fetch_assoc($res2);
-$player_idx = $row && $row['max_idx'] !== null ? intval($row['max_idx']) + 1 : 0;
-
-// 插入玩家
-$sql = "INSERT INTO players (room_id, player_idx, hand) VALUES ('$room_id', $player_idx, '[]')";
-if (mysqli_query($conn, $sql)) {
-    echo json_encode(['player_idx' => $player_idx]);
-} else {
-    echo json_encode(['error' => '加入房间失败']);
-}
-exit;
+closeDbConnection($conn);
+?>
