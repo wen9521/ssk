@@ -3,18 +3,45 @@ import Lobby from './components/game/Lobby';
 import PokerTable from './components/game/PokerTable';
 import usePollingGameState from './hooks/usePollingGameState';
 import { dealCards } from './utils/game/cardUtils';
-import { aiSmartSplit } from './utils/ai/SmartSplit'; // 假设已适配
-import { calcSSSAllScores } from './utils/game/sssScore'; // 假设已适配
+import { aiSmartSplit } from './utils/ai/SmartSplit';
+import { calcSSSAllScores } from './utils/game/sssScore';
 import './styles/App.css';
 
 const BACKEND_DOMAIN = "https://9525.ip-ddns.com";
 const AI_NAMES = ['AI·关羽', 'AI·张飞', 'AI·赵云'];
 
+// [新增] 适配器函数：将新格式 'A♠' 转换为 AI 能理解的旧格式 'ace_of_spades'
+const cardToLegacyFormat = (card) => {
+    const rankStr = card.slice(0, -1);
+    const suitChar = card.slice(-1);
+    const rankMap = { 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', '10': '10', '9': '9', '8': '8', '7': '7', '6': '6', '5': '5', '4': '4', '3': '3', '2': '2' };
+    const suitMap = { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' };
+    if (!rankMap[rankStr] || !suitMap[suitChar]) return '2_of_clubs'; // Fallback
+    return `${rankMap[rankStr]}_of_${suitMap[suitChar]}`;
+};
+
+// [新增] 适配器函数：将 AI 返回的旧格式牌墩转换回新格式
+const dunFromLegacyFormat = (dun) => {
+    const rankMap = { 'ace': 'A', 'king': 'K', 'queen': 'Q', 'jack': 'J', '10': '10', '9': '9', '8': '8', '7': '7', '6': '6', '5': '5', '4': '4', '3': '3', '2': '2' };
+    const suitMap = { 'spades': '♠', 'hearts': '♥', 'diamonds': '♦', 'clubs': '♣' };
+    const convertCard = (card) => {
+        const parts = card.split('_of_');
+        const rank = rankMap[parts[0]];
+        const suit = suitMap[parts[1]];
+        return rank && suit ? rank + suit : '2♣'; // Fallback
+    };
+    return {
+        dun1: dun.head.map(convertCard),
+        dun2: dun.middle.map(convertCard),
+        dun3: dun.tail.map(convertCard),
+    };
+};
+
 const initialGameState = {
-  status: 'lobby', // 'lobby', 'dealing', 'playing', 'finished'
-  players: [],     // { name: string, hand: string[], dun: {dun1, dun2, dun3} | null }
+  status: 'lobby',
+  players: [],
   scores: [],
-  fullDeck: [],    // 用于发牌动画
+  fullDeck: [],
 };
 
 export default function App() {
@@ -22,15 +49,10 @@ export default function App() {
   const [playerIdx, setPlayerIdx] = useState(null);
   const [isOnline, setIsOnline] = useState(false);
   const [msg, setMsg] = useState('欢迎来到十三水游戏');
-  const [isActionDisabled, setIsActionDisabled] = useState(false); // 防止重复点击
-
-  // [重构] 统一的游戏状态
+  const [isActionDisabled, setIsActionDisabled] = useState(false);
   const [gameState, setGameState] = useState(initialGameState);
-
-  // 在线模式轮询
   const onlineGameState = usePollingGameState(roomId, isOnline ? 1500 : null);
 
-  // [重构] 当从服务器获取到新状态时，更新本地状态
   useEffect(() => {
     if (isOnline && onlineGameState) {
       setGameState(onlineGameState);
@@ -45,8 +67,7 @@ export default function App() {
     setMsg('欢迎来到十三水游戏');
     setIsActionDisabled(false);
   };
-  
-  // [重构] 核心游戏逻辑：开始单机试玩
+
   const startTryPlay = () => {
     setIsActionDisabled(true);
     setMsg('正在洗牌和发牌...');
@@ -54,24 +75,16 @@ export default function App() {
     const numPlayers = 4;
     const { fullDeck, playerHands } = dealCards(numPlayers);
 
-    // 1. 初始化玩家数据结构
     const players = Array(numPlayers).fill(null).map((_, i) => ({
       name: i === 0 ? '你' : AI_NAMES[i - 1],
-      hand: [], // 动画开始时手牌为空
+      hand: [],
       dun: null,
     }));
     
-    // 2. 设置初始状态，准备开始动画
-    setGameState({
-      status: 'dealing',
-      players,
-      scores: [0,0,0,0],
-      fullDeck
-    });
+    setGameState({ status: 'dealing', players, scores: [], fullDeck });
     setPlayerIdx(0);
     setIsOnline(false);
 
-    // 3. 发牌动画
     let cardIndex = 0;
     const dealInterval = setInterval(() => {
       setGameState(prev => {
@@ -85,22 +98,21 @@ export default function App() {
       if (cardIndex >= 52) {
         clearInterval(dealInterval);
         
-        // 4. 发牌结束，AI 自动理牌
         setTimeout(() => {
           setMsg('AI 正在理牌...');
           setGameState(prev => {
             const playersAfterAI = prev.players.map((p, i) => {
-              if (i === 0) { // 人类玩家
-                return { ...p, hand: playerHands[i] }; // 确保手牌是最终的13张
+              const finalHand = playerHands[i];
+              if (i === 0) {
+                return { ...p, hand: finalHand };
               }
-              // AI 玩家
-              const splitResult = aiSmartSplit(playerHands[i]);
-              return {
-                ...p,
-                name: p.name,
-                hand: playerHands[i],
-                dun: { dun1: splitResult.head, dun2: splitResult.middle, dun3: splitResult.tail }
-              };
+              // [修正] 调用AI前转换手牌格式
+              const legacyHand = finalHand.map(cardToLegacyFormat);
+              const splitResultLegacy = aiSmartSplit(legacyHand);
+              // [修正] 将AI返回结果转换回新格式
+              const splitResult = dunFromLegacyFormat(splitResultLegacy);
+
+              return { ...p, hand: finalHand, dun: splitResult };
             });
             return { ...prev, players: playersAfterAI, status: 'playing' };
           });
@@ -110,42 +122,41 @@ export default function App() {
       }
     }, 60);
   };
-
-  // [重构] 玩家提交理牌结果 (单机模式)
-  const handleSubmitDun = (duns) => {
-      setMsg("理牌已提交，等待比牌...");
-      
-      // 更新玩家的牌墩
-      const updatedPlayers = [...gameState.players];
-      updatedPlayers[playerIdx].dun = duns;
-
-      // 检查是否所有人都准备好了
-      const allPlayersReady = updatedPlayers.every(p => p.dun !== null);
-      if (allPlayersReady) {
-          const playerDunsForScoring = updatedPlayers.map(p => ({
-            head: p.dun.dun1,
-            middle: p.dun.dun2,
-            tail: p.dun.dun3
-          }));
-          const scores = calcSSSAllScores(playerDunsForScoring);
-          setGameState({ ...gameState, players: updatedPlayers, status: 'finished', scores });
-          setMsg("比牌完成！");
-      } else {
-          setGameState({ ...gameState, players: updatedPlayers });
-      }
-  };
   
-  // [重构] 再来一局 (对于单机模式，就是重新调用 startTryPlay)
+  const handleSubmitDun = (duns) => {
+      setMsg("理牌已提交，正在比牌...");
+      setGameState(prev => {
+          const updatedPlayers = [...prev.players];
+          updatedPlayers[playerIdx].dun = duns;
+
+          const allPlayersReady = updatedPlayers.every(p => p.dun !== null);
+          if (allPlayersReady) {
+              const playerDunsForScoring = updatedPlayers.map(p => p.dun ? ({ head: p.dun.dun1, middle: p.dun.dun2, tail: p.dun.dun3 }) : null);
+              const scores = calcSSSAllScores(playerDunsForScoring);
+              setMsg("比牌完成！");
+              return { ...prev, players: updatedPlayers, status: 'finished', scores };
+          }
+          return { ...prev, players: updatedPlayers };
+      });
+  };
+
   const handleResetGame = () => {
     if (isOnline) {
-      // 在线模式重置逻辑...
+      // online logic...
     } else {
       startTryPlay();
     }
   };
-
-  // 其他在线模式的函数 (createRoom, joinRoom) 保持不变，但它们会设置 isOnline = true
-  // ...
+  
+  // A dummy smart split for the player for now
+  const handleSmartSplit = () => {
+    if (gameState.status !== 'playing' || !gameState.players[playerIdx]) return;
+    const myHand = gameState.players[playerIdx].hand;
+    const legacyHand = myHand.map(cardToLegacyFormat);
+    const splitResultLegacy = aiSmartSplit(legacyHand);
+    const duns = dunFromLegacyFormat(splitResultLegacy);
+    handleSubmitDun(duns);
+  };
 
   return (
     <div className="app-container">
@@ -156,8 +167,6 @@ export default function App() {
           isActionDisabled={isActionDisabled}
           onSetRoomId={setRoomId}
           onStartTryPlay={startTryPlay}
-          // onCreateRoom={...}
-          // onJoinRoom={...}
         />
       ) : (
         <PokerTable
@@ -165,8 +174,8 @@ export default function App() {
           playerIdx={playerIdx}
           msg={msg}
           onResetGame={handleResetGame}
-          onSubmitDun={handleSubmitDun} // 传递回调
-          // onSmartSplit={...}
+          onSubmitDun={handleSmartSplit} // For now, submit is same as smart split for simplicity
+          onSmartSplit={handleSmartSplit}
           onExit={resetToLobby}
         />
       )}
