@@ -1,21 +1,93 @@
 // src/utils/game/cardUtils.js
 
-// [重构] 这是唯一的、权威的卡牌和游戏规则工具文件。
-// [新增] 添加了 compareHands 和 isFoul 函数，并强化了 getHandType。
+// [最终修正版] 确保所有函数都存在、健壮且能正确返回值。
 
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const SUITS = ['♠', '♥', '♦', '♣'];
 
-export function createDeck() { /* ... (无变化) ... */ }
-export function shuffleDeck(deck) { /* ... (无变化) ... */ }
-export function getRank(card) { /* ... (无变化) ... */ }
-export function getSuit(card) { /* ... (无变化) ... */ }
-export function dealCards(numPlayers = 4) { /* ... (无变化) ... */ }
-
-// --- 以下是新增和修改的核心逻辑 ---
+/**
+ * [加固] 创建一副标准的52张扑克牌。
+ * @returns {string[]} e.g., ["A♠", "K♠", ...]
+ */
+export function createDeck() {
+  const deck = [];
+  for (const suit of SUITS) {
+    for (const rank of RANKS) {
+      deck.push(rank + suit);
+    }
+  }
+  return deck;
+}
 
 /**
- * [强化] 强大的牌型判断函数
+ * [加固] 洗牌算法 (Fisher-Yates shuffle)。
+ * @param {string[]} deck - 牌组.
+ * @returns {string[]} 洗过的牌组.
+ */
+export function shuffleDeck(deck) {
+  if (!deck || !Array.isArray(deck)) return []; // 安全检查
+  const shuffled = [...deck];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+/**
+ * [修正] 统一的发牌模块，使用更简洁可靠的逻辑。
+ * @param {number} numPlayers - 玩家数量.
+ * @returns {{fullDeck: string[], playerHands: string[][]}}
+ */
+export function dealCards(numPlayers = 4) {
+  const deck = createDeck();
+  const shuffledDeck = shuffleDeck(deck);
+  
+  const playerHands = Array(numPlayers).fill(null).map(() => []);
+
+  // 确保所有牌都被发出
+  for (let i = 0; i < shuffledDeck.length; i++) {
+    const playerIndex = i % numPlayers;
+    if (playerHands[playerIndex].length < 13) {
+      playerHands[playerIndex].push(shuffledDeck[i]);
+    }
+  }
+
+  return {
+    fullDeck: shuffledDeck, 
+    playerHands: playerHands
+  };
+}
+
+/**
+ * [加固] 统一的获取卡牌点数值的函数。
+ * @param {string} card - e.g., 'A♠', '10♥'.
+ * @returns {number} Rank value (2-14, 14 for Ace).
+ */
+export function getRank(card) {
+  if (!card || typeof card !== 'string' || card.length < 2) return 0;
+  const rankStr = card.slice(0, -1);
+  switch (rankStr) {
+    case 'A': return 14;
+    case 'K': return 13;
+    case 'Q': return 12;
+    case 'J': return 11;
+    default: return parseInt(rankStr, 10) || 0;
+  }
+}
+
+/**
+ * [加固] 统一的获取卡牌花色的函数。
+ * @param {string} card - e.g., 'A♠'
+ * @returns {string} Suit symbol e.g., '♠'
+ */
+export function getSuit(card) {
+    if (!card || typeof card !== 'string' || card.length < 2) return '';
+    return card.slice(-1);
+}
+
+/**
+ * [加固] 强大的牌型判断函数
  * @param {string[]} cards - 一组牌
  * @returns {string} 牌型名称
  */
@@ -33,7 +105,6 @@ export function getHandType(cards) {
         const uniqueRanks = [...new Set(ranks)];
         if (uniqueRanks.length !== cards.length) return false;
         if (uniqueRanks[uniqueRanks.length - 1] - uniqueRanks[0] === cards.length - 1) return true;
-        // A-5 顺子: [2, 3, 4, 5, 14]
         if (JSON.stringify(uniqueRanks) === JSON.stringify([2, 3, 4, 5, 14])) return true;
         return false;
     })();
@@ -54,10 +125,11 @@ export function getHandType(cards) {
 }
 
 /**
- * [新增] 比较两手牌大小（在牌型相同时调用）
+ * [加固] 比较两手牌大小（在牌型相同时调用）
  * @returns {number} 1: hand1 > hand2, -1: hand1 < hand2, 0: a === b
  */
 export function compareHands(hand1, hand2) {
+    if (!hand1 || !hand2) return 0;
     const ranks1 = hand1.map(getRank).sort((a, b) => b - a);
     const ranks2 = hand2.map(getRank).sort((a, b) => b - a);
     for (let i = 0; i < ranks1.length; i++) {
@@ -69,16 +141,15 @@ export function compareHands(hand1, hand2) {
 }
 
 /**
- * [新增] 权威的“倒水”判断函数
+ * [加固] 权威的“倒水”判断函数
  * @returns {boolean} true 如果倒水, false 如果没有
  */
 export function isFoul(dun1, dun2, dun3) {
     if (!dun1 || !dun2 || !dun3 || dun1.length !== 3 || dun2.length !== 5 || dun3.length !== 5) {
-      // 牌张数不全，不算倒水，但认为是无效状态
       return false; 
     }
 
-    const handTypes = ["散牌", "对子", "两对", "三条", "顺子", "同花", "葫芦", "铁支", "同花顺"];
+    const handTypes = ["无", "散牌", "对子", "两对", "三条", "顺子", "同花", "葫芦", "铁支", "同花顺"];
     
     const type1 = getHandType(dun1);
     const type2 = getHandType(dun2);
