@@ -1,13 +1,24 @@
-/* 移除圆角 */
+/* 移动端卡片样式 */
 .card-image {
-  border-radius: 0 !important;
   width: 50px;
   height: 70px;
+  border-radius: 0;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0 2px;
 }
 
-/* 调整选中状态 */
 .card-image.selected {
   transform: translateY(-5px);
   box-shadow: 0 8px 20px rgba(255, 209, 102, 0.6);
   border: 2px solid var(--accent);
+  z-index: 10;
+}
+
+@media (max-width: 480px) {
+  .card-image {
+    width: 40px;
+    height: 56px;
+  }
 }
