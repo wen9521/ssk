@@ -1,15 +1,10 @@
-// frontend/src/utils/game/cardUtils.js
+// src/utils/game/cardUtils.js
 
-const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-const suits = ['♠', '♥', '♦', '♣'];
+// [重构] 这是唯一的、权威的卡牌工具文件。
+// [新增] 添加了 getHandType 函数用于判断牌型。
 
-// 牌面英文映射 (用于图片)
-const rankMap = {
-  'A': 'ace', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', '10': '10', 'J': 'jack', 'Q': 'queen', 'K': 'king'
-};
-const suitMap = {
-  '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs'
-};
+const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const SUITS = ['♠', '♥', '♦', '♣'];
 
 /**
  * 创建一副标准的52张扑克牌。
@@ -17,8 +12,8 @@ const suitMap = {
  */
 export function createDeck() {
   const deck = [];
-  for (const rank of ranks) {
-    for (const suit of suits) {
+  for (const rank of RANKS) {
+    for (const suit of SUITS) {
       deck.push(rank + suit);
     }
   }
@@ -40,13 +35,13 @@ export function shuffleDeck(deck) {
 }
 
 /**
- * 获取卡牌的点数值。
+ * 统一的获取卡牌点数值的函数。
  * @param {string} card - e.g., 'A♠', '10♥'.
  * @returns {number} Rank value (2-14, 14 for Ace).
  */
 export function getRank(card) {
   if (!card || typeof card !== 'string' || card.length < 2) return 0;
-  const rankStr = card.length > 2 ? card.substring(0, 2) : card.substring(0, 1);
+  const rankStr = card.slice(0, -1);
   switch (rankStr) {
     case 'A': return 14;
     case 'K': return 13;
@@ -57,7 +52,7 @@ export function getRank(card) {
 }
 
 /**
- * 获取卡牌的花色。
+ * 统一的获取卡牌花色的函数。
  * @param {string} card - e.g., 'A♠'
  * @returns {string} Suit symbol e.g., '♠'
  */
@@ -67,47 +62,68 @@ export function getSuit(card) {
 }
 
 /**
- * 根据卡牌字符串获取对应的图片URL。
- * @param {string} card - e.g., "A♠", "10♣"
- * @returns {string} 图片路径 e.g., "/cards/ace_of_spades.svg"
- */
-export function getCardImageUrl(card) {
-  if (!card || card.length < 2) return '/cards/red_joker.svg'; // 返回一个默认背面图
-  const rankStr = card.length > 2 ? card.substring(0, 2) : card.substring(0, 1);
-  const suitStr = card.slice(-1);
-
-  const rank = rankMap[rankStr];
-  const suit = suitMap[suitStr];
-
-  if (!rank || !suit) return '/cards/red_joker.svg';
-
-  return `/cards/${rank}_of_${suit}.svg`;
-}
-
-
-/**
- * 【新增的发牌模块】
- * 创建、清洗并向指定数量的玩家发牌。
+ * 统一的发牌模块。
  * @param {number} numPlayers - 玩家数量.
- * @returns {{fullDeck: string[], playerHands: string[][]}} 返回包含完整牌组和每个玩家手牌的对象
+ * @returns {{fullDeck: string[], playerHands: string[][]}}
  */
 export function dealCards(numPlayers = 4) {
   const deck = createDeck();
   const shuffledDeck = shuffleDeck(deck);
-  let currentDeck = [...shuffledDeck];
   
   const playerHands = Array(numPlayers).fill(null).map(() => []);
-
-  for (let i = 0; i < 13; i++) {
-    for (let j = 0; j < numPlayers; j++) {
-      if(currentDeck.length > 0) {
-        playerHands[j].push(currentDeck.pop());
-      }
+  for (let i = 0; i < 52; i++) {
+    if (i < 13 * numPlayers) {
+      playerHands[i % numPlayers].push(shuffledDeck[i]);
     }
   }
 
   return {
-    fullDeck: shuffledDeck, // 返回洗好的整副牌用于动画
-    playerHands: playerHands // 返回最终每个玩家的手牌
+    fullDeck: shuffledDeck, 
+    playerHands: playerHands
   };
+}
+
+/**
+ * [新增] 强大的牌型判断函数
+ * @param {string[]} cards - 一组牌, e.g., ['A♠', 'K♠', 'Q♠', 'J♠', '10♠']
+ * @returns {string} 牌型名称, e.g., "同花顺"
+ */
+export function getHandType(cards) {
+    if (!cards || cards.length === 0) return '';
+    
+    const ranks = cards.map(getRank);
+    const suits = cards.map(getSuit);
+
+    const rankCounts = ranks.reduce((acc, rank) => {
+        acc[rank] = (acc[rank] || 0) + 1;
+        return acc;
+    }, {});
+
+    const counts = Object.values(rankCounts);
+    const isFlush = new Set(suits).size === 1;
+    
+    const sortedUniqueRanks = [...new Set(ranks)].sort((a, b) => a - b);
+    let isStraight = false;
+    if (sortedUniqueRanks.length === cards.length) {
+        // 普通顺子
+        isStraight = sortedUniqueRanks[sortedUniqueRanks.length - 1] - sortedUniqueRanks[0] === cards.length - 1;
+        // A-5 顺子 (10-J-Q-K-A不算)
+        if (!isStraight && JSON.stringify(sortedUniqueRanks) === JSON.stringify([2, 3, 4, 5, 14])) {
+            isStraight = true;
+        }
+    }
+    
+    if (cards.length === 5) {
+        if (isStraight && isFlush) return "同花顺";
+        if (counts.includes(4)) return "铁支";
+        if (counts.includes(3) && counts.includes(2)) return "葫芦";
+        if (isFlush) return "同花";
+        if (isStraight) return "顺子";
+    }
+
+    if (counts.includes(3)) return "三条";
+    if (counts.filter(c => c === 2).length === 2) return "两对";
+    if (counts.includes(2)) return "对子";
+    
+    return "散牌";
 }
