@@ -1,86 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { aiSmartSplit, getPlayerSmartSplits } from '../../utils/ai/SmartSplit';
 import { calcSSSAllScores, isFoul } from '../../utils/game/sssScore';
 import { getShuffledDeck, dealHands } from '../../utils/game/DealCards';
+import Card from '../ui/Card'; // 导入 Card 组件
 import '../../styles/MobileGameTable.css';
 
 const AI_NAMES = ['小明', '小红', '小刚'];
-
-const CardComponent = React.memo(({ card, isSelected, onClick, isReady }) => {
-  const suitSymbols = {
-    'S': '♠',
-    'H': '♥',
-    'D': '♦',
-    'C': '♣'
-  };
-
-  let rank, suit;
-  if (card.length === 3) {
-    rank = '10';
-    suit = card[2];
-  } else {
-    rank = card[0];
-    suit = card[1];
-  }
-  
-  const suitSymbol = suitSymbols[suit];
-  const isRed = suit === 'H' || suit === 'D';
-  
-  return (
-    <div 
-      className={`card ${isSelected ? 'selected' : ''}`}
-      onClick={(e) => { if (isReady) onClick(card, e); }}
-    >
-      <div className="card-inner">
-        <div className="card-corner top-left">
-          <div 
-            className="card-rank"
-            style={{ color: isRed ? '#e74c3c' : '#2c3e50' }}
-          >
-            {rank}
-          </div>
-          <div 
-            className="card-suit"
-            style={{ color: isRed ? '#e74c3c' : '#2c3e50' }}
-          >
-            {suitSymbol}
-          </div>
-        </div>
-        
-        <div className="card-center">
-          <div 
-            className="card-suit-large"
-            style={{ color: isRed ? '#e74c3c' : '#2c3e50' }}
-          >
-            {suitSymbol}
-          </div>
-          <div 
-            className="card-rank-large"
-            style={{ color: isRed ? '#e74c3c' : '#2c3e50' }}
-          >
-            {rank}
-          </div>
-        </div>
-        
-        <div className="card-corner bottom-right">
-          <div 
-            className="card-rank"
-            style={{ color: isRed ? '#e74c3c' : '#2c3e50' }}
-          >
-            {rank}
-          </div>
-          <div 
-            className="card-suit"
-            style={{ color: isRed ? '#e74c3c' : '#2c3e50' }}
-          >
-            {suitSymbol}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-});
 
 export default function MobileGameTable() {
   const navigate = useNavigate();
@@ -102,31 +28,6 @@ export default function MobileGameTable() {
   const [mySplits, setMySplits] = useState([]);
   const [splitIndex, setSplitIndex] = useState(0);
   const [aiProcessed, setAiProcessed] = useState([false, false, false]);
-
-  useEffect(() => {
-    if (!isReady) return;
-    
-    aiPlayers.forEach((ai, idx) => {
-      const timer = setTimeout(() => {
-        setAiPlayers(old => {
-          if (old[idx].processed) return old;
-          
-          const newAis = [...old];
-          const split = aiSmartSplit(ai.cards13);
-          newAis[idx] = { ...newAis[idx], ...split, processed: true };
-          return newAis;
-        });
-        
-        setAiProcessed(proc => {
-          const arr = [...proc];
-          arr[idx] = true;
-          return arr;
-        });
-      }, 400 + idx * 350);
-      
-      return () => clearTimeout(timer);
-    });
-  }, [isReady, aiPlayers]);
 
   function handleReady() {
     if (!isReady) {
@@ -158,6 +59,21 @@ export default function MobileGameTable() {
         setSplitIndex(0);
       }, 0);
 
+      aiHands.forEach((hand, idx) => {
+        setTimeout(() => {
+          setAiPlayers(old => {
+            const newAis = [...old];
+            const split = aiSmartSplit(hand);
+            newAis[idx] = { ...newAis[idx], ...split, processed: true };
+            return newAis;
+          });
+          setAiProcessed(proc => {
+            const arr = [...proc];
+            arr[idx] = true;
+            return arr;
+          });
+        }, 400 + idx * 350);
+      });
     } else {
       setHead([]); 
       setMiddle([]); 
@@ -261,18 +177,23 @@ export default function MobileGameTable() {
     );
   }
 
+  // 修复：使用 Card 组件显示扑克牌
   function renderPaiDunCards(arr, area) {
     return (
       <div className="dun-cards-container">
         {arr.map((card, idx) => {
           const isSelected = selected.area === area && selected.cards.includes(card);
           return (
-            <CardComponent 
-              key={`${area}-${card}`}
+            <Card 
+              key={`${area}-${idx}`} 
               card={card}
               isSelected={isSelected}
-              isReady={isReady}
-              onClick={(c, e) => handleCardClick(c, area, e)}
+              onCardClick={(e) => { 
+                if (isReady) {
+                  e.stopPropagation();
+                  handleCardClick(card, area, e);
+                }
+              }}
             />
           );
         })}
@@ -319,18 +240,18 @@ export default function MobileGameTable() {
                 </div>
                 <div className="result-dun-row">
                   {i === 0
-                    ? renderPaiDunCards(head)
-                    : renderPaiDunCards(aiPlayers[i - 1].head)}
+                    ? renderPaiDunCards(head, 'head')
+                    : renderPaiDunCards(aiPlayers[i - 1].head, 'head')}
                 </div>
                 <div className="result-dun-row">
                   {i === 0
-                    ? renderPaiDunCards(middle)
-                    : renderPaiDunCards(aiPlayers[i - 1].middle)}
+                    ? renderPaiDunCards(middle, 'middle')
+                    : renderPaiDunCards(aiPlayers[i - 1].middle, 'middle')}
                 </div>
                 <div className="result-dun-row">
                   {i === 0
-                    ? renderPaiDunCards(tail)
-                    : renderPaiDunCards(aiPlayers[i - 1].tail)}
+                    ? renderPaiDunCards(tail, 'tail')
+                    : renderPaiDunCards(aiPlayers[i - 1].tail, 'tail')}
                 </div>
               </div>
             ))}

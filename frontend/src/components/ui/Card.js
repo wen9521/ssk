@@ -10,7 +10,7 @@ const Card = ({ card, isSelected, onCardClick }) => {
       src={getCardImageUrl(card)}
       alt={card}
       className={classNames}
-      onClick={() => onCardClick && onCardClick(card)}
+      onClick={(e) => onCardClick && onCardClick(e)} // 修改此处，传递事件对象e
     />
   );
 };
