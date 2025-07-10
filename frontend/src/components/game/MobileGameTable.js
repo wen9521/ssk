@@ -238,91 +238,43 @@ export default function MobileGameTable() {
                   )}
                   <span className="player-score">（{scores[i]}分）</span>
                 </div>
-                <div className="result-dun-row">
-                  {i === 0
-                    ? renderPaiDunCards(head, 'head')
-                    : renderPaiDunCards(aiPlayers[i - 1].head, 'head')}
-                </div>
-                <div className="result-dun-row">
-                  {i === 0
-                    ? renderPaiDunCards(middle, 'middle')
-                    : renderPaiDunCards(aiPlayers[i - 1].middle, 'middle')}
-                </div>
-                <div className="result-dun-row">
-                  {i === 0
-                    ? renderPaiDunCards(tail, 'tail')
-                    : renderPaiDunCards(aiPlayers[i - 1].tail, 'tail')}
-                </div>
               </div>
-            ))}
-          </div>
-          <div className="result-modal-actions">
-            <button 
-              className="action-button ready-button"
-              onClick={() => setShowResult(false)}
-            >
-              关闭
-            </button>
-            <button 
-              className="action-button restart-button"
-              onClick={handleReady}
-            >
-              再来一局
-            </button>
-          </div>
+              <div className="result-dun-row">
+                <div className="dun-label">头道</div>
+                {i === 0
+                  ? renderPaiDunCards(head, 'head')
+                  : renderPaiDunCards(aiPlayers[i - 1].head, 'head')}
+              </div>
+              <div className="result-dun-row">
+                <div className="dun-label">中道</div>
+                {i === 0
+                  ? renderPaiDunCards(middle, 'middle')
+                  : renderPaiDunCards(aiPlayers[i - 1].middle, 'middle')}
+              </div>
+              <div className="result-dun-row">
+                <div className="dun-label">尾道</div>
+                {i === 0
+                  ? renderPaiDunCards(tail, 'tail')
+                  : renderPaiDunCards(aiPlayers[i - 1].tail, 'tail')}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="result-modal-actions">
+          <button 
+            className="action-button ready-button"
+            onClick={() => setShowResult(false)}
+          >
+            关闭
+          </button>
+          <button 
+            className="action-button restart-button"
+            onClick={handleReady}
+          >
+            再来一局
+          </button>
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="mobile-game-container">
-      <div className="game-header">
-        <button className="exit-button" onClick={() => navigate('/')}>
-          &lt; 退出
-        </button>
-        <div className="score-display">
-          <span role="img" aria-label="coin">🪙</span> 积分：100
-        </div>
-      </div>
-      
-      <div className="players-container">
-        {renderPlayerSeat('你', 0, true)}
-        {aiPlayers.map((ai, idx) => renderPlayerSeat(ai.name, idx + 1, false))}
-      </div>
-      
-      <div className="game-area">
-        {renderPaiDun(head, '头道', 'head')}
-        {renderPaiDun(middle, '中道', 'middle')}
-        {renderPaiDun(tail, '尾道', 'tail')}
-      </div>
-      
-      <div className="controls-container">
-        <button 
-          className={`control-button ${isReady ? 'cancel-button' : 'ready-button'}`} 
-          onClick={handleReady}
-        >
-          {isReady ? '取消准备' : '开始游戏'}
-        </button>
-        <button 
-          className="control-button smart-split-button" 
-          onClick={handleSmartSplit} 
-          disabled={!isReady}
-        >
-          智能分牌
-        </button>
-        <button 
-          className="control-button compare-button" 
-          onClick={handleStartCompare} 
-          disabled={!isReady || !aiProcessed.every(p => p)}
-        >
-          开始比牌
-        </button>
-      </div>
-      
-      <div className="message-area">{msg}</div>
-      
-      {renderResultModal()}
     </div>
   );
 }

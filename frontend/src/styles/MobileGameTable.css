@@ -22,7 +22,7 @@
 .mobile-game-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: 90vh; /* 修改整体高度为屏幕高度的90% */
   background: linear-gradient(135deg, var(--background) 0%, #0d3b4a 100%);
   color: var(--light-text);
   font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
@@ -86,6 +86,7 @@
   padding: 10px 0;
   gap: 10px;
   margin-bottom: 15px;
+  max-height: 12vh; /* 调整玩家容器高度 */
   -webkit-overflow-scrolling: touch;
 }
 
@@ -127,12 +128,13 @@
 }
 
 .game-area {
-  flex-grow: 1;
+  flex-grow: 0.8; /* 调整游戏区域高度 */
+  max-height: 55vh; /* 调整游戏区域高度 */
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 15px;
   margin-bottom: 15px;
-  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -142,9 +144,19 @@
   padding: 15px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-height: 28vh; /* 调整牌墩容器高度 */
+  position: relative;
 }
 
 .dun-header {
+  position: absolute; /* 调整说明文字位置 */
+  top: 8px; /* 调整说明文字位置 */
+  right: 8px; /* 调整说明文字位置 */
+  background: rgba(0, 0, 0, 0.4); /* 调整说明文字位置 */
+  padding: 4px 8px; /* 调整说明文字位置 */
+  border-radius: 10px; /* 调整说明文字位置 */
+  opacity: 0.7; /* 调整说明文字位置 */
+  z-index: 1; /* 调整说明文字位置 */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -163,7 +175,7 @@
 }
 
 .dun-content {
-  min-height: 100px;
+  min-height: 26vh; /* 调整扑克牌高度 */
   display: flex;
   align-items: center;
 }
@@ -258,6 +270,13 @@
 }
 
 .controls-container {
+  position: fixed; /* 调整控制栏位置 */
+  bottom: 0; /* 调整控制栏位置 */
+  left: 0; /* 调整控制栏位置 */
+  right: 0; /* 调整控制栏位置 */
+  padding: 8px; /* 调整控制栏位置 */
+  background: rgba(10, 40, 50, 0.95); /* 调整控制栏位置 */
+  z-index: 100; /* 调整控制栏位置 */
   display: flex;
   gap: 10px;
   margin-top: 10px;
@@ -378,17 +397,21 @@
 
 .result-dun-row {
   display: flex;
-  justify-content: center;
-  gap: 4px;
-  margin-bottom: 3px;
-  height: 60px;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
-.result-modal-actions {
+.result-dun-row .dun-label {
+  min-width: 50px;
+  text-align: right;
+  margin-right: 8px;
+  opacity: 0.7;
+}
+
+.result-dun-row .dun-cards-container {
+  flex-grow: 1;
   display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-top: 20px;
+  flex-wrap: wrap;
 }
 
 .action-button {
@@ -436,24 +459,58 @@
   }
 }
 
-/* 在现有样式基础上添加 */
-.card-rank, .card-suit {
-  font-size: 14px;
-  font-weight: bold;
+/* 修改整体高度为屏幕高度的90% */
+.mobile-game-container {
+  min-height: 90vh;
 }
 
-.card-suit-large {
-  font-size: 24px;
-  margin-bottom: 5px;
+/* 调整游戏区域高度 */
+.game-area {
+  flex-grow: 0.8;
+  max-height: 55vh;
+  overflow-y: auto;
 }
 
-.card-rank-large {
-  font-size: 20px;
-  font-weight: bold;
+/* 调整牌墩容器高度 */
+.dun-container {
+  min-height: 28vh;
+  position: relative;
 }
 
-/* 确保卡片有最小尺寸 */
-.card {
-  min-width: 50px;
-  min-height: 70px;
+/* 调整说明文字位置 */
+.dun-header {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 8px;
+  border-radius: 10px;
+  opacity: 0.7;
+  z-index: 1;
+}
+
+/* 调整扑克牌高度 */
+.dun-content {
+  min-height: 26vh; /* 牌墩高度的94% */
+}
+
+/* 移除扑克牌圆角 */
+.card-image {
+  border-radius: 0 !important;
+}
+
+/* 调整玩家容器高度 */
+.players-container {
+  max-height: 12vh;
+}
+
+/* 调整控制栏位置 */
+.controls-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px;
+  background: rgba(10, 40, 50, 0.95);
+  z-index: 100;
 }
