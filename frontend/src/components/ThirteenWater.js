@@ -3,10 +3,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Play.css';
 
-const OUTER_MAX_WIDTH = 420;
-const PAI_DUN_HEIGHT = 133;
-const CARD_HEIGHT = Math.round(PAI_DUN_HEIGHT * 0.94);
-const CARD_WIDTH = Math.round(CARD_HEIGHT * 46 / 66);
+// 移除固定像素尺寸定义
+
+const AI_NAMES = ['小明', '小红', '小刚'];
 
 export default function ThirteenWater() {
   const navigate = useNavigate();
@@ -24,12 +23,16 @@ export default function ThirteenWater() {
   }
 
   function renderCard(card, isSelected) {
+    // 动态计算卡片尺寸
+    const cardWidthPx = Math.min(window.innerWidth * 0.12, 50); // 示例：卡片宽度最大50px，或视口宽度的12%
+    const cardHeightPx = cardWidthPx * (90 / 60); // 保持宽高比
+
     return (
       <div 
         className={`card ${isSelected ? 'selected' : ''}`}
         style={{
-          width: CARD_WIDTH,
-          height: CARD_HEIGHT,
+          width: `${cardWidthPx}px`,
+          height: `${cardHeightPx}px`,
           borderRadius: 8,
           background: '#fff',
           boxShadow: isSelected 
@@ -39,10 +42,10 @@ export default function ThirteenWater() {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          margin: '0 2px',
+          margin: '0 1px', // 调整边距
         }}
       >
-        <div style={{ fontSize: 24, fontWeight: 'bold', color: '#333' }}>
+        <div style={{ fontSize: `${cardWidthPx * 0.4}px`, fontWeight: 'bold', color: '#333' }}>
           {card || '?'}
         </div>
       </div>
@@ -55,9 +58,10 @@ export default function ThirteenWater() {
         display: 'flex',
         justifyContent: 'center',
         flexWrap: 'wrap',
-        gap: 5,
-        minHeight: CARD_HEIGHT + 20,
-        alignItems: 'center'
+        gap: 2, // 调整间距
+        // minHeight: CARD_HEIGHT + 20, // 原始常量不再存在，移除此行
+        alignItems: 'center',
+        padding: '5px' // 添加内边距防止卡片紧贴边缘
       }}>
         {arr.length === 0 ? (
           <div style={{
@@ -82,7 +86,7 @@ export default function ThirteenWater() {
           width: '100%',
           borderRadius: 16,
           background: 'rgba(26, 109, 59, 0.7)',
-          minHeight: 150,
+          // minHeight: 150, // 可以考虑移除或调整，让内容决定高度
           marginBottom: 20,
           position: 'relative',
           boxShadow: "0 6px 16px rgba(0,0,0,0.15)",
@@ -114,11 +118,15 @@ export default function ThirteenWater() {
       background: 'linear-gradient(135deg, #0d4d2b 0%, #1a6d3b 100%)',
       minHeight: '100vh',
       fontFamily: '"Helvetica Neue", Arial, sans-serif',
-      padding: '20px 0'
+      // padding: '20px 0', // 移除垂直 padding，让内容撑满
+      display: 'flex', // 使用flexbox布局
+      flexDirection: 'column', // 垂直排列
+      alignItems: 'center', // 水平居中
+      justifyContent: 'space-between', // 内容之间分配空间
     }}>
       <div style={{
-        maxWidth: OUTER_MAX_WIDTH,
-        width: '100%',
+        // maxWidth: OUTER_MAX_WIDTH, // 移除固定最大宽度，使用百分比
+        width: '95%', // 调整为百分比宽度
         margin: '0 auto',
         background: 'rgba(26, 109, 59, 0.85)',
         borderRadius: 25,
@@ -128,7 +136,7 @@ export default function ThirteenWater() {
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        minHeight: '90vh',
+        minHeight: '90vh', // 保持最小高度
         boxSizing: 'border-box'
       }}>
         {/* 顶部：标题和退出按钮 */}
@@ -267,7 +275,7 @@ function playerSeatStyle(isMe) {
   return {
     border: '1px solid #1a6d3b',
     borderRadius: 12,
-    marginRight: 8,
+    // marginRight: 8, // 移除固定右边距，使用gap
     width: '22%',
     minWidth: 70,
     color: isMe ? '#fff' : '#ccc',
@@ -278,6 +286,7 @@ function playerSeatStyle(isMe) {
     fontSize: 16,
     boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
     transition: 'all 0.3s',
-    opacity: 0.8
+    opacity: 0.8,
+    boxSizing: 'border-box' // 确保padding不会导致溢出
   };
 }
