@@ -17,9 +17,10 @@ export default function GameLobby() {
     }}>
       <h1 style={{
         color: '#ffcc00',
-        fontSize: 36,
+        fontSize: 'clamp(28px, 6vw, 36px)', // 响应式字体
         textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-        marginBottom: 40
+        marginBottom: 'clamp(20px, 4vh, 40px)', // 响应式间距
+        textAlign: 'center'
       }}>
         棋牌游戏大厅
       </h1>
@@ -28,12 +29,16 @@ export default function GameLobby() {
         display: 'flex',
         flexWrap: 'wrap',
         justifyContent: 'center',
-        gap: 30,
-        width: '90%', // 调整宽度以适应屏幕
+        gap: 'clamp(15px, 3vw, 30px)', // 响应式间距
+        width: '100%',
+        maxWidth: '1200px'
       }}>
         {/* 十三水游戏入口 */}
         <div 
-          style={gameCardStyle}
+          style={{
+            ...gameCardStyle,
+            flex: '1 1 clamp(280px, 30vw, 350px)' // 响应式宽度
+          }}
           onClick={() => navigate('/thirteen-water')}
         >
           <div style={gameIconStyle}>♠️♥️♦️♣️</div>
@@ -43,7 +48,10 @@ export default function GameLobby() {
         </div>
         
         {/* 斗地主游戏入口（占位） */}
-        <div style={gameCardStyle}>
+        <div style={{
+          ...gameCardStyle,
+          flex: '1 1 clamp(280px, 30vw, 350px)' // 响应式宽度
+        }}>
           <div style={gameIconStyle}>🃏👨‍🌾👑</div>
           <h2 style={gameTitleStyle}>斗地主</h2>
           <p style={gameDescStyle}>热门扑克游戏，三人对战</p>
@@ -51,7 +59,10 @@ export default function GameLobby() {
         </div>
         
         {/* 锄大地游戏入口（占位） */}
-        <div style={gameCardStyle}>
+        <div style={{
+          ...gameCardStyle,
+          flex: '1 1 clamp(280px, 30vw, 350px)' // 响应式宽度
+        }}>
           <div style={gameIconStyle}>🪓🌄🃏</div>
           <h2 style={gameTitleStyle}>锄大地</h2>
           <p style={gameDescStyle}>经典扑克玩法，流行于华南地区</p>
@@ -66,33 +77,34 @@ export default function GameLobby() {
 const gameCardStyle = {
   background: 'rgba(255, 255, 255, 0.1)',
   borderRadius: 20,
-  padding: 30,
+  padding: 'clamp(15px, 3vw, 30px)', // 响应式内边距
   textAlign: 'center',
   backdropFilter: 'blur(10px)',
   border: '2px solid #ffcc00',
   boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
   cursor: 'pointer',
   transition: 'transform 0.3s, box-shadow 0.3s',
-  width: 'auto', // 使用 auto 宽度
-  minWidth: '300px', // 保持最小宽度
-  flex: '1 1 300px' // Flex 属性，允许自动调整大小
+  minWidth: '280px',
+  maxWidth: '100%',
+  marginBottom: '10px'
 };
 
 const gameIconStyle = {
-  fontSize: 60,
-  marginBottom: 20
+  fontSize: 'clamp(40px, 8vw, 60px)', // 响应式图标
+  marginBottom: 'clamp(10px, 2vw, 20px)'
 };
 
 const gameTitleStyle = {
   color: '#ffcc00',
-  fontSize: 28,
-  marginBottom: 15
+  fontSize: 'clamp(22px, 4.5vw, 28px)', // 响应式标题
+  marginBottom: 'clamp(8px, 1.5vw, 15px)'
 };
 
 const gameDescStyle = {
   color: '#e0f7e9',
-  fontSize: 18,
-  marginBottom: 25
+  fontSize: 'clamp(14px, 3vw, 18px)', // 响应式描述
+  marginBottom: 'clamp(15px, 3vw, 25px)',
+  lineHeight: 1.4
 };
 
 const playButtonStyle = {
@@ -100,12 +112,14 @@ const playButtonStyle = {
   color: '#1a462a',
   border: 'none',
   borderRadius: 10,
-  padding: '12px 30px',
-  fontSize: 18,
+  padding: 'clamp(8px, 1.5vw, 12px) clamp(15px, 3vw, 30px)', // 响应式按钮
+  fontSize: 'clamp(14px, 3vw, 18px)', // 响应式字体
   fontWeight: 'bold',
   cursor: 'pointer',
   boxShadow: '0 4px 15px rgba(255, 204, 0, 0.3)',
-  transition: 'transform 0.2s, box-shadow 0.2s'
+  transition: 'transform 0.2s, box-shadow 0.2s',
+  width: '100%',
+  maxWidth: '200px'
 };
 
 const disabledButtonStyle = {
