@@ -4,6 +4,7 @@ import Opponent from './Opponent';
 import CardComparison from './CardComparison';
 import GameControls from './GameControls';
 import { dealCards } from './utils/cardUtils';
+import Card from './Card'; // 修复：添加Card组件导入
 
 const CardTable = () => {
   const [players, setPlayers] = useState([]);
