@@ -1,12 +1,7 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { aiSmartSplit, getPlayerSmartSplits } from './SmartSplit';
-import { calcSSSAllScores } from './sssScore';
-import { getShuffledDeck, dealHands } from './DealCards';
 import './Play.css';
-import { isFoul } from './sssScore';
-
-const AI_NAMES = ['小明', '小红', '小刚'];
 
 const OUTER_MAX_WIDTH = 420;
 const PAI_DUN_HEIGHT = 133;
@@ -20,159 +15,269 @@ export default function ThirteenWater() {
   const [tail, setTail] = useState([]);
   const [selected, setSelected] = useState({ area: '', cards: [] });
   const [msg, setMsg] = useState('');
-  const [aiPlayers, setAiPlayers] = useState([
-    { name: AI_NAMES[0], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
-    { name: AI_NAMES[1], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
-    { name: AI_NAMES[2], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
-  ]);
-  const [showResult, setShowResult] = useState(false);
-  const [scores, setScores] = useState([0,0,0,0]);
   const [isReady, setIsReady] = useState(false);
-  const [foulStates, setFoulStates] = useState([false, false, false, false]);
-  const [mySplits, setMySplits] = useState([]);
-  const [splitIndex, setSplitIndex] = useState(0);
-  const [aiProcessed, setAiProcessed] = useState([false, false, false]);
+  const [aiProcessed] = useState([false, false, false]);
 
   function handleReady() {
-    if (!isReady) {
-      // 发牌功能占位 - 后续实现
-      const deck = getShuffledDeck();
-      const [myHand, ...aiHands] = dealHands(deck);
-      
-      setHead(myHand.slice(0, 3));
-      setMiddle(myHand.slice(3, 8));
-      setTail(myHand.slice(8, 13));
-      setIsReady(true);
-      setMsg('发牌完成，请理牌');
-      setShowResult(false);
-      setScores([0,0,0,0]);
-      setSelected({ area: '', cards: [] });
-      setFoulStates([false, false, false, false]);
-      setMySplits([]); 
-      setSplitIndex(0);
-      setAiProcessed([false, false, false]);
-      
-      setAiPlayers([
-        { name: AI_NAMES[0], isAI: true, cards13: aiHands[0], head: aiHands[0].slice(0,3), middle: aiHands[0].slice(3,8), tail: aiHands[0].slice(8,13), processed: false },
-        { name: AI_NAMES[1], isAI: true, cards13: aiHands[1], head: aiHands[1].slice(0,3), middle: aiHands[1].slice(3,8), tail: aiHands[1].slice(8,13), processed: false },
-        { name: AI_NAMES[2], isAI: true, cards13: aiHands[2], head: aiHands[2].slice(0,3), middle: aiHands[2].slice(3,8), tail: aiHands[2].slice(8,13), processed: false },
-      ]);
-      
-      // 智能分牌占位 - 后续实现
-      setTimeout(() => {
-        const splits = getPlayerSmartSplits(myHand);
-        setMySplits(splits);
-        setSplitIndex(0);
-      }, 0);
-
-      // AI理牌占位 - 后续实现
-      aiHands.forEach((hand, idx) => {
-        setTimeout(() => {
-          setAiPlayers(old => {
-            const newAis = [...old];
-            const split = aiSmartSplit(hand);
-            newAis[idx] = { ...newAis[idx], ...split, processed: true };
-            return newAis;
-          });
-          setAiProcessed(proc => {
-            const arr = [...proc];
-            arr[idx] = true;
-            return arr;
-          });
-        }, 400 + idx * 350);
-      });
-    } else {
-      // 取消准备
-      setHead([]); 
-      setMiddle([]); 
-      setTail([]);
-      setAiPlayers([
-        { name: AI_NAMES[0], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
-        { name: AI_NAMES[1], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
-        { name: AI_NAMES[2], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
-      ]);
-      setIsReady(false);
-      setMsg('已取消准备');
-      setShowResult(false);
-      setScores([0,0,0,0]);
-      setSelected({ area: '', cards: [] });
-      setFoulStates([false, false, false, false]);
-      setMySplits([]); 
-      setSplitIndex(0);
-      setAiProcessed([false, false, false]);
-    }
+    setIsReady(!isReady);
+    setMsg(isReady ? '已取消准备' : '准备中...');
   }
 
-  function handleCardClick(card, area, e) {
-    e.stopPropagation();
-    setSelected(prev => {
-      if (prev.area !== area) return { area, cards: [card] };
-      const isSelected = prev.cards.includes(card);
-      let nextCards;
-      if (isSelected) {
-        nextCards = prev.cards.filter(c => c !== card);
-      } else {
-        nextCards = [...prev.cards, card];
-      }
-      return { area, cards: nextCards };
-    });
+  function renderCard(card, isSelected) {
+    return (
+      <div 
+        className={`card ${isSelected ? 'selected' : ''}`}
+        style={{
+          width: CARD_WIDTH,
+          height: CARD_HEIGHT,
+          borderRadius: 8,
+          background: '#fff',
+          boxShadow: isSelected 
+            ? '0 0 0 3px #ffcc00, 0 4px 12px rgba(0,0,0,0.2)' 
+            : '0 2px 6px rgba(0,0,0,0.15)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          margin: '0 2px',
+        }}
+      >
+        <div style={{ fontSize: 24, fontWeight: 'bold', color: '#333' }}>
+          {card || '?'}
+        </div>
+      </div>
+    );
   }
 
-  function moveTo(dest) {
-    if (!selected.cards.length) return;
-    let newHead = [...head], newMiddle = [...middle], newTail = [...tail];
-    const from = selected.area;
-    if (from === 'head') newHead = newHead.filter(c => !selected.cards.includes(c));
-    if (from === 'middle') newMiddle = newMiddle.filter(c => !selected.cards.includes(c));
-    if (from === 'tail') newTail = newTail.filter(c => !selected.cards.includes(c));
-    if (dest === 'head') newHead = [...newHead, ...selected.cards];
-    if (dest === 'middle') newMiddle = [...newMiddle, ...selected.cards];
-    if (dest === 'tail') newTail = [...newTail, ...selected.cards];
-    setHead(newHead); 
-    setMiddle(newMiddle); 
-    setTail(newTail);
-    setSelected({ area: dest, cards: [] });
-    setMsg('');
+  function renderPaiDunCards(arr, area) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        flexWrap: 'wrap',
+        gap: 5,
+        minHeight: CARD_HEIGHT + 20,
+        alignItems: 'center'
+      }}>
+        {arr.length === 0 ? (
+          <div style={{
+            color: '#a3c6b3',
+            fontSize: 16,
+            fontStyle: 'italic'
+          }}>
+            点击放置牌
+          </div>
+        ) : (
+          arr.map((card, idx) => renderCard(card, false))
+        )}
+      </div>
+    );
   }
 
-  function handleSmartSplit() {
-    if (!mySplits.length) {
-      setMsg('智能分牌计算中，请稍候…');
-      return;
-    }
-    const nextIdx = (splitIndex + 1) % mySplits.length;
-    setSplitIndex(nextIdx);
-    const split = mySplits[nextIdx];
-    setHead(split.head);
-    setMiddle(split.middle);
-    setTail(split.tail);
-    setMsg(`已切换智能分牌方案 ${nextIdx + 1}/${mySplits.length}`);
+  function renderPaiDun(arr, label, area) {
+    return (
+      <div
+        className="pai-dun-container"
+        style={{
+          width: '100%',
+          borderRadius: 16,
+          background: 'rgba(26, 109, 59, 0.7)',
+          minHeight: 150,
+          marginBottom: 20,
+          position: 'relative',
+          boxShadow: "0 6px 16px rgba(0,0,0,0.15)",
+          padding: 20,
+          border: '2px solid #1a6d3b'
+        }}
+      >
+        <div style={{
+          position: 'absolute',
+          top: 10,
+          left: 15,
+          color: '#ffcc00',
+          fontSize: 18,
+          fontWeight: 700,
+          background: 'rgba(0,0,0,0.3)',
+          padding: '4px 12px',
+          borderRadius: 20
+        }}>
+          {label}墩
+          <span style={{ marginLeft: 8, color: '#fff' }}>({arr.length}张)</span>
+        </div>
+        {renderPaiDunCards(arr, area)}
+      </div>
+    );
   }
 
-  function handleStartCompare() {
-    if (aiProcessed.some(p => !p)) {
-      setMsg('请等待所有玩家提交理牌');
-      return;
-    }
-    if (head.length !== 3 || middle.length !== 5 || tail.length !== 5) {
-      setMsg('请按 3-5-5 张分配');
-      return;
-    }
-    
-    // 比牌功能占位 - 后续实现
-    const allPlayers = [
-      { name: '你', head, middle, tail },
-      ...aiPlayers.map(ai => ({ name: ai.name, head: ai.head, middle: ai.middle, tail: ai.tail }))
-    ];
-    const resScores = calcSSSAllScores(allPlayers);
-    const fouls = allPlayers.map(p => isFoul(p.head, p.middle, p.tail));
-    
-    setScores(resScores);
-    setFoulStates(fouls);
-    setShowResult(true);
-    setMsg('');
-    setIsReady(false);
-  }
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #0d4d2b 0%, #1a6d3b 100%)',
+      minHeight: '100vh',
+      fontFamily: '"Helvetica Neue", Arial, sans-serif',
+      padding: '20px 0'
+    }}>
+      <div style={{
+        maxWidth: OUTER_MAX_WIDTH,
+        width: '100%',
+        margin: '0 auto',
+        background: 'rgba(26, 109, 59, 0.85)',
+        borderRadius: 25,
+        boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+        padding: 20,
+        border: '2px solid #ffcc00',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '90vh',
+        boxSizing: 'border-box'
+      }}>
+        {/* 顶部：标题和退出按钮 */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          marginBottom: 20,
+          borderBottom: '2px solid #ffcc00',
+          paddingBottom: 15
+        }}>
+          <h1 style={{
+            color: '#ffcc00',
+            fontSize: 24,
+            margin: 0,
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+          }}>
+            十三水游戏
+          </h1>
+          
+          <button
+            style={{
+              background: 'linear-gradient(90deg, #e74c3c, #c0392b)',
+              color: '#fff',
+              fontWeight: 'bold',
+              border: 'none',
+              borderRadius: 8,
+              padding: '8px 15px',
+              cursor: 'pointer',
+              fontSize: 16,
+              boxShadow: '0 3px 8px rgba(0,0,0,0.2)',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+            onClick={() => navigate('/')}
+          >
+            <span style={{ marginRight: 5 }}>←</span> 返回大厅
+          </button>
+        </div>
+        
+        {/* 玩家区 */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between',
+          marginBottom: 25,
+          gap: 10
+        }}>
+          <div className="play-seat" style={playerSeatStyle(true)}>
+            <div style={{ fontSize: 18, marginBottom: 4 }}>你</div>
+            <div style={{ fontSize: 14, fontWeight: 400 }}>
+              {isReady ? '已准备' : '未准备'}
+            </div>
+          </div>
+          {['小明', '小红', '小刚'].map((name, idx) => (
+            <div key={idx} className="play-seat" style={playerSeatStyle(false)}>
+              <div style={{ fontSize: 18, marginBottom: 4 }}>{name}</div>
+              <div style={{ fontSize: 14, fontWeight: 400 }}>
+                {aiProcessed[idx] ? '已准备' : '准备中...'}
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* 牌墩区域 */}
+        <div style={{ 
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 15,
+          marginBottom: 25
+        }}>
+          {renderPaiDun(head, '头')}
+          {renderPaiDun(middle, '中')}
+          {renderPaiDun(tail, '尾')}
+        </div>
+        
+        {/* 按钮区 */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 1fr 1fr', 
+          gap: 12,
+          marginTop: 'auto'
+        }}>
+          <button
+            className="game-btn"
+            style={{
+              background: isReady
+                ? '#95a5a6'
+                : 'linear-gradient(90deg, #2ecc71, #27ae60)',
+            }}
+            onClick={handleReady}
+          >
+            {isReady ? '取消准备' : '开始准备'}
+          </button>
+          
+          <button
+            className="game-btn"
+            style={{
+              background: 'linear-gradient(90deg, #3498db, #2980b9)',
+              opacity: isReady ? 1 : 0.6
+            }}
+            disabled={!isReady}
+          >
+            智能分牌
+          </button>
+          
+          <button
+            className="game-btn"
+            style={{
+              background: '#95a5a6',
+            }}
+            disabled={true}
+          >
+            开始比牌
+          </button>
+        </div>
+        
+        {/* 消息区域 */}
+        <div style={{ 
+          color: '#ffcc00', 
+          textAlign: 'center', 
+          fontSize: 16, 
+          minHeight: 24,
+          marginTop: 15,
+          fontWeight: 500
+        }}>
+          {msg || '等待操作...'}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  // ...文件其余部分保持不变
+// 玩家座位样式
+function playerSeatStyle(isMe) {
+  return {
+    border: '1px solid #1a6d3b',
+    borderRadius: 12,
+    marginRight: 8,
+    width: '22%',
+    minWidth: 70,
+    color: isMe ? '#fff' : '#ccc',
+    background: isMe ? '#1a6d3b' : '#2a556e',
+    textAlign: 'center',
+    padding: '10px 0',
+    fontWeight: 700,
+    fontSize: 16,
+    boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+    transition: 'all 0.3s',
+    opacity: 0.8
+  };
 }
