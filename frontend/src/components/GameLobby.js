@@ -25,11 +25,11 @@ export default function GameLobby() {
       </h1>
       
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
         gap: 30,
-        width: '100%',
-        maxWidth: 1000
+        width: '90%', // 调整宽度以适应屏幕
       }}>
         {/* 十三水游戏入口 */}
         <div 
@@ -72,7 +72,10 @@ const gameCardStyle = {
   border: '2px solid #ffcc00',
   boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
   cursor: 'pointer',
-  transition: 'transform 0.3s, box-shadow 0.3s'
+  transition: 'transform 0.3s, box-shadow 0.3s',
+  width: 'auto', // 使用 auto 宽度
+  minWidth: '300px', // 保持最小宽度
+  flex: '1 1 300px' // Flex 属性，允许自动调整大小
 };
 
 const gameIconStyle = {
