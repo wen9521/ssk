@@ -1,5 +1,4 @@
 import React from 'react';
-import Card from './Card';
 
 const Opponent = ({ name, cardCount, position, isActive }) => {
   // 生成背面朝上的卡牌
