@@ -10,7 +10,7 @@ function CardTable() {
         isLoading, error,
     } = useGame();
 
-    const me = players.find(p => p.user_id === userId);
+    // const me = players.find(p => p.user_id === userId); // 修复: 移除未使用的变量
     const others = players.filter(p => p.user_id !== userId);
     
     // TODO: 完善回合逻辑

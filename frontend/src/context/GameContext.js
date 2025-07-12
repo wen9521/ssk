@@ -10,7 +10,6 @@ export function useGame() {
 }
 
 export function GameProvider({ children }) {
-    // ... (所有 state 定义保持不变) ...
     const [gameType, setGameType] = useState(null);
     const [userId, setUserId] = useState('');
     const [roomId, setRoomId] = useState(null);
@@ -27,30 +26,6 @@ export function GameProvider({ children }) {
         biddingState: null,
     });
 
-
-    // ... (useEffect 和大部分函数保持不变) ...
-    useEffect(() => {
-        const storedUserId = localStorage.getItem('userId');
-        if (storedUserId) setUserId(storedUserId);
-        else {
-            const newUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-            localStorage.setItem('userId', newUserId);
-            setUserId(newUserId);
-        }
-    }, []);
-
-    const handleWsMessage = useCallback((message) => {
-        setLastWsMessage(message);
-        if (message.type === 'game_update' || message.sender) {
-            refreshRoomStatus();
-        }
-    }, []);
-
-    useEffect(() => {
-        webSocketService.addMessageListener(handleWsMessage);
-        return () => webSocketService.removeMessageListener(handleWsMessage);
-    }, [handleWsMessage]);
-    
     const refreshRoomStatus = useCallback(async () => {
         if (!roomId) return;
         setIsLoading(true);
@@ -71,7 +46,7 @@ export function GameProvider({ children }) {
                 const extraData = JSON.parse(statusData.room.extra_data);
                 if (statusData.room.status === 'bidding') {
                     setDoudizhuState(prevState => ({ ...prevState, biddingState: extraData }));
-                } else if (statusData.room.status === 'playing' || statusData.room.status === 'finished') {
+                } else if (['playing', 'finished'].includes(statusData.room.status)) {
                     setDoudizhuState(prevState => ({ ...prevState, landlord: extraData.landlord, landlordCards: extraData.landlordCards, biddingState: null }));
                 }
             }
@@ -84,10 +59,33 @@ export function GameProvider({ children }) {
         }
     }, [roomId, userId]);
 
+    useEffect(() => {
+        const storedUserId = localStorage.getItem('userId');
+        if (storedUserId) setUserId(storedUserId);
+        else {
+            const newUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+            localStorage.setItem('userId', newUserId);
+            setUserId(newUserId);
+        }
+    }, []);
+
+    // 修复：添加了 refreshRoomStatus 作为依赖
+    const handleWsMessage = useCallback((message) => {
+        setLastWsMessage(message);
+        if (message.type === 'game_update' || message.sender) {
+            refreshRoomStatus();
+        }
+    }, [refreshRoomStatus]);
+
+    useEffect(() => {
+        webSocketService.addMessageListener(handleWsMessage);
+        return () => webSocketService.removeMessageListener(handleWsMessage);
+    }, [handleWsMessage]);
+    
     const selectGameType = (type) => setGameType(type);
     const goBackToGameSelection = () => { setGameType(null); setRoomId(null); setError(null); };
 
-    const handleCreateRoom = async () => { /* ... */ 
+    const handleCreateRoom = async () => { 
         if (!gameType) { setError("请先选择一个游戏类型。"); return false; }
         setIsLoading(true); setError(null);
         try {
@@ -98,7 +96,7 @@ export function GameProvider({ children }) {
         } catch (err) { setError(`创建房间失败: ${err.message}`); return false;
         } finally { setIsLoading(false); }
     };
-    const handleJoinRoom = async (newRoomId) => { /* ... */
+    const handleJoinRoom = async (newRoomId) => {
         setIsLoading(true); setError(null);
         try {
             await api.joinRoom(newRoomId, userId);
@@ -107,7 +105,7 @@ export function GameProvider({ children }) {
         } catch (err) { setError(`加入房间失败: ${err.message}`); return false;
         } finally { setIsLoading(false); }
     };
-    const handleStartGame = async () => { /* ... */
+    const handleStartGame = async () => {
         setIsLoading(true); setError(null);
         try {
             await api.startGame(roomId, userId);
@@ -118,9 +116,9 @@ export function GameProvider({ children }) {
         } finally { setIsLoading(false); }
     };
     
-    const handleBid = async (bidValue) => { /* ... */
+    const handleBid = async (bidValue) => {
         setIsLoading(true);
-setError(null);
+        setError(null);
         try {
             await api.bid(roomId, userId, bidValue);
             await refreshRoomStatus();
@@ -132,14 +130,12 @@ setError(null);
         }
     };
 
-    // --- 新增：处理出牌的函数 ---
     const handlePlayCard = async (cards) => {
         setIsLoading(true);
         setError(null);
         try {
             await api.playCard(roomId, userId, cards);
             await refreshRoomStatus();
-            // 触发WebSocket通知
             webSocketService.sendMessage({ type: 'game_update', message: `玩家 ${userId} 出牌` });
         } catch (err) {
             setError(`出牌失败: ${err.message}`);
@@ -148,25 +144,23 @@ setError(null);
         }
     };
 
-    useEffect(() => { /* ... */
+    useEffect(() => {
         if (roomId && userId) { webSocketService.connect(roomId, userId); }
         return () => { if (webSocketService.socket) webSocketService.disconnect(); };
     }, [roomId, userId]);
 
-    useEffect(() => { /* ... */
-        if (roomId && (roomStatus === 'waiting' || roomStatus === 'full' || roomStatus === 'bidding' || roomStatus === 'playing')) {
+    useEffect(() => {
+        if (roomId && ['waiting', 'full', 'bidding', 'playing'].includes(roomStatus)) {
             const interval = setInterval(refreshRoomStatus, 5000);
             return () => clearInterval(interval);
         }
     }, [roomId, roomStatus, refreshRoomStatus]);
 
     const value = {
-        // ... (所有旧的值)
         gameType, userId, roomId, players, roomStatus, isCreator, isLoading, error, lastWsMessage,
         hand, doudizhuState,
         selectGameType, goBackToGameSelection, handleCreateRoom, handleJoinRoom, handleStartGame,
         handleBid,
-        // 新增 handlePlayCard
         handlePlayCard,
         refreshRoomStatus,
     };

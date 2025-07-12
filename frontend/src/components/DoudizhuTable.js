@@ -8,19 +8,34 @@ import './styles/GameTable.css';
 function DoudizhuTable() {
     const {
         roomId, players, userId, roomStatus,
-        doudizhuState, isLoading, error, handleBid
+        doudizhuState, isLoading, error, handleBid // 修复: handleBid 将被使用
     } = useGame();
     
     const { landlord, landlordCards, biddingState } = doudizhuState;
-    const me = players.find(p => p.user_id === userId);
+    // const me = players.find(p => p.user_id === userId); // 修复: 移除未使用的变量
     const others = players.filter(p => p.user_id !== userId);
 
-    // TODO: 从 gameState 中获取当前轮到的玩家
+    // TODO: 从 gameState 中获取当前轮到谁
     const currentPlayerTurn = userId;
     const myTurn = roomStatus === 'playing' && currentPlayerTurn === userId;
     const amICurrentBidder = biddingState?.playerIds[biddingState.turnIndex] === userId;
 
-    const renderBiddingControls = () => { /* ... (功能不变，样式可在全局CSS中调整) ... */ };
+    const renderBiddingControls = () => {
+        if (roomStatus !== 'bidding' || !amICurrentBidder) {
+            return null; // 如果不是我叫分，则不显示任何东西
+        }
+
+        const highestBid = biddingState?.highestBid || 0;
+
+        return (
+            <div className="hand-actions"> {/* 复用 hand-actions 样式 */}
+                <button onClick={() => handleBid(0)} disabled={isLoading}>不叫</button>
+                {highestBid < 1 && <button onClick={() => handleBid(1)} disabled={isLoading}>1分</button>}
+                {highestBid < 2 && <button onClick={() => handleBid(2)} disabled={isLoading}>2分</button>}
+                {highestBid < 3 && <button onClick={() => handleBid(3)} disabled={isLoading}>3分</button>}
+            </div>
+        );
+    };
     
     return (
         <div className="game-table">
@@ -34,8 +49,7 @@ function DoudizhuTable() {
             </header>
 
             <section className="player-area">
-                {/* 仅为示例，真实布局会更复杂 */}
-                <div className="top-player">
+                 <div className="top-player">
                     <div className="player-avatar">{others[0]?.user_id.substring(0, 2)}</div>
                     <div className="player-name">{others[0]?.user_id}</div>
                     <div className="player-status">{others[0]?.is_creator ? '房主' : ''}</div>
@@ -45,10 +59,7 @@ function DoudizhuTable() {
                          <div className="player-avatar">{others[1]?.user_id.substring(0, 2)}</div>
                          <div className="player-name">{others[1]?.user_id}</div>
                     </div>
-                    <div className="right-player">
-                         <div className="player-avatar">{others[2]?.user_id.substring(0, 2)}</div>
-                         <div className="player-name">{others[2]?.user_id}</div>
-                    </div>
+                    {/* 斗地主只有3个玩家，所以右边留空 */}
                 </div>
             </section>
 
@@ -63,8 +74,8 @@ function DoudizhuTable() {
             </section>
             
             <footer className="hand-placeholder">
-                <Hand myTurn={myTurn || amICurrentBidder} />
-                {roomStatus === 'bidding' && amICurrentBidder && renderBiddingControls()}
+                <Hand myTurn={myTurn} />
+                {renderBiddingControls()}
             </footer>
         </div>
     );
