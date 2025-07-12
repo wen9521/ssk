@@ -1,69 +1,60 @@
 <?php
 // backend/api/create-room.php
+// 描述: 创建一个新的游戏房间，并将创建者作为第一个玩家加入。
 
-header('Content-Type: application/json');
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+
 require_once '../db.php';
+require_once '../utils/response.php';
 
-// 生成一个随机且易于记忆的房间号 (5位大写字母)
-function generate_room_id($conn) {
-    do {
-        $room_id = '';
-        $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        for ($i = 0; $i < 5; $i++) {
-            $room_id .= $chars[rand(0, strlen($chars) - 1)];
-        }
-        // 检查房间号是否已存在
-        $stmt = $conn->prepare("SELECT id FROM rooms WHERE room_id = ?");
-        $stmt->bind_param("s", $room_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-    } while ($result->num_rows > 0);
-    $stmt->close();
-    return $room_id;
+$input = json_decode(file_get_contents('php://input'), true);
+
+// --- 输入验证 ---
+$userId = $input['userId'] ?? null;
+$gameType = $input['gameType'] ?? 'thirteen_water'; // 默认为 'thirteen_water' 以兼容旧版
+
+if (empty($userId)) {
+    sendErrorResponse('创建失败: 未提供用户ID (userId)。', 400);
 }
 
-// 获取前端发送的数据
-$data = json_decode(file_get_contents('php://input'), true);
-$playerName = $data['name'] ?? '房主';
-$playerId = uniqid('player_', true); // 为新玩家生成唯一ID
+// 验证游戏类型是否合法
+$allowedGameTypes = ['thirteen_water', 'doudizhu', 'big_two'];
+if (!in_array($gameType, $allowedGameTypes)) {
+    sendErrorResponse('创建失败: 无效的游戏类型。', 400);
+}
 
-// 开启事务, 确保数据一致性
+$roomId = bin2hex(random_bytes(4)); // 生成一个8个字符的十六进制ID
+
+$conn = getDbConnection();
 $conn->begin_transaction();
 
 try {
-    // 1. 创建房间
-    $room_id = generate_room_id($conn);
-    $stmt_room = $conn->prepare("INSERT INTO rooms (room_id, host_id) VALUES (?, ?)");
-    $stmt_room->bind_param("ss", $room_id, $playerId);
-    $stmt_room->execute();
-    $stmt_room->close();
+    // 步骤 1: 创建新房间，并指定 game_type
+    $stmt = $conn->prepare("INSERT INTO rooms (room_id, game_type, status) VALUES (?, ?, 'waiting')");
+    if (!$stmt) throw new Exception("服务器内部错误: 准备创建房间语句失败 - " . $conn->error);
     
-    // 2. 将创建者作为房主加入玩家表
-    $stmt_player = $conn->prepare("INSERT INTO players (player_id, room_id, name, is_host) VALUES (?, ?, ?, 1)");
-    $stmt_player->bind_param("sss", $playerId, $room_id, $playerName);
-    $stmt_player->execute();
-    $stmt_player->close();
-    
-    // 提交事务
-    $conn->commit();
-    
-    // 返回成功响应
-    send_json_response([
-        'success' => true,
-        'room_id' => $room_id,
-        'player_id' => $playerId,
-        'player_name' => $playerName
-    ]);
-    
-} catch (mysqli_sql_exception $e) {
-    // 如果出错, 回滚事务
-    $conn->rollback();
-    http_response_code(500);
-    send_json_response([
-        'success' => false,
-        'message' => '创建房间失败: ' . $e->getMessage()
-    ]);
-}
+    $stmt->bind_param("ss", $roomId, $gameType);
+    $stmt->execute();
+    $stmt->close();
 
-closeDbConnection($conn);
-?>
+    // 步骤 2: 将创建者作为第一个玩家加入房间
+    $stmt = $conn->prepare("INSERT INTO players (room_id, user_id, is_creator) VALUES (?, ?, TRUE)");
+    if (!$stmt) throw new Exception("服务器内部错误: 准备添加玩家语句失败 - " . $conn->error);
+    $stmt->bind_param("ss", $roomId, $userId);
+    $stmt->execute();
+    $stmt->close();
+
+    $conn->commit();
+
+    sendSuccessResponse(['roomId' => $roomId, 'creatorId' => $userId, 'gameType' => $gameType], "房间创建成功！", 201);
+
+} catch (Exception $e) {
+    $conn->rollback();
+    error_log("创建房间失败: " . $e->getMessage());
+    sendErrorResponse("创建房间时发生内部错误，请稍后再试。", 500);
+} finally {
+    closeDbConnection($conn);
+}

@@ -1,12 +1,12 @@
+// frontend/src/index.js
 import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import './assets/styles.css';
+import ReactDOM from 'react-dom/client';
+import './index.css'; // 全局样式
 import App from './App';
 
-ReactDOM.render(
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
-  document.getElementById('root')
+  </React.StrictMode>
 );

@@ -1,0 +1,40 @@
+/* frontend/src/components/styles/GameSelector.css */
+.selector-container h2 {
+    font-size: 1.8em;
+    color: var(--text-color);
+    margin-bottom: 2rem;
+}
+
+.game-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: var(--text-color);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.game-button:hover:not(:disabled) {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px 0 var(--card-shadow);
+}
+
+.game-status {
+    font-size: 0.6em;
+    font-weight: normal;
+    color: var(--success-color);
+    margin-top: 0.5rem;
+}
+
+.game-button:disabled .game-status {
+    color: #888;
+}

@@ -1,84 +1,101 @@
 <?php
 // backend/api/set-dun.php
+// 描述: 玩家提交自己整理好的三墩牌。
 
-header('Content-Type: application/json');
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
+
 require_once '../db.php';
+require_once '../utils/response.php';
+// require_once '../utils/scoring.php'; // 未来用于验证牌型和计分
 
-$data = json_decode(file_get_contents('php://input'), true);
-$player_id = $data['player_id'] ?? '';
-$dun = $data['dun'] ?? null; // dun 应该是一个 {head, middle, tail} 结构
+$input = json_decode(file_get_contents('php://input'), true);
 
-if (empty($player_id) || empty($dun)) {
-    http_response_code(400);
-    send_json_response(['success' => false, 'message' => '缺少 player_id 或 dun 数据']);
-    exit;
+// --- 输入验证 ---
+$errors = [];
+if (empty($input['roomId'])) $errors[] = 'roomId 不能为空。';
+if (empty($input['userId'])) $errors[] = 'userId 不能为空。';
+if (empty($input['hands']['front']) || count($input['hands']['front']) !== 3) $errors[] = '前墩牌 (front) 必须是3张。';
+if (empty($input['hands']['middle']) || count($input['hands']['middle']) !== 5) $errors[] = '中墩牌 (middle) 必须是5张。';
+if (empty($input['hands']['back']) || count($input['hands']['back']) !== 5) $errors[] = '后墩牌 (back) 必须是5张。';
+
+if (!empty($errors)) {
+    sendErrorResponse('提交失败: 输入数据无效。', 400, $errors);
 }
 
-// 验证 dun 结构是否正确 (简单的验证)
-if (!isset($dun['head']) || !isset($dun['middle']) || !isset($dun['tail']) || 
-    count($dun['head']) !== 3 || count($dun['middle']) !== 5 || count($dun['tail']) !== 5) {
-    http_response_code(400);
-    send_json_response(['success' => false, 'message' => '牌墩结构不正确，请按 3-5-5 分配']);
-    exit;
-}
+$roomId = $input['roomId'];
+$userId = $input['userId'];
+$frontHand = json_encode($input['hands']['front']);
+$middleHand = json_encode($input['hands']['middle']);
+$backHand = json_encode($input['hands']['back']);
 
+// TODO: 在这里可以引入 scoring.php 中的函数来验证牌型是否合法
+// 比如 isValidHand(array_merge($input['hands']['front'], ...), $originalHandFromDb)
+// 比如 isCombinationValid($frontHand, $middleHand, $backHand)
+
+$conn = getDbConnection();
 $conn->begin_transaction();
 
 try {
-    // 1. 更新玩家的牌墩和准备状态
-    $dun_json = json_encode($dun);
-    $stmt = $conn->prepare("UPDATE players SET dun = ?, is_ready = 1 WHERE player_id = ?");
-    $stmt->bind_param("ss", $dun_json, $player_id);
+    // 步骤 1: 验证玩家和房间状态
+    $stmt = $conn->prepare("SELECT p.status FROM players p JOIN rooms r ON p.room_id = r.room_id WHERE p.room_id = ? AND p.user_id = ? AND r.status = 'playing'");
+    if (!$stmt) throw new Exception("准备验证玩家状态语句失败: " . $conn->error);
+    $stmt->bind_param("ss", $roomId, $userId);
     $stmt->execute();
-    $stmt->close();
+    $result = $stmt->get_result();
 
-    // 2. 获取玩家所在的房间ID
-    $stmt_get_room = $conn->prepare("SELECT room_id FROM players WHERE player_id = ?");
-    $stmt_get_room->bind_param("s", $player_id);
-    $stmt_get_room->execute();
-    $room_id = $stmt_get_room->get_result()->fetch_assoc()['room_id'];
-    $stmt_get_room->close();
-
-    if (!$room_id) {
-        throw new Exception("找不到该玩家所在的房间");
+    if ($result->num_rows === 0) {
+        sendErrorResponse("提交失败: 房间不在游戏中或玩家不属于该房间。", 403);
     }
-
-    // 3. 检查是否所有玩家都已准备好
-    $stmt_check_all_ready = $conn->prepare("
-        SELECT COUNT(*) as total_players, SUM(is_ready) as ready_players 
-        FROM players 
-        WHERE room_id = ?
-    ");
-    $stmt_check_all_ready->bind_param("s", $room_id);
-    $stmt_check_all_ready->execute();
-    $result = $stmt_check_all_ready->get_result()->fetch_assoc();
-    $stmt_check_all_ready->close();
-
-    $all_ready = ($result['total_players'] > 0 && $result['total_players'] == $result['ready_players']);
-
-    // 4. 如果所有人都准备好了, 更新房间状态为 comparing
-    if ($all_ready) {
-        // 在这里可以加入比牌和计分的逻辑, 然后直接把房间状态设为 finished
-        // 为简化流程, 我们先只改变状态, 计分逻辑可以放在 get-status 或一个新API中
-        $stmt_update_room = $conn->prepare("UPDATE rooms SET status = 'comparing' WHERE room_id = ?");
-        $stmt_update_room->bind_param("s", $room_id);
+    
+    $player = $result->fetch_assoc();
+    if ($player['status'] === 'dun_set') {
+        sendErrorResponse("您已经提交过牌，请勿重复提交。", 409);
+    }
+    $stmt->close();
+    
+    // 步骤 2: 更新玩家的三墩牌和状态
+    $stmt = $conn->prepare("UPDATE players SET front_hand = ?, middle_hand = ?, back_hand = ?, status = 'dun_set' WHERE room_id = ? AND user_id = ?");
+    if (!$stmt) throw new Exception("准备更新玩家牌组语句失败: " . $conn->error);
+    $stmt->bind_param("sssss", $frontHand, $middleHand, $backHand, $roomId, $userId);
+    $stmt->execute();
+    
+    if ($stmt->affected_rows === 0) {
+        // 如果没有行被更新，说明出了问题
+        throw new Exception("更新玩家牌组失败，没有行受到影响。");
+    }
+    $stmt->close();
+    
+    // 步骤 3: 检查是否所有玩家都已完成
+    $stmt = $conn->prepare("SELECT COUNT(*) as dunSetCount FROM players WHERE room_id = ? AND status = 'dun_set'");
+    if (!$stmt) throw new Exception("准备检查所有玩家状态语句失败: " . $conn->error);
+    $stmt->bind_param("s", $roomId);
+    $stmt->execute();
+    $countResult = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    
+    $isAllDunSet = ($countResult['dunSetCount'] === 4);
+    
+    // 如果所有人都完成了，可以触发计分逻辑 (这里暂时只更新房间状态)
+    if ($isAllDunSet) {
+        // TODO: 在这里调用计分函数
+        
+        $stmt_update_room = $conn->prepare("UPDATE rooms SET status = 'scoring' WHERE room_id = ?");
+        if (!$stmt_update_room) throw new Exception("准备更新房间状态为 scoring 失败: " . $conn->error);
+        $stmt_update_room->bind_param("s", $roomId);
         $stmt_update_room->execute();
         $stmt_update_room->close();
     }
-
+    
     $conn->commit();
-
-    send_json_response([
-        'success' => true,
-        'message' => '理牌已提交',
-        'all_ready' => $all_ready
-    ]);
-
+    
+    $responseData = ['allPlayersReady' => $isAllDunSet];
+    sendSuccessResponse($responseData, "牌组提交成功！");
+    
 } catch (Exception $e) {
     $conn->rollback();
-    http_response_code(500);
-    send_json_response(['success' => false, 'message' => $e->getMessage()]);
+    error_log("提交dun牌失败: " . $e->getMessage());
+    sendErrorResponse("提交牌组时发生内部错误。", 500);
+} finally {
+    closeDbConnection($conn);
 }
-
-closeDbConnection($conn);
-?>

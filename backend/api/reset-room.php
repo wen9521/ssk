@@ -1,68 +1,72 @@
 <?php
-// backend/api/reset-room.php (v2)
+// backend/api/reset-room.php
+// 描述: 由房主操作，用于重置一个房间，清空所有玩家数据，以便重新开始。
 
-header('Content-Type: application/json');
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
+
 require_once '../db.php';
+require_once '../utils/response.php';
 
-$data = json_decode(file_get_contents('php://input'), true);
-$room_id = $data['room_id'] ?? '';
-$player_id = $data['player_id'] ?? ''; // The player initiating the reset
+$input = json_decode(file_get_contents('php://input'), true);
 
-if (empty($room_id) || empty($player_id)) {
-    http_response_code(400);
-    send_json_response(['success' => false, 'message' => '缺少房间号或玩家ID']);
-    exit;
+// --- 输入验证 ---
+if (empty($input['roomId']) || empty($input['userId'])) {
+    sendErrorResponse('操作失败: 必须提供房间ID (roomId) 和用户ID (userId)。', 400);
 }
+$roomId = $input['roomId'];
+$operatorId = $input['userId'];
 
+$conn = getDbConnection();
 $conn->begin_transaction();
 
 try {
-    // 1. Verify the requester is the host of the room.
-    $stmt = $conn->prepare("SELECT host_id FROM rooms WHERE room_id = ?");
-    $stmt->bind_param("s", $room_id);
+    // 步骤 1: 验证操作者是否为房主
+    $stmt = $conn->prepare("SELECT user_id FROM players WHERE room_id = ? AND is_creator = TRUE");
+    if (!$stmt) throw new Exception("准备验证房主语句失败: " . $conn->error);
+    $stmt->bind_param("s", $roomId);
     $stmt->execute();
-    $room_data = $stmt->get_result()->fetch_assoc();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 0) {
+        sendErrorResponse("操作失败: 房间不存在或您没有权限。", 404);
+    }
+    
+    $creator = $result->fetch_assoc();
+    if ($creator['user_id'] !== $operatorId) {
+        sendErrorResponse("操作失败: 只有房主才能重置房间。", 403);
+    }
+    $stmt->close();
+    
+    // 步骤 2: 删除房间内所有玩家的记录
+    $stmt = $conn->prepare("DELETE FROM players WHERE room_id = ?");
+    if (!$stmt) throw new Exception("准备删除玩家记录语句失败: " . $conn->error);
+    $stmt->bind_param("s", $roomId);
+    $stmt->execute();
+    $stmt->close();
+    
+    // 步骤 3: 更新房间状态回 'waiting'
+    $stmt = $conn->prepare("UPDATE rooms SET status = 'waiting' WHERE room_id = ?");
+    if (!$stmt) throw new Exception("准备更新房间状态语句失败: " . $conn->error);
+    $stmt->bind_param("s", $roomId);
+    $stmt->execute();
+    $stmt->close();
+    
+    // 步骤 4: 将房主重新添加回房间
+    $stmt = $conn->prepare("INSERT INTO players (room_id, user_id, is_creator) VALUES (?, ?, TRUE)");
+    if (!$stmt) throw new Exception("准备重新添加房主语句失败: " . $conn->error);
+    $stmt->bind_param("ss", $roomId, $operatorId);
+    $stmt->execute();
     $stmt->close();
 
-    if (!$room_data) {
-        throw new Exception("房间不存在");
-    }
-    if ($room_data['host_id'] !== $player_id) {
-        throw new Exception("只有房主才能重置游戏");
-    }
-
-    // 2. Reset the room's status and clear any game-specific data.
-    $stmt_room_status = $conn->prepare(
-        "UPDATE rooms 
-         SET status = 'lobby', game_data = NULL 
-         WHERE room_id = ?"
-    );
-    $stmt_room_status->bind_param("s", $room_id);
-    $stmt_room_status->execute();
-    $stmt_room_status->close();
-    
-    // 3. Reset all players in the room for a new game.
-    // This clears their game-related data but keeps them in the room.
-    $stmt_reset_players = $conn->prepare(
-        "UPDATE players 
-         SET hand = NULL, dun = NULL, is_ready = 0, score = 0 
-         WHERE room_id = ?"
-    );
-    $stmt_reset_players->bind_param("s", $room_id);
-    $stmt_reset_players->execute();
-    $stmt_reset_players->close();
-
-    // All went well, commit the changes.
     $conn->commit();
-
-    send_json_response(['success' => true, 'message' => '房间已重置，可以开始新一局']);
+    
+    sendSuccessResponse(['roomId' => $roomId], "房间已成功重置！");
 
 } catch (Exception $e) {
-    // If anything goes wrong, roll back the transaction.
     $conn->rollback();
-    http_response_code(403); // Use 403 for permission errors, 500 for others
-    send_json_response(['success' => false, 'message' => $e->getMessage()]);
+    error_log("重置房间失败: " . $e->getMessage());
+    sendErrorResponse("重置房间时发生内部错误。", 500);
+} finally {
+    closeDbConnection($conn);
 }
-
-closeDbConnection($conn);
-?>

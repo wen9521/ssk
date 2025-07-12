@@ -1,42 +1,17 @@
+// frontend/src/components/Card.js
 import React from 'react';
+import './styles/Card.css';
 
-const Card = ({ card, onClick, isSelected, size = 'normal' }) => {
-  const sizeMap = {
-    small: { width: 40, height: 60 },
-    normal: { width: 60, height: 90 },
-    large: { width: 80, height: 120 }
-  };
+const Card = ({ cardName }) => {
+    // 根据 cardName (e.g., 'ace_of_spades') 构建SVG图片的路径
+    // SVG 文件应该位于 /public/cards/ 目录下
+    const imageUrl = `${process.env.PUBLIC_URL}/cards/${cardName}.svg`;
 
-  const { width, height } = sizeMap[size];
-  const imageUrl = `${process.env.PUBLIC_URL}/cards/${card}.svg`;
-
-  return (
-    <div
-      className={`card ${isSelected ? 'selected' : ''}`}
-      onClick={() => onClick && onClick(card)}
-      style={{
-        width: `${width}px`,
-        height: `${height}px`,
-        borderRadius: '8px',
-        boxShadow: '0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23)',
-        margin: '0 2px',
-        transform: isSelected ? 'translateY(-10px)' : 'none',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        cursor: 'pointer',
-        overflow: 'hidden' // Hide overflowing image parts if any
-      }}
-    >
-      <img
-        src={imageUrl}
-        alt={card}
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'block' // Remove extra space below image
-        }}
-      />
-    </div>
-  );
+    return (
+        <div className="card">
+            <img src={imageUrl} alt={cardName} className="card-image" />
+        </div>
+    );
 };
 
 export default Card;

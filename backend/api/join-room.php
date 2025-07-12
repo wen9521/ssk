@@ -1,69 +1,92 @@
 <?php
 // backend/api/join-room.php
+// 描述: 允许一个玩家加入一个已经存在的、等待中的游戏房间。
 
-header('Content-Type: application/json');
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
+
 require_once '../db.php';
+require_once '../utils/response.php';
 
-$data = json_decode(file_get_contents('php://input'), true);
-$room_id = strtoupper($data['room_id'] ?? '');
-$player_name = $data['name'] ?? '玩家';
+$input = json_decode(file_get_contents('php://input'), true);
 
-if (empty($room_id)) {
-    http_response_code(400);
-    send_json_response(['success' => false, 'message' => '房间号不能为空']);
-    exit;
+if (empty($input['roomId']) || empty($input['userId'])) {
+    sendErrorResponse('加入失败: 必须提供房间ID (roomId) 和用户ID (userId)。', 400);
 }
+$roomId = $input['roomId'];
+$userId = $input['userId'];
 
-// 开启事务
+$conn = getDbConnection();
 $conn->begin_transaction();
 
 try {
-    // 1. 检查房间是否存在并锁定, 防止并发问题
-    $stmt = $conn->prepare("SELECT id FROM rooms WHERE room_id = ? FOR UPDATE");
-    $stmt->bind_param("s", $room_id);
+    // 步骤 1: 锁定并检查房间状态和游戏类型
+    $stmt = $conn->prepare("SELECT status, game_type FROM rooms WHERE room_id = ? FOR UPDATE");
+    if (!$stmt) throw new Exception("准备查询房间语句失败: " . $conn->error);
+    $stmt->bind_param("s", $roomId);
     $stmt->execute();
     $result = $stmt->get_result();
+    
     if ($result->num_rows === 0) {
-        throw new Exception("房间不存在");
+        sendErrorResponse("加入失败: 房间 {$roomId} 不存在。", 404);
+    }
+    
+    $room = $result->fetch_assoc();
+    if ($room['status'] !== 'waiting') {
+        sendErrorResponse("加入失败: 房间 {$roomId} 不再接受新玩家。", 403);
     }
     $stmt->close();
     
-    // 2. 检查房间人数
-    $stmt = $conn->prepare("SELECT COUNT(id) as player_count FROM players WHERE room_id = ?");
-    $stmt->bind_param("s", $room_id);
+    // --- 根据游戏类型确定最大玩家数 ---
+    $maxPlayers = 4; // 默认
+    if ($room['game_type'] === 'doudizhu') {
+        $maxPlayers = 3;
+    }
+
+    // 步骤 2: 检查房间内的当前玩家数量
+    $stmt = $conn->prepare("SELECT COUNT(*) as playerCount, GROUP_CONCAT(user_id) as players FROM players WHERE room_id = ?");
+    if (!$stmt) throw new Exception("准备查询玩家数量语句失败: " . $conn->error);
+    $stmt->bind_param("s", $roomId);
     $stmt->execute();
-    $player_count = $stmt->get_result()->fetch_assoc()['player_count'];
+    $result = $stmt->get_result()->fetch_assoc();
+    $playerCount = (int)$result['playerCount'];
+    $players = $result['players'] ? explode(',', $result['players']) : [];
+    
+    if (in_array($userId, $players)) {
+        sendErrorResponse("您已在该房间中。", 409);
+    }
+
+    if ($playerCount >= $maxPlayers) {
+        sendErrorResponse("加入失败: 房间 {$roomId} 已满。", 403);
+    }
     $stmt->close();
     
-    if ($player_count >= 4) {
-        throw new Exception("房间已满");
+    // 步骤 3: 插入新玩家
+    $stmt = $conn->prepare("INSERT INTO players (room_id, user_id) VALUES (?, ?)");
+    if (!$stmt) throw new Exception("准备插入新玩家语句失败: " . $conn->error);
+    $stmt->bind_param("ss", $roomId, $userId);
+    $stmt->execute();
+    $stmt->close();
+    
+    $newPlayerCount = $playerCount + 1;
+    
+    // 步骤 4: 如果房间满了，更新房间状态
+    if ($newPlayerCount === $maxPlayers) {
+        $stmt_update = $conn->prepare("UPDATE rooms SET status = 'full' WHERE room_id = ?");
+        if (!$stmt_update) throw new Exception("准备更新房间状态语句失败: " . $conn->error);
+        $stmt_update->bind_param("s", $roomId);
+        $stmt_update->execute();
+        $stmt_update->close();
     }
-    
-    // 3. 添加新玩家
-    $player_id = uniqid('player_', true);
-    $stmt_player = $conn->prepare("INSERT INTO players (player_id, room_id, name) VALUES (?, ?, ?)");
-    $stmt_player->bind_param("sss", $player_id, $room_id, $player_name);
-    $stmt_player->execute();
-    $stmt_player->close();
-    
-    // 提交事务
+
     $conn->commit();
     
-    send_json_response([
-        'success' => true,
-        'room_id' => $room_id,
-        'player_id' => $player_id,
-        'player_name' => $player_name
-    ]);
-    
+    sendSuccessResponse(['roomId' => $roomId, 'userId' => $userId, 'playerCount' => $newPlayerCount], "成功加入房间！");
+
 } catch (Exception $e) {
     $conn->rollback();
-    http_response_code(400); // Bad Request
-    send_json_response([
-        'success' => false,
-        'message' => $e->getMessage()
-    ]);
+    error_log("加入房间失败: " . $e->getMessage());
+    sendErrorResponse("加入房间时发生内部错误，请稍后再试。", 500);
+} finally {
+    closeDbConnection($conn);
 }
-
-closeDbConnection($conn);
-?>

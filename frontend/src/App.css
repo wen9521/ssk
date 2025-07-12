@@ -1,0 +1,7 @@
+/* frontend/src/App.css */
+.AppContainer {
+  width: 100%;
+  max-width: 480px; /* 移动优先的最大宽度 */
+  margin: 0 auto;
+  text-align: center;
+}
