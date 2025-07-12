@@ -1,0 +1,30 @@
+/* frontend/src/components/styles/ModeSelector.css */
+.mode-selector-container {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.mode-selector-header {
+    margin: 2rem 0;
+}
+
+.mode-selector-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* 增加按钮之间的间距 */
+    margin-top: 2rem;
+}
+
+.mode-button {
+    padding: 20px;
+    font-size: 1.2em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.mode-button-desc {
+    font-size: 0.7em;
+    font-weight: normal;
+    margin-top: 0.5rem;
+    color: #ccc;
+}

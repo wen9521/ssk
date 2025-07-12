@@ -34,14 +34,13 @@ async function request(endpoint, method = 'POST', body = null) {
     }
 }
 
-// --- 通用API ---
-export const createRoom = (userId, gameType) => request('/create-room.php', 'POST', { userId, gameType });
-export const joinRoom = (roomId, userId) => request('/join-room.php', 'POST', { roomId, userId });
-export const getRoomStatus = (roomId) => request('/get-status.php', 'POST', { roomId });
-export const startGame = (roomId, userId) => request('/start-game.php', 'POST', { roomId, userId });
-export const resetRoom = (roomId, userId) => request('/reset-room.php', 'POST', { roomId, userId });
+// --- 游戏大厅 API ---
+export const quickPlay = (userId, gameType) => request('/quick-play.php', 'POST', { userId, gameType });
+export const matchmaking = (action, userId, gameType = null) => request('/matchmaking.php', 'POST', { action, userId, gameType });
 
-// --- 游戏逻辑API ---
+
+// --- 游戏逻辑 API ---
+export const getRoomStatus = (roomId) => request('/get-status.php', 'POST', { roomId });
 export const bid = (roomId, userId, bid_value) => request('/bid.php', 'POST', { roomId, userId, bid_value });
 export const setDun = (roomId, userId, hands) => request('/set-dun.php', 'POST', { roomId, userId, hands });
 export const playCard = (roomId, userId, cards) => request('/play-card.php', 'POST', { roomId, userId, cards });

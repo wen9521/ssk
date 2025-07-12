@@ -2,7 +2,7 @@
 import React from 'react';
 import { useGame } from '../context/GameContext';
 import GameSelector from './GameSelector';
-import RoomActions from './RoomActions';
+import ModeSelector from './ModeSelector'; // <-- 更新引用
 
 function HomePage() {
     const { gameType } = useGame();
@@ -15,7 +15,7 @@ function HomePage() {
             </header>
             
             <main className="glass-card">
-                { !gameType ? <GameSelector /> : <RoomActions /> }
+                { !gameType ? <GameSelector /> : <ModeSelector /> } {/* <-- 更新组件 */}
             </main>
         </div>
     );
