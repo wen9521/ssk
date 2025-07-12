@@ -1,21 +1,20 @@
 // frontend/src/components/HomePage.js
-import React, 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import { useGame } from '../context/GameContext';
-import GameSelector from './GameSelector'; // 将创建这个新组件
-import RoomActions from './RoomActions'; // 将创建这个新组件
+import GameSelector from './GameSelector';
+import RoomActions from './RoomActions';
 
 function HomePage() {
-    const { gameType } = useGame(); // 从Context中获取当前选择的游戏类型
+    const { gameType } = useGame();
 
     return (
-        <div style={{ padding: '20px', textAlign: 'center', maxWidth: '500px', margin: 'auto' }}>
-            <header style={{ marginBottom: '40px' }}>
+        <div className="page-container">
+            <header>
                 <h1>在线棋牌游戏中心</h1>
+                <p>由 WSS & Gewe 提供技术支持</p>
             </header>
             
-            <main>
-                {/* 如果尚未选择游戏类型，则显示游戏选择器；否则显示房间操作 */}
+            <main className="glass-card">
                 { !gameType ? <GameSelector /> : <RoomActions /> }
             </main>
         </div>
