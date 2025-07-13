@@ -2,7 +2,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { GameProvider, useGame } from './context/GameContext';
-import './App.css'; // 引入App的专属CSS
+import './App.css';
 
 // 引入所有页面和游戏桌组件
 import HomePage from './components/HomePage';
@@ -12,13 +12,13 @@ import DoudizhuTable from './components/DoudizhuTable';
 
 function App() {
     return (
-        <GameProvider>
-            <Router>
+        <Router> {/* <-- Router 现在包裹了 GameProvider */}
+            <GameProvider>
                 <div className="AppContainer">
                     <AppRoutes />
                 </div>
-            </Router>
-        </GameProvider>
+            </GameProvider>
+        </Router>
     );
 }
 

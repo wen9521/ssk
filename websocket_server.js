@@ -4,20 +4,20 @@
 
 const WebSocket = require('ws');
 
-// 创建一个 WebSocket 服务器，监听 8080 端口。
+// 创建一个 WebSocket 服务器，监听 14722 端口。
 // 在实际部署中，你需要确保服务器的防火墙或安全组允许外部访问这个端口。
-const wss = new WebSocket.Server({ port: 8080 });
+const wss = new WebSocket.Server({ port: 14722 });
 
 // 使用一个 Map 来存储所有的游戏房间。
 // 键是 room_id，值是一个 Set，包含该房间内所有玩家的 WebSocket 连接。
 const rooms = new Map();
 
-console.log('WebSocket 服务器已启动，正在监听 8080 端口...');
+console.log('WebSocket 服务器已启动，正在监听 14722 端口...');
 
 // 监听连接事件
 wss.on('connection', (ws, req) => {
     // 从连接 URL 中获取 room_id。
-    // 客户端连接的 URL 应该是 ws://your_server_ip:8080?roomId=YOUR_ROOM_ID
+    // 客户端连接的 URL 应该是 ws://your_server_ip:14722?roomId=YOUR_ROOM_ID
     const url = new URL(req.url, `http://${req.headers.host}`);
     const roomId = url.searchParams.get('roomId');
     const playerId = url.searchParams.get('playerId'); // 假设客户端也会传来 playerId
