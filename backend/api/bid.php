@@ -7,13 +7,13 @@ header("Content-Type: application/json; charset=UTF-8");
 
 require_once '../db.php';
 require_once '../utils/response.php';
+require_once '../utils/DoudizhuCardUtils.php'; // 引入卡牌工具
 
 $input = json_decode(file_get_contents('php://input'), true);
 
 // --- 输入验证 ---
 $roomId = $input['roomId'] ?? null;
 $userId = $input['userId'] ?? null;
-// bid_value: 0 for "pass", 1, 2, 3 for bidding
 $bidValue = isset($input['bid_value']) ? (int)$input['bid_value'] : null;
 
 if (!$roomId || !$userId || $bidValue === null) {
@@ -27,16 +27,12 @@ $conn = getDbConnection();
 $conn->begin_transaction();
 
 try {
-    // 步骤 1: 获取房间和所有玩家的当前状态，并锁定房间以防竞态条件
+    // 步骤 1: 获取并锁定房间状态
     $stmt = $conn->prepare("SELECT status, extra_data FROM rooms WHERE room_id = ? AND game_type = 'doudizhu' FOR UPDATE");
-    if (!$stmt) throw new Exception("准备查询房间语句失败");
     $stmt->bind_param("s", $roomId);
     $stmt->execute();
     $roomResult = $stmt->get_result();
-
-    if ($roomResult->num_rows === 0) {
-        sendErrorResponse("操作失败: 房间不存在或不是斗地主游戏。", 404);
-    }
+    if ($roomResult->num_rows === 0) throw new Exception("房间不存在或不是斗地主游戏。", 404);
     $room = $roomResult->fetch_assoc();
     $stmt->close();
 
@@ -45,28 +41,30 @@ try {
     }
 
     $biddingState = json_decode($room['extra_data'] ?? '[]', true);
-    $landlordCards = $biddingState['landlordCards'] ?? []; // 底牌应该在 extra_data 中
+    $playerIds = $biddingState['playerIds'] ?? [];
 
-    // 初始化叫分状态 (如果第一次叫分)
-    if (empty($biddingState['bids'])) {
+    // 如果playerIds为空，从players表重新获取
+    if (empty($playerIds)) {
         $players_stmt = $conn->prepare("SELECT user_id FROM players WHERE room_id = ? ORDER BY joined_at ASC");
         $players_stmt->bind_param("s", $roomId);
         $players_stmt->execute();
         $playersResult = $players_stmt->get_result();
-        $playerIds = [];
         while($row = $playersResult->fetch_assoc()) { $playerIds[] = $row['user_id']; }
         $players_stmt->close();
-
+        if(count($playerIds) !== 3) throw new Exception("玩家人数不为3");
         $biddingState['playerIds'] = $playerIds;
-        $biddingState['bids'] = []; // 存储每个玩家的叫分记录
-        $biddingState['turnIndex'] = 0; // 从第一个加入的玩家开始
+    }
+
+    // 初始化叫分状态
+    if (empty($biddingState['bids'])) {
+        $biddingState['bids'] = [];
+        $biddingState['turnIndex'] = 0;
         $biddingState['highestBid'] = 0;
         $biddingState['highestBidder'] = null;
     }
 
     // 步骤 2: 验证操作合法性
     $turnIndex = $biddingState['turnIndex'];
-    $playerIds = $biddingState['playerIds'];
     if ($playerIds[$turnIndex] !== $userId) {
         sendErrorResponse("操作失败: 还未轮到您叫分。", 403);
     }
@@ -82,37 +80,74 @@ try {
     }
     
     $landlord = null;
+    $biddingState['turnIndex'] = ($turnIndex + 1) % 3; // 先递增
 
     // 步骤 4: 判断叫分是否结束
     // a) 有人叫了3分
     if ($bidValue === 3) {
         $landlord = $userId;
     } else {
-        // b) 轮转一圈，确定地主
-        $biddingState['turnIndex'] = ($turnIndex + 1) % 3;
-        
-        // 检查是否所有人都已操作
+        // b) 所有人都已操作
         $bidsSoFar = count($biddingState['bids']);
         if ($bidsSoFar >= 3) {
-            // 如果连续两个玩家pass，则最后一个叫分的玩家是地主
-            if (count(array_filter($biddingState['bids'], fn($b) => $b['bid'] > 0)) === 1 && count(array_filter($biddingState['bids'], fn($b) => $b['bid'] === 0)) === 2) {
+            // 检查最近的三个出价，如果两个是 pass，则最高出价者成为地主
+            $lastThreeBids = array_slice($biddingState['bids'], -3);
+            $passCount = count(array_filter($lastThreeBids, fn($b) => $b['bid'] === 0));
+
+            if ($biddingState['highestBidder'] !== null) {
+                // 如果有人叫了分，并且在他之后连续两人不叫，他就当地主
+                $lastBidderIndex = -1;
+                foreach($biddingState['bids'] as $index => $bid) {
+                    if ($bid['playerId'] === $biddingState['highestBidder']) $lastBidderIndex = $index;
+                }
+                if ($bidsSoFar - 1 - $lastBidderIndex >= 2) {
+                     $landlord = $biddingState['highestBidder'];
+                }
+            }
+             // 或者轮完一圈还没定，那就按最高分来
+            if(!$landlord && $bidsSoFar % 3 === 0 && $biddingState['highestBidder'] !== null) {
                  $landlord = $biddingState['highestBidder'];
             }
-            // 如果所有人都叫过一次分（并且没人叫3分），最后一个叫分的人是地主
-            $lastBids = array_slice($biddingState['bids'], -3);
-            if(count($lastBids) === 3 && $biddingState['highestBidder'] !== null) {
-                $landlord = $biddingState['highestBidder'];
-            }
         }
-        // c) 如果所有人都选择不叫，需要重新发牌 (这个逻辑暂时简化，直接报错)
-        if ($bidsSoFar === 3 && $biddingState['highestBidder'] === null) {
-             // 在真实游戏中，应该重置房间状态为 full 并重新发牌
-             sendErrorResponse("所有玩家都不叫，游戏流局。", 409);
+        
+        // c) 如果所有人都选择不叫 ("流局")
+        if ($bidsSoFar >= 3 && $biddingState['highestBidder'] === null) {
+            // --- 关键修复：实现流局重置逻辑 ---
+            $cardUtils = new DoudizhuCardUtils();
+            $cardUtils->shuffle();
+            $hands = $cardUtils->deal();
+            
+            // 更新每个玩家的手牌
+            for ($i = 0; $i < 3; $i++) {
+                $stmt = $conn->prepare("UPDATE players SET hand = ? WHERE room_id = ? AND user_id = ?");
+                $stmt->bind_param("sss", json_encode($hands[$i]), $roomId, $playerIds[$i]);
+                $stmt->execute();
+                $stmt->close();
+            }
+
+            // 重置房间的extra_data，开始新一轮叫分
+            $newBiddingState = [
+                'playerIds' => $playerIds,
+                'landlordCards' => $hands[3], // 新的底牌
+                'bids' => [],
+                'turnIndex' => ($biddingState['turnIndex']) % 3, // 从下家开始
+                'highestBid' => 0,
+                'highestBidder' => null
+            ];
+            $stmt = $conn->prepare("UPDATE rooms SET extra_data = ? WHERE room_id = ?");
+            $stmt->bind_param("ss", json_encode($newBiddingState), $roomId);
+            $stmt->execute();
+            $stmt->close();
+
+            $conn->commit();
+            sendSuccessResponse(['redeal' => true], "所有玩家都不叫，流局并重新发牌。");
+            return; // 修复完成，直接返回
         }
     }
 
     // 步骤 5: 如果确定了地主，结束叫分阶段
     if ($landlord) {
+        $landlordCards = $biddingState['landlordCards'];
         // a) 更新地主手牌
         $stmt = $conn->prepare("SELECT hand FROM players WHERE room_id = ? AND user_id = ?");
         $stmt->bind_param("ss", $roomId, $landlord);
@@ -127,40 +162,43 @@ try {
         $stmt->execute();
         $stmt->close();
         
-        // b) 更新其他玩家状态为 "peasant" (农民)
+        // b) 更新农民状态
         $stmt = $conn->prepare("UPDATE players SET status = 'peasant' WHERE room_id = ? AND user_id != ?");
         $stmt->bind_param("ss", $roomId, $landlord);
         $stmt->execute();
         $stmt->close();
         
-        // c) 更新房间状态为 "playing"，并在extra_data中记录地主和底牌
-        $finalRoomData = json_encode(['landlord' => $landlord, 'landlordCards' => $landlordCards]);
+        // c) 更新房间状态
+        $finalRoomData = json_encode(['landlord' => $landlord, 'landlordCards' => $landlordCards, 'turn' => $landlord]);
         $stmt = $conn->prepare("UPDATE rooms SET status = 'playing', extra_data = ? WHERE room_id = ?");
         $stmt->bind_param("ss", $finalRoomData, $roomId);
         $stmt->execute();
         $stmt->close();
         
+        $conn->commit();
+        sendSuccessResponse(['landlordDetermined' => true, 'landlord' => $landlord], "地主已确定！");
     } else {
-        // 如果叫分未结束，仅更新biddingState
+        // 叫分未结束，仅更新biddingState
         $stmt = $conn->prepare("UPDATE rooms SET extra_data = ? WHERE room_id = ?");
         $stmt->bind_param("ss", json_encode($biddingState), $roomId);
         $stmt->execute();
         $stmt->close();
+        
+        $conn->commit();
+        sendSuccessResponse([
+            'bidder' => $userId, 
+            'bidValue' => $bidValue,
+            'landlordDetermined' => false,
+            'nextTurnPlayer' => $playerIds[$biddingState['turnIndex']]
+        ], "叫分成功！");
     }
-
-    $conn->commit();
-    sendSuccessResponse([
-        'bidder' => $userId, 
-        'bidValue' => $bidValue,
-        'landlordDetermined' => !is_null($landlord),
-        'landlord' => $landlord,
-        'nextTurnPlayer' => $landlord ? null : $playerIds[$biddingState['turnIndex']]
-    ], "叫分成功！");
 
 } catch (Exception $e) {
     $conn->rollback();
-    error_log("叫分失败: " . $e->getMessage());
-    sendErrorResponse("叫分时发生内部错误。", 500);
+    error_log("叫分失败 [Room: $roomId, User: $userId]: " . $e->getMessage());
+    sendErrorResponse("叫分时发生内部错误: " . $e->getMessage(), 500);
 } finally {
-    closeDbConnection($conn);
+    if (isset($conn)) {
+        closeDbConnection($conn);
+    }
 }

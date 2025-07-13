@@ -1,7 +1,9 @@
 // frontend/src/services/websocketService.js
 // 描述: 管理与后端Node.js服务器的WebSocket连接。
 
-const WEBSOCKET_URL = process.env.REACT_APP_WEBSOCKET_URL;
+// 直接硬编码生产环境的WebSocket地址，确保部署后连接正确。
+// 使用 wss:// (安全的WebSocket协议)，并指定端口14722
+const WEBSOCKET_URL = 'wss://9525.ip-ddns.com:14722';
 
 class WebSocketService {
     constructor() {
@@ -17,6 +19,12 @@ class WebSocketService {
     connect(roomId, playerId) {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             console.log("WebSocket已经连接。");
+            return;
+        }
+
+        // 检查是否提供了必要的参数
+        if (!roomId || !playerId) {
+            console.error("连接失败：必须提供roomId和playerId。");
             return;
         }
 
