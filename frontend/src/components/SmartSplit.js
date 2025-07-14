@@ -1,5 +1,5 @@
 // frontend/src/components/SmartSplit.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react'; // 移除 useEffect 导入
 import Card from './Card';
 import './styles/SmartSplit.css';
 import { setDun } from '../services/apiService';

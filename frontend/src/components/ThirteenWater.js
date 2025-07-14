@@ -1,6 +1,6 @@
 // frontend/src/components/ThirteenWater.js
 import React, { useState, useEffect, useContext } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom'; // 移除了 setGameState 导入
 import { GameContext } from '../context/GameContext';
 import SmartSplit from './SmartSplit';
 import Opponent from './Opponent';
@@ -9,7 +9,7 @@ import './styles/GameTable.css';
 const ThirteenWater = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { gameState, setGameState } = useContext(GameContext);
+    const { gameState } = useContext(GameContext);
 
     // 游戏阶段: 'dealing', 'splitting', 'comparing', 'finished'
     const [phase, setPhase] = useState('dealing'); 

@@ -25,7 +25,7 @@ function App() {
 }
 
 function AppRoutes() {
-    const { gameType, roomId, roomStatus } = useGame();
+    const { gameType, roomId } = useGame();
 
     // A helper function to determine which game table to render
     const getGameTableElement = () => {
