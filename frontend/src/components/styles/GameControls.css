@@ -1,0 +1,68 @@
+/* frontend/src/components/styles/GameControls.css */
+
+.game-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    gap: 15px;
+    position: absolute;
+    bottom: 120px; /* 根据手牌组件高度调整 */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 20px;
+}
+
+.control-btn {
+    padding: 10px 25px;
+    font-size: 1.1em;
+    font-weight: bold;
+    border-radius: 10px;
+    border: 2px solid;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    color: white;
+}
+
+.control-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.bid-btn {
+    background-color: #007bff;
+    border-color: #0056b3;
+}
+.bid-btn:hover:not(:disabled) {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.pass-btn {
+    background-color: #6c757d;
+    border-color: #5a6268;
+}
+.pass-btn:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+.hint-btn {
+    background-color: #ffc107;
+    border-color: #d39e00;
+    color: #212529;
+}
+.hint-btn:hover:not(:disabled) {
+    background-color: #e0a800;
+}
+
+.play-btn {
+    background-color: #28a745;
+    border-color: #1e7e34;
+}
+.play-btn:hover:not(:disabled) {
+    background-color: #218838;
+    transform: scale(1.05);
+}
