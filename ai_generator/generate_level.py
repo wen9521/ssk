@@ -29,8 +29,9 @@ def generate_creative_prompt_with_gemini():
     """Uses Gemini Pro to generate a creative prompt for an image."""
     print("Generating a creative prompt with Gemini Pro...")
     try:
-        model = genai.GenerativeModel('gemini-pro')
-        # A more sophisticated prompt to get better results
+        # CORRECTED: Use the stable 'gemini-1.0-pro' model name
+        model = genai.GenerativeModel('gemini-1.0-pro')
+        
         response = model.generate_content(
             "Generate a short, visually rich, SFW (safe for work) description for a 'spot the difference' game image. "
             "Focus on a single character with interesting details. "
@@ -43,27 +44,18 @@ def generate_creative_prompt_with_gemini():
         return prompt_text
     except Exception as e:
         print(f"Error calling Gemini API: {e}")
-        # Fallback prompt in case of API error
-        return "A cute cat wearing a wizard hat."
+        return "A cute cat wearing a wizard hat." # Fallback prompt
 
 def create_placeholder_image(prompt_text):
-    """Creates a placeholder image with the given text.
-    This function replaces the call to a real text-to-image model like DALL-E or Imagen.
-    """
+    """Creates a placeholder image with the given text."""
     print("Creating a placeholder image...")
-    # Create a blank image
     img = Image.new('RGB', (1024, 1024), color = (73, 109, 137))
     d = ImageDraw.Draw(img)
-    
-    # Use a basic font
     try:
         font = ImageFont.truetype("arial.ttf", 40)
     except IOError:
         font = ImageFont.load_default()
-
-    # Draw the text on the image
     d.text((50,50), "Image Placeholder", font=font, fill=(255,255,0))
-    # Wrap text and draw
     y_text = 150
     lines = [prompt_text[i:i+50] for i in range(0, len(prompt_text), 50)]
     for line in lines:
@@ -74,13 +66,11 @@ def create_placeholder_image(prompt_text):
     img.save(buffer, format="PNG")
     return buffer.getvalue()
 
-
 def create_difference(image_bytes):
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     modified_image = image.copy()
     draw = ImageDraw.Draw(modified_image)
     x, y, r = random.randint(200,800), random.randint(200,800), random.randint(20,30)
-    # Erase a small circle to create a difference
     draw.ellipse((x-r, y-r, x+r, y+r), fill=(73, 109, 137))
     
     buffer = io.BytesIO()
@@ -88,10 +78,13 @@ def create_difference(image_bytes):
     return buffer.getvalue(), [{"x": x, "y": y, "radius": r}]
 
 def upload_to_r2(data, object_name, content_type):
-    # This function remains the same, it uploads to Cloudflare R2
+    # Construct the correct endpoint URL using the Account ID
+    endpoint_url = f"https://{CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+    print(f"Attempting to upload to endpoint: {endpoint_url}")
+    
     r2_client = boto3.client(
         service_name='s3',
-        endpoint_url=f"https://{CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com",
+        endpoint_url=endpoint_url,
         aws_access_key_id=R2_ACCESS_KEY_ID,
         aws_secret_access_key=R2_SECRET_ACCESS_KEY,
         region_name='auto',
@@ -99,9 +92,7 @@ def upload_to_r2(data, object_name, content_type):
     r2_client.put_object(Bucket=R2_BUCKET_NAME, Key=object_name, Body=data, ContentType=content_type, ACL='public-read')
     print(f"Uploaded {object_name} to R2 bucket {R2_BUCKET_NAME}.")
 
-
 def add_level_to_kv(level_id):
-    # This function also remains the same, it calls your Cloudflare Worker
     headers = {'Content-Type': 'application/json', 'x-internal-api-key': WORKER_SECRET_KEY}
     payload = {'newLevelId': level_id}
     response = requests.post(f"{WORKER_URL}/levels", headers=headers, json=payload, timeout=10)
@@ -114,22 +105,15 @@ def main():
     base_path = f"levels/{level_id}"
     
     try:
-        # 1. Generate a creative prompt using Gemini
         creative_prompt = generate_creative_prompt_with_gemini()
-
-        # 2. Generate a placeholder image based on the prompt
         original_bytes = create_placeholder_image(creative_prompt)
-        
-        # 3. Create difference
         modified_bytes, differences = create_difference(original_bytes)
         metadata = json.dumps({"prompt": creative_prompt, "differences": differences}).encode('utf-8')
-
-        # 4. Upload to R2
+        
         upload_to_r2(original_bytes, f"{base_path}/original.png", 'image/png')
         upload_to_r2(modified_bytes, f"{base_path}/modified.png", 'image/png')
         upload_to_r2(metadata, f"{base_path}/metadata.json", 'application/json')
         
-        # 5. Update KV index via Worker
         add_level_to_kv(level_id)
 
         print("Cron Job Finished Successfully.")
