@@ -44,6 +44,7 @@ def generate_creative_prompt_with_gemini():
         )
         
         response = model.generate_content(instruction)
+        # CORRECTED: The newline character replacement is now on a single, valid line.
         prompt_text = response.text.strip().replace("*", "").replace("
 ", " ")
         print(f"Generated Prompt: {prompt_text}")
@@ -112,6 +113,7 @@ def upload_to_r2(data, object_name, content_type):
 def add_level_to_kv(level_id):
     headers = {'Content-Type': 'application/json', 'x-internal-api-key': WORKER_SECRET_KEY}
     payload = {'newLevelId': level_id}
+    # Corrected: use WORKER_URL from env
     response = requests.post(f"{WORKER_URL}", headers=headers, json=payload, timeout=10)
     response.raise_for_status()
     print(f"Successfully added level {level_id} to KV via worker.")

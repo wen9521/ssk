@@ -2,11 +2,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './styles/SpotTheDifference.css';
 
-// The URL of your Cloudflare Worker which now acts as the main API
 const API_URL = 'https://render.wenge666.workers.dev/levels';
 
-const GameStateDisplay = ({ message }) => (
+const GameStateDisplay = ({ message, isLoading = false }) => (
     <div className="game-state-container">
+        {isLoading && <div className="loader"></div>}
         <p>{message}</p>
     </div>
 );
@@ -15,80 +15,75 @@ const SpotTheDifference = () => {
     const [levels, setLevels] = useState([]);
     const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
     const [foundDifferences, setFoundDifferences] = useState([]);
-    const [isLevelComplete, setIsLevelComplete] = useState(false);
-    const [isGameComplete, setIsGameComplete] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // --- Data Fetching Effect ---
     useEffect(() => {
         const fetchLevels = async () => {
+            setIsLoading(true);
             try {
-                // Directly call the Cloudflare Worker, completely bypassing the PHP backend
                 const response = await fetch(API_URL);
-                if (!response.ok) {
-                    throw new Error(`The API server responded with status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
                 const data = await response.json();
-                if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+                if (data.success && data.data.length > 0) {
                     setLevels(data.data);
-                } else if (data.success && data.data.length === 0) {
-                    setError('暂无可用关卡，我们的AI正在努力生成中，请稍后重试。');
                 } else {
-                    throw new Error(data.error || 'Failed to load level data from the API.');
+                    setError('暂无可用关卡，我们的AI正在努力生成中，请稍后重试。');
                 }
             } catch (err) {
                 setError(`获取关卡失败: ${err.message}`);
-                console.error(err);
             } finally {
                 setIsLoading(false);
             }
         };
-
         fetchLevels();
     }, []);
 
     const currentLevel = levels[currentLevelIndex];
     const differences = useMemo(() => currentLevel?.differences || [], [currentLevel]);
+    const isLevelComplete = useMemo(() => differences.length > 0 && foundDifferences.length === differences.length, [foundDifferences, differences]);
+    const isGameComplete = useMemo(() => isLevelComplete && currentLevelIndex === levels.length - 1, [isLevelComplete, currentLevelIndex, levels]);
 
-    useEffect(() => {
-        if (differences.length > 0 && foundDifferences.length === differences.length) {
-            setIsLevelComplete(true);
-            if (currentLevelIndex === levels.length - 1) {
-                setIsGameComplete(true);
-            }
-        }
-    }, [foundDifferences, differences, currentLevelIndex, levels]);
-
+    // --- Game Logic Handlers ---
     const handleImageClick = (e) => {
         if (isLevelComplete || !currentLevel) return;
+        const imgElement = e.target;
+        const rect = imgElement.getBoundingClientRect();
+        
+        // Calculate the real image size inside the object-fit container
+        const naturalRatio = imgElement.naturalWidth / imgElement.naturalHeight;
+        const clientRatio = imgElement.clientWidth / imgElement.clientHeight;
+        let imgDisplayedWidth, imgDisplayedHeight, offsetX, offsetY;
 
-        const rect = e.target.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        if (naturalRatio > clientRatio) { // Image is wider, letterboxed top/bottom
+            imgDisplayedWidth = imgElement.clientWidth;
+            imgDisplayedHeight = imgDisplayedWidth / naturalRatio;
+            offsetX = 0;
+            offsetY = (imgElement.clientHeight - imgDisplayedHeight) / 2;
+        } else { // Image is taller, letterboxed left/right
+            imgDisplayedHeight = imgElement.clientHeight;
+            imgDisplayedWidth = imgDisplayedHeight * naturalRatio;
+            offsetY = 0;
+            offsetX = (imgElement.clientWidth - imgDisplayedWidth) / 2;
+        }
 
-        const imageWidth = rect.width;
-        const originalWidth = 1024; // The original width of the generated images
-        const scaleFactor = imageWidth / originalWidth;
+        const x = e.clientX - rect.left - offsetX;
+        const y = e.clientY - rect.top - offsetY;
+        const scaleFactor = imgDisplayedWidth / 1024;
 
         differences.forEach((diff, index) => {
-            const distance = Math.sqrt(
-                Math.pow(x - (diff.x * scaleFactor), 2) + 
-                Math.pow(y - (diff.y * scaleFactor), 2)
-            );
-            if (distance < (diff.radius * scaleFactor)) {
-                if (!foundDifferences.includes(index)) {
-                    setFoundDifferences(prev => [...prev, index]);
-                }
+            const distance = Math.sqrt(Math.pow(x - (diff.x * scaleFactor), 2) + Math.pow(y - (diff.y * scaleFactor), 2));
+            if (distance < (diff.radius * scaleFactor) && !foundDifferences.includes(index)) {
+                setFoundDifferences(prev => [...prev, index]);
             }
         });
     };
-    
+
     const goToLevel = (index) => {
         if (index >= 0 && index < levels.length) {
             setCurrentLevelIndex(index);
             setFoundDifferences([]);
-            setIsLevelComplete(false);
-            setIsGameComplete(false);
         }
     };
 
@@ -97,52 +92,51 @@ const SpotTheDifference = () => {
         goToLevel(0);
     };
 
-    if (isLoading) return <GameStateDisplay message="正在从云端加载关卡，请稍候..." />;
+    // --- Render Logic ---
+    if (isLoading) return <GameStateDisplay message="正在从云端加载关卡..." isLoading={true} />;
     if (error) return <GameStateDisplay message={error} />;
     if (!currentLevel) return <GameStateDisplay message="太棒了！您已完成所有当前关卡！" />;
 
     return (
         <div className="spot-the-difference-container">
-            <h1>大家来找茬 - 第 {currentLevelIndex + 1} / {levels.length} 关</h1>
-            <div className="images-container">
+            <header className="game-header">
+                <h1>第 {currentLevelIndex + 1} / {levels.length} 关</h1>
+                <p>找到的差异点: {foundDifferences.length} / {differences.length}</p>
+            </header>
+
+            <main className="images-container">
                 <div className="image-wrapper" onClick={handleImageClick}>
                     <img src={currentLevel.original} alt="Original" crossOrigin="anonymous" />
                     {foundDifferences.map(index => {
                         const diff = differences[index];
-                        return <div key={index} className="difference-marker" style={{ left: `${(diff.x/1024)*100}%`, top: `${(diff.y/1024)*100}%`, width: `${diff.radius*2}px`, height: `${diff.radius*2}px` }} />;
+                        return <div key={index} className="difference-marker" style={{ left: `${(diff.x/1024)*100}%`, top: `${(diff.y/1024)*100}%`, width: `${diff.radius*2}px`, height: `${diff.radius*2}px`, transform: 'translate(-50%, -50%)' }} />;
                     })}
                 </div>
                 <div className="image-wrapper" onClick={handleImageClick}>
                     <img src={currentLevel.modified} alt="Modified" crossOrigin="anonymous" />
                     {foundDifferences.map(index => {
                         const diff = differences[index];
-                        return <div key={index} className="difference-marker" style={{ left: `${(diff.x/1024)*100}%`, top: `${(diff.y/1024)*100}%`, width: `${diff.radius*2}px`, height: `${diff.radius*2}px` }} />;
+                        return <div key={index} className="difference-marker" style={{ left: `${(diff.x/1024)*100}%`, top: `${(diff.y/1024)*100}%`, width: `${diff.radius*2}px`, height: `${diff.radius*2}px`, transform: 'translate(-50%, -50%)' }} />;
                     })}
                 </div>
-            </div>
+            </main>
 
-            {isGameComplete ? (
-                <div className="game-complete-message">
-                    <h2>恭喜你，全部通关！</h2>
-                    <button onClick={handleRestartGame}>再玩一次</button>
-                </div>
-            ) : (
-                <>
-                    <p>找到的差异点: {foundDifferences.length} / {differences.length}</p>
-                    {isLevelComplete && (
-                        <div className="level-complete-message">
-                            <h3>太棒了，完成本关！</h3>
-                            <button onClick={() => goToLevel(currentLevelIndex + 1)}>下一关</button>
-                        </div>
-                    )}
+            <footer className="game-footer">
+                {isGameComplete ? (
+                    <div className="game-complete-message">
+                        <button onClick={handleRestartGame}>🎉 恭喜通关！再玩一次 🎉</button>
+                    </div>
+                ) : isLevelComplete ? (
+                    <div className="level-complete-message">
+                        <button onClick={() => goToLevel(currentLevelIndex + 1)}>✔️ 太棒了！下一关</button>
+                    </div>
+                ) : (
                     <div className="level-controls">
                         <button onClick={() => goToLevel(currentLevelIndex - 1)} disabled={currentLevelIndex === 0}>上一关</button>
-                        <button onClick={() => goToLevel(currentLevelIndex + 1)} disabled={isGameComplete || !isLevelComplete}>
-                            下一关
-                        </button>
+                        <button onClick={() => goToLevel(currentLevelIndex + 1)} disabled={!isLevelComplete}>下一关</button>
                     </div>
-                </>
-            )}
+                )}
+            </footer>
         </div>
     );
 };
