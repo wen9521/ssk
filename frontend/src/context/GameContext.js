@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import * as api from '../services/apiService';
 import webSocketService from '../services/websocketService';
 
-const GameContext = createContext();
+export const GameContext = createContext();
 
 export function useGame() {
     return useContext(GameContext);
