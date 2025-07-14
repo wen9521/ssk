@@ -1,17 +1,15 @@
 // frontend/src/components/DoudizhuTable.js
 import React, { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext'; // Import useGame
 import Hand from './Hand';
 import Opponent from './Opponent';
 import Card from './Card';
-import * as api from '../services/apiService'; 
 import webSocketService from '../services/websocketService';
 import './styles/GameTable.css';
 
 const DoudizhuTable = () => {
     const navigate = useNavigate();
-    const location = useLocation();
 
     // 从 GameContext 获取状态和函数
     const {
