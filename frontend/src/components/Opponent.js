@@ -1,30 +1,27 @@
+// frontend/src/components/Opponent.js
 import React from 'react';
+import './styles/GameTable.css'; // 复用GameTable中的样式
 
-const Opponent = ({ name, cardCount, position, isActive }) => {
-  // 生成背面朝上的卡牌
-  const cards = Array.from({ length: cardCount }, (_, i) => i);
-  
-  return (
-    <div className={`opponent ${position} ${isActive ? 'active' : ''}`}>
-      <div className="opponent-info">
-        <div className="opponent-name">{name}</div>
-        <div className="opponent-status">{cardCount}张牌</div>
-      </div>
-      
-      <div className="opponent-cards">
-        {cards.map((_, index) => (
-          <div 
-            key={index}
-            className="opponent-card-back"
-            style={{
-              transform: `rotate(${index % 2 === 0 ? -2 : 2}deg)`,
-              marginLeft: index > 0 ? '-30px' : '0'
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
+const Opponent = ({ name, isReady, cardsInfo }) => {
+    const statusText = isReady ? '已准备' : '理牌中...';
+    const statusClass = isReady ? 'status-ready' : 'status-waiting';
+
+    return (
+        <div className="opponent-seat">
+            <div className="opponent-name">{name}</div>
+            <div className={`opponent-status ${statusClass}`}>{statusText}</div>
+            {/* 未来可以在这里展示对手的牌墩信息 */}
+            {/* 
+            {cardsInfo && (
+                <div className="opponent-cards-preview">
+                    <div>前墩: {cardsInfo.front.type}</div>
+                    <div>中墩: {cardsInfo.middle.type}</div>
+                    <div>后墩: {cardsInfo.back.type}</div>
+                </div>
+            )}
+            */}
+        </div>
+    );
 };
 
 export default Opponent;
