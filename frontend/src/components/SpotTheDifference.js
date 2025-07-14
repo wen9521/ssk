@@ -1,5 +1,5 @@
 // frontend/src/components/SpotTheDifference.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './styles/SpotTheDifference.css';
 
 // 这是一个辅助组件，用于显示加载或错误状态
@@ -53,11 +53,14 @@ const SpotTheDifference = () => {
     }, []); // 空依赖数组意味着这个effect只在组件挂载时运行一次
 
     const currentLevel = levels[currentLevelIndex];
-    const differences = currentLevel?.differences || [];
+    
+    // 使用 useMemo 来确保 differences 数组的引用稳定性
+    const differences = useMemo(() => currentLevel?.differences || [], [currentLevel]);
 
     // 检查关卡或游戏是否完成
     useEffect(() => {
-        if (levels.length > 0 && foundDifferences.length === differences.length) {
+        // 只有在 differences 数组有内容时才进行判断
+        if (differences.length > 0 && foundDifferences.length === differences.length) {
             setIsLevelComplete(true);
             if (currentLevelIndex === levels.length - 1) {
                 setIsGameComplete(true);
