@@ -2,5 +2,5 @@
 
 requests
 Pillow
-openai
+google-generativeai
 boto3

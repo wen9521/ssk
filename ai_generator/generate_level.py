@@ -1,135 +1,140 @@
 # ai_generator/generate_level.py
-# This script runs on a schedule to generate "Spot the Difference" game levels.
-# It creates a pair of images and a metadata file, then uploads them to a cloud storage bucket.
-
 import os
+import requests
 import random
 import io
 import json
 import uuid
-import openai
+import google.generativeai as genai
 import boto3
-from PIL import Image, ImageDraw
-from botocore.exceptions import NoCredentialsError
+from PIL import Image, ImageDraw, ImageFont
 
-# --- Configuration loaded from Render's Environment Variables ---
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME')
-S3_ACCESS_KEY = os.environ.get('S3_ACCESS_KEY')
-S3_SECRET_KEY = os.environ.get('S3_SECRET_KEY')
-S3_ENDPOINT_URL = os.environ.get('S3_ENDPOINT_URL') # e.g., https://<region>.digitaloceanspaces.com for DigitalOcean
+# --- Configuration from Render Environment Variables ---
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+# Cloudflare R2
+CLOUDFLARE_ACCOUNT_ID = os.environ.get('CLOUDFLARE_ACCOUNT_ID')
+R2_BUCKET_NAME = os.environ.get('R2_BUCKET_NAME')
+R2_ACCESS_KEY_ID = os.environ.get('R2_ACCESS_KEY_ID')
+R2_SECRET_ACCESS_KEY = os.environ.get('R2_SECRET_ACCESS_KEY')
+R2_PUBLIC_URL = os.environ.get('R2_PUBLIC_URL') # Your R2 public bucket URL
+# Cloudflare Worker
+WORKER_URL = os.environ.get('WORKER_URL') # e.g., https://level-api-worker.yourname.workers.dev
+WORKER_SECRET_KEY = os.environ.get('WORKER_SECRET_KEY')
 
-# Configure OpenAI client
-if OPENAI_API_KEY:
-    openai.api_key = OPENAI_API_KEY
+# Configure Gemini client
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
-def generate_image_with_dalle(prompt):
-    """Generates an image using DALL-E 3 and returns its content in bytes."""
-    print(f"Generating image with prompt: {prompt}")
+def generate_creative_prompt_with_gemini():
+    """Uses Gemini Pro to generate a creative prompt for an image."""
+    print("Generating a creative prompt with Gemini Pro...")
     try:
-        response = openai.Image.create(
-            model="dall-e-3",
-            prompt=prompt,
-            n=1,
-            size="1024x1024",
-            response_format="b64_json"
+        model = genai.GenerativeModel('gemini-pro')
+        # A more sophisticated prompt to get better results
+        response = model.generate_content(
+            "Generate a short, visually rich, SFW (safe for work) description for a 'spot the difference' game image. "
+            "Focus on a single character with interesting details. "
+            "Example: A beautiful anime-style girl on a sunny beach, digital art. "
+            "Another example: A female cyberpunk warrior in a rainy neon city. "
+            "Now, your turn:"
         )
-        import base64
-        image_data = base64.b64decode(response['data'][0]['b64_json'])
-        return image_data
+        prompt_text = response.text.strip().replace("*", "") # Clean up markdown
+        print(f"Generated Prompt: {prompt_text}")
+        return prompt_text
     except Exception as e:
-        print(f"Error calling DALL-E API: {e}")
-        raise
+        print(f"Error calling Gemini API: {e}")
+        # Fallback prompt in case of API error
+        return "A cute cat wearing a wizard hat."
+
+def create_placeholder_image(prompt_text):
+    """Creates a placeholder image with the given text.
+    This function replaces the call to a real text-to-image model like DALL-E or Imagen.
+    """
+    print("Creating a placeholder image...")
+    # Create a blank image
+    img = Image.new('RGB', (1024, 1024), color = (73, 109, 137))
+    d = ImageDraw.Draw(img)
+    
+    # Use a basic font
+    try:
+        font = ImageFont.truetype("arial.ttf", 40)
+    except IOError:
+        font = ImageFont.load_default()
+
+    # Draw the text on the image
+    d.text((50,50), "Image Placeholder", font=font, fill=(255,255,0))
+    # Wrap text and draw
+    y_text = 150
+    lines = [prompt_text[i:i+50] for i in range(0, len(prompt_text), 50)]
+    for line in lines:
+        d.text((50, y_text), line, font=font, fill=(255, 255, 255))
+        y_text += 50
+    
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    return buffer.getvalue()
+
 
 def create_difference(image_bytes):
-    """Creates a difference on the image and returns the modified image and difference data."""
-    original_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    modified_image = original_image.copy()
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    modified_image = image.copy()
     draw = ImageDraw.Draw(modified_image)
-    
-    x = random.randint(200, 800)
-    y = random.randint(200, 800)
-    radius = random.randint(25, 35)
-    
-    # Example logic: copy a patch from another part of the image to cover a spot
-    patch_source_x = x - 150 if x > 200 else x + 150
-    patch = original_image.crop((patch_source_x, y, patch_source_x + (radius*2), y + (radius*2)))
-    modified_image.paste(patch, (x, y))
-    
-    print(f"Created a difference at (x={x}, y={y}) with radius={radius}")
+    x, y, r = random.randint(200,800), random.randint(200,800), random.randint(20,30)
+    # Erase a small circle to create a difference
+    draw.ellipse((x-r, y-r, x+r, y+r), fill=(73, 109, 137))
     
     buffer = io.BytesIO()
     modified_image.save(buffer, format="PNG")
-    modified_bytes = buffer.getvalue()
-    
-    difference_data = [{"x": x + radius, "y": y + radius, "radius": radius}]
-    return modified_bytes, difference_data
+    return buffer.getvalue(), [{"x": x, "y": y, "radius": r}]
 
-def upload_to_storage(data, bucket, object_name, content_type='image/png'):
-    """Uploads data to an S3-compatible storage and returns the public URL."""
-    s3_client = boto3.client(
-        's3',
-        endpoint_url=S3_ENDPOINT_URL,
-        aws_access_key_id=S3_ACCESS_KEY,
-        aws_secret_access_key=S3_SECRET_KEY
+def upload_to_r2(data, object_name, content_type):
+    # This function remains the same, it uploads to Cloudflare R2
+    r2_client = boto3.client(
+        service_name='s3',
+        endpoint_url=f"https://{CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com",
+        aws_access_key_id=R2_ACCESS_KEY_ID,
+        aws_secret_access_key=R2_SECRET_ACCESS_KEY,
+        region_name='auto',
     )
-    try:
-        s3_client.put_object(Body=data, Bucket=bucket, Key=object_name, ContentType=content_type, ACL='public-read')
-        # Construct the URL. This format may vary based on your S3 provider.
-        url = f"{S3_ENDPOINT_URL}/{bucket}/{object_name}"
-        print(f"Successfully uploaded: {url}")
-        return url
-    except Exception as e:
-        print(f"Storage upload failed: {e}")
-        return None
+    r2_client.put_object(Bucket=R2_BUCKET_NAME, Key=object_name, Body=data, ContentType=content_type, ACL='public-read')
+    print(f"Uploaded {object_name} to R2 bucket {R2_BUCKET_NAME}.")
+
+
+def add_level_to_kv(level_id):
+    # This function also remains the same, it calls your Cloudflare Worker
+    headers = {'Content-Type': 'application/json', 'x-internal-api-key': WORKER_SECRET_KEY}
+    payload = {'newLevelId': level_id}
+    response = requests.post(f"{WORKER_URL}/levels", headers=headers, json=payload, timeout=10)
+    response.raise_for_status()
+    print(f"Successfully added level {level_id} to KV via worker.")
 
 def main():
-    """Main function for the cron job."""
-    print("Cron Job Started: Generating a new level and uploading to storage.")
-    
-    if not all([OPENAI_API_KEY, S3_BUCKET_NAME, S3_ACCESS_KEY, S3_SECRET_KEY, S3_ENDPOINT_URL]):
-        print("Error: Missing one or more required environment variables.")
-        return
-
-    prompts = [
-        "A beautiful anime-style girl on a sunny beach, digital art",
-        "A female cyberpunk warrior in a rainy neon city, detailed illustration",
-        "A classic portrait of a woman reading in a garden, oil painting style",
-        "A female astronaut on the moon, with Earth in the background, realistic"
-    ]
-    prompt = random.choice(prompts)
+    print("Cron Job Started: Using Gemini to generate level concept.")
+    level_id = str(uuid.uuid4())
+    base_path = f"levels/{level_id}"
     
     try:
-        # 1. Generate original image
-        original_image_bytes = generate_image_with_dalle(prompt)
-        
-        # 2. Create modified image and get difference data
-        modified_image_bytes, differences = create_difference(original_image_bytes)
-        
-        # 3. Prepare metadata and folder structure
-        level_id = str(uuid.uuid4())
-        base_path = f"spot-the-difference/{level_id}"
-        
-        metadata = {
-            "level_id": level_id,
-            "prompt": prompt,
-            "differences": differences,
-            "original_image": "original.png",
-            "modified_image": "modified.png"
-        }
-        metadata_bytes = json.dumps(metadata, indent=2).encode('utf-8')
+        # 1. Generate a creative prompt using Gemini
+        creative_prompt = generate_creative_prompt_with_gemini()
 
-        # 4. Upload all assets to the cloud storage
-        print(f"Uploading assets for level {level_id} to folder {base_path}...")
-        upload_to_storage(original_image_bytes, S3_BUCKET_NAME, f"{base_path}/original.png")
-        upload_to_storage(modified_image_bytes, S3_BUCKET_NAME, f"{base_path}/modified.png")
-        upload_to_storage(metadata_bytes, S3_BUCKET_NAME, f"{base_path}/metadata.json", content_type='application/json')
+        # 2. Generate a placeholder image based on the prompt
+        original_bytes = create_placeholder_image(creative_prompt)
         
-        print(f"Successfully created and uploaded level {level_id}.")
+        # 3. Create difference
+        modified_bytes, differences = create_difference(original_bytes)
+        metadata = json.dumps({"prompt": creative_prompt, "differences": differences}).encode('utf-8')
+
+        # 4. Upload to R2
+        upload_to_r2(original_bytes, f"{base_path}/original.png", 'image/png')
+        upload_to_r2(modified_bytes, f"{base_path}/modified.png", 'image/png')
+        upload_to_r2(metadata, f"{base_path}/metadata.json", 'application/json')
+        
+        # 5. Update KV index via Worker
+        add_level_to_kv(level_id)
+
         print("Cron Job Finished Successfully.")
-        
     except Exception as e:
-        print(f"An error occurred in the main process: {e}")
+        print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
