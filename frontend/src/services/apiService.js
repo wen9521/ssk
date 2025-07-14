@@ -1,6 +1,6 @@
 // frontend/src/services/apiService.js
 // 描述: 统一处理对后端PHP API的HTTP请求。
-// 修复：更改为命名导出以解决编译错误。
+// 修复：更改为命名导出，并组合matchmaking函数以解决编译错误。
 
 const API_BASE_URL = 'https://9525.ip-ddns.com/api';
 
@@ -41,7 +41,6 @@ async function request(endpoint, method = 'POST', body = null) {
 // --- 导出所有API函数 ---
 
 // 游戏房间相关
-// 注意：createRoom 和 joinRoom 的后端文件不存在，这里是虚拟实现以允许项目编译。
 export const createRoom = () => Promise.reject(new Error("功能未实现：create-room.php 不存在。"));
 export const joinRoom = () => Promise.reject(new Error("功能未实现：join-room.php 不存在。"));
 export const getRoomStatus = (roomId) => request('/get-status.php', 'POST', { roomId });
@@ -54,7 +53,9 @@ export const setDun = (roomId, userId, hands) => request('/set-dun.php', 'POST',
 // 斗地主专用
 export const bid = (roomId, userId, bidValue) => request('/bid.php', 'POST', { roomId, userId, bid_value: bidValue });
 
-// 匹配相关
-export const joinMatchmaking = (userId, gameType) => request('/matchmaking.php', 'POST', { action: 'join', userId, gameType });
-export const leaveMatchmaking = (userId) => request('/matchmaking.php', 'POST', { action: 'leave', userId });
-export const checkMatchmakingStatus = (userId) => request('/matchmaking.php', 'POST', { action: 'status', userId });
+// 匹配相关 - 组合成一个对象导出
+export const matchmaking = {
+    join: (userId, gameType) => request('/matchmaking.php', 'POST', { action: 'join', userId, gameType }),
+    leave: (userId) => request('/matchmaking.php', 'POST', { action: 'leave', userId }),
+    status: (userId) => request('/matchmaking.php', 'POST', { action: 'status', userId }),
+};
