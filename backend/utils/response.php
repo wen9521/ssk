@@ -1,50 +1,44 @@
 <?php
 // backend/utils/response.php
 
-/**
- * 设置CORS（跨域资源共享）所需的HTTP头部。
- * 允许所有来源进行GET, POST, OPTIONS请求，并允许特定的头部。
- */
 function setCorsHeaders() {
-    header("Access-Control-Allow-Origin: *");
-    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-    header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization");
-
-    // 浏览器在发送复杂请求（如带自定义头的POST）前，会先发送一个OPTIONS预检请求。
-    // 我们需要响应该请求，告诉浏览器我们的CORS策略，然后立即退出脚本，不执行后面的逻辑。
-    if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-        http_response_code(204); // No Content
-        exit;
+    error_log("DEBUG: setCorsHeaders 函数开始执行.");
+    
+    // 确保在任何输出发送之前调用 header()
+    if (!headers_sent()) {
+        header("Access-Control-Allow-Origin: *");
+        header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+        header("Access-Control-Allow-Headers: Content-Type, Authorization");
+        header("Access-Control-Allow-Credentials: true"); // 如果需要支持跨域cookie
+    } else {
+        error_log("WARNING: 头部已发送，无法设置 CORS 头部。");
     }
+
+    // 记录当前所有已设置的头部
+    error_log("DEBUG: 当前已设置的头部:");
+    foreach (headers_list() as $header) {
+        error_log("DEBUG: - " . $header);
+    }
+
+    // 处理 OPTIONS 请求
+    if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+        http_response_code(204);
+        exit();
+    }
+    error_log("DEBUG: setCorsHeaders 函数执行完毕.");
 }
 
-/**
- * 发送一个标准的成功JSON响应。
- * @param mixed $data - 要在 'data' 键中返回的数据。
- * @param string $message - 成功的消息。
- */
-function sendSuccessResponse($data = null, $message = '操作成功') {
-    header('Content-Type: application/json');
-    http_response_code(200); // 明确设置成功状态码
-    echo json_encode([
-        'success' => true,
-        'message' => $message,
-        'data' => $data
-    ]);
-    exit;
-}
-
-/**
- * 发送一个标准的错误JSON响应。
- * @param string $message - 错误消息。
- * @param int $statusCode - HTTP状态码 (例如 400, 404, 500)。
- */
-function sendErrorResponse($message, $statusCode = 400) {
-    header('Content-Type: application/json');
+function sendSuccessResponse($data, $message = "操作成功", $statusCode = 200) {
+    header("Content-Type: application/json; charset=UTF-8");
     http_response_code($statusCode);
-    echo json_encode([
-        'success' => false,
-        'message' => $message
-    ]);
-    exit;
+    echo json_encode(['success' => true, 'message' => $message, 'data' => $data]);
+    exit();
 }
+
+function sendErrorResponse($message, $statusCode = 500, $details = []) {
+    header("Content-Type: application/json; charset=UTF-8");
+    http_response_code($statusCode);
+    echo json_encode(['success' => false, 'message' => $message, 'details' => $details]);
+    exit();
+}
+?>

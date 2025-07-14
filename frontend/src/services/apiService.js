@@ -1,7 +1,7 @@
 // frontend/src/services/apiService.js
 // 描述: 统一处理对后端PHP API的HTTP请求。
 
-const API_BASE_URL = 'https://9525.ip-ddns.com/backend/api';
+const API_BASE_URL = 'https://9525.ip-ddns.com/api';
 
 async function request(endpoint, method = 'POST', body = null) {
     const url = `${API_BASE_URL}${endpoint}`;
@@ -33,20 +33,28 @@ async function request(endpoint, method = 'POST', body = null) {
         }
 
         return data.data;
-
     } catch (error) {
-        console.error(`API请求错误: ${method} ${url}`, error);
+        console.error("API请求错误:", error);
         throw error;
     }
 }
 
-// --- 游戏大厅 API ---
-export const quickPlay = (userId, gameType) => request('/quick-play.php', 'POST', { userId, gameType });
-export const matchmaking = (action, userId, gameType = null) => request('/matchmaking.php', 'POST', { action, userId, gameType });
+const apiService = {
+    // 游戏房间相关
+    getRoomStatus: (roomId) => request('/get-status.php', 'POST', { roomId }),
+    
+    // 游戏操作相关
+    quickPlay: (userId, gameType) => request('/quick-play.php', 'POST', { userId, gameType }),
+    playCard: (roomId, userId, cards) => request('/play-card.php', 'POST', { roomId, userId, cards }),
+    setDun: (roomId, userId, hands) => request('/set-dun.php', 'POST', { roomId, userId, hands }),
+    
+    // 斗地主专用
+    bid: (roomId, userId, bidValue) => request('/bid.php', 'POST', { roomId, userId, bid_value: bidValue }),
 
+    // 匹配相关
+    joinMatchmaking: (userId, gameType) => request('/matchmaking.php', 'POST', { action: 'join', userId, gameType }),
+    leaveMatchmaking: (userId) => request('/matchmaking.php', 'POST', { action: 'leave', userId }),
+    checkMatchmakingStatus: (userId) => request('/matchmaking.php', 'POST', { action: 'status', userId }),
+};
 
-// --- 游戏逻辑 API ---
-export const getRoomStatus = (roomId) => request('/get-status.php', 'POST', { roomId });
-export const bid = (roomId, userId, bid_value) => request('/bid.php', 'POST', { roomId, userId, bid_value });
-export const setDun = (roomId, userId, hands) => request('/set-dun.php', 'POST', { roomId, userId, hands });
-export const playCard = (roomId, userId, cards) => request('/play-card.php', 'POST', { roomId, userId, cards });
+export default apiService;
