@@ -2,13 +2,13 @@
 // backend/api/quick-play.php
 // 描述: 处理“人机试玩”请求，自动创建房间、填充AI、开始游戏。
 
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json; charset=UTF-8");
-
+require_once '../utils/cors.php';
 require_once '../db.php';
 require_once '../utils/response.php';
 require_once '../utils/cardUtils.php';
 require_once '../utils/DoudizhuCardUtils.php';
+
+header("Content-Type: application/json; charset=UTF-8");
 
 $input = json_decode(file_get_contents('php://input'), true);
 

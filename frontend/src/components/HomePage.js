@@ -10,8 +10,6 @@ function HomePage() {
     return (
         <div className="page-container">
             <header>
-                <h1>在线棋牌游戏中心</h1>
-                <p>由 WSS & Gewe 提供技术支持</p>
             </header>
             
             <main className="glass-card">

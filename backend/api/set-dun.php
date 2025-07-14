@@ -2,12 +2,12 @@
 // backend/api/set-dun.php
 // 描述: 玩家提交自己整理好的三墩牌。
 
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json; charset=UTF-8");
-
+require_once '../utils/cors.php';
 require_once '../db.php';
 require_once '../utils/response.php';
 // require_once '../utils/scoring.php'; // 未来用于验证牌型和计分
+
+header("Content-Type: application/json; charset=UTF-8");
 
 $input = json_decode(file_get_contents('php://input'), true);
 

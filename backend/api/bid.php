@@ -2,12 +2,12 @@
 // backend/api/bid.php
 // 描述: 处理斗地主游戏的叫地主（叫分）逻辑。
 
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json; charset=UTF-8");
-
+require_once '../utils/cors.php';
 require_once '../db.php';
 require_once '../utils/response.php';
 require_once '../utils/DoudizhuCardUtils.php'; // 引入卡牌工具
+
+header("Content-Type: application/json; charset=UTF-8");
 
 $input = json_decode(file_get_contents('php://input'), true);
 

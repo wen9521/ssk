@@ -2,13 +2,11 @@
 // backend/api/get-status.php
 // 描述: 获取指定房间的当前状态、游戏类型和玩家列表。
 
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: GET, POST");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
-
+require_once '../utils/cors.php';
 require_once '../db.php';
 require_once '../utils/response.php';
+
+header("Content-Type: application/json; charset=UTF-8");
 
 $roomId = '';
 if (isset($_GET['roomId'])) {
