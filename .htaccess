@@ -1,18 +1,21 @@
+# .htaccess for React App with a /backend/api directory
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
-  # Rule 1: Allow direct access to existing files and directories in /backend
-  RewriteCond %{REQUEST_URI} ^/backend/ [NC]
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
-  RewriteRule ^ - [L]
+  # Set the base of the rewrite rules to the root of the application
+  RewriteBase /
 
-  # Rule 2: Serve existing files and directories directly (for images, css, etc.)
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
-  RewriteRule ^ - [L]
+  # --- API EXCEPTION RULE ---
+  # Do not apply the next rule if the request is for the /backend/api/ directory
+  RewriteCond %{REQUEST_URI} !^/backend/api/
 
-  # Rule 3: For all other requests, serve the main index.html (SPA Fallback)
-  # This allows React Router to handle client-side routing.
-  RewriteRule ^ index.html [L]
+  # --- STANDARD SPA ROUTING RULES ---
+  # If the request is not for an existing file
+  RewriteCond %{REQUEST_FILENAME} !-f
+  # And the request is not for an existing directory
+  RewriteCond %{REQUEST_FILENAME} !-d
+  # Then rewrite the request to index.html for the React app to handle
+  RewriteRule . /index.html [L]
+
 </IfModule>
