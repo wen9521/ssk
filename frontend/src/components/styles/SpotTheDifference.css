@@ -1,23 +1,31 @@
 /* frontend/src/components/styles/SpotTheDifference.css */
 
-/* --- Base Setup --- */
+/* --- Base Setup: The key to no scrollbars --- */
 html, body, #root {
-    height: 100%;
     margin: 0;
     padding: 0;
-    background-color: #1a1a1a; /* Dark background for immersion */
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* Globally disable scrolling */
+    background-color: #1a1a1a; /* Dark background for the app shell */
+}
+
+/* Apply box-sizing to all elements */
+*, *::before, *::after {
+    box-sizing: border-box;
 }
 
 /* --- Main Game Container (Fullscreen, No Scroll) --- */
 .spot-the-difference-container {
     display: flex;
     flex-direction: column;
-    height: 100dvh; /* Dynamic viewport height: full screen on mobile */
-    width: 100vw;
-    box-sizing: border-box;
-    background-color: #f0f2f5; /* Light grey background for the game area */
-    color: #333;
+    height: 100dvh; /* Dynamic viewport height for modern mobile browsers */
+    width: 100%;
+    background-color: #f4f4f8; /* A soft, neutral background */
+    color: #1c1c1e;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    /* This container itself should not scroll */
+    overflow: hidden; 
 }
 
 /* --- Header Section --- */
@@ -25,105 +33,113 @@ html, body, #root {
     flex-shrink: 0; /* Header will not shrink */
     padding: 10px 15px;
     text-align: center;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #d1d1d6;
+    background-color: #ffffff;
 }
 .game-header h1 {
-    font-size: clamp(1rem, 4vw, 1.25rem); /* Responsive font size */
+    font-size: clamp(1rem, 4vw, 1.25rem);
     margin: 0;
     font-weight: 600;
 }
 .game-header p {
     font-size: clamp(0.8rem, 2.5vw, 0.9rem);
-    margin: 5px 0 0;
-    color: #666;
+    margin: 4px 0 0;
+    color: #636366;
 }
 
 /* --- Main Content (Image Area) --- */
 .images-container {
-    flex-grow: 1; /* This is key: it takes up all available space */
+    flex-grow: 1; /* This is key: it greedily takes up all available vertical space */
     display: flex;
     gap: 10px;
     padding: 10px;
-    min-height: 0; /* Important for flex-grow to work correctly in all browsers */
-    /* On mobile, stack them vertically */
-    flex-direction: column; 
+    min-height: 0; /* A critical fix for flexbox in some browsers to prevent overflow */
+    flex-direction: column; /* Mobile-first: stacked vertically */
 }
-/* On larger screens, display side-by-side */
+/* On larger screens (tablets/desktops), display side-by-side */
 @media (min-width: 768px) {
     .images-container {
         flex-direction: row;
+        gap: 15px;
+        padding: 15px;
     }
 }
 
 .image-wrapper {
     position: relative;
     cursor: crosshair;
-    flex: 1; /* Each wrapper takes up equal space */
-    min-width: 0;
-    min-height: 0;
-    background-color: #e9e9e9;
+    flex: 1; /* Each wrapper expands equally to fill the space */
     border-radius: 8px;
-    overflow: hidden; /* Hide parts of image that don't fit */
+    overflow: hidden;
+    background-color: #e5e5ea; /* A placeholder color while image loads */
+    min-height: 0; /* Another flexbox fix */
 }
 
 .image-wrapper img {
     width: 100%;
     height: 100%;
     display: block;
-    object-fit: contain; /* Crucial: fits image without stretching, centered */
+    object-fit: contain; /* CRUCIAL: Fits image without stretching, centered */
 }
 
 .difference-marker {
     position: absolute;
-    border: 3px solid #ff3838;
-    background-color: rgba(255, 56, 56, 0.2);
+    border: 3px solid #ff3b30;
+    background-color: rgba(255, 59, 48, 0.25);
     border-radius: 50%;
     pointer-events: none;
-    box-shadow: 0 0 12px rgba(255, 56, 56, 0.7);
-    /* Transform is now set inline in the component */
+    box-shadow: 0 0 12px rgba(255, 59, 48, 0.8);
+    transform: translate(-50%, -50%);
 }
 
 /* --- Footer Section (Buttons) --- */
 .game-footer {
     flex-shrink: 0;
-    padding: 15px;
-    border-top: 1px solid #e0e0e0;
+    padding: 12px 15px;
+    background-color: #ffffff;
+    border-top: 1px solid #d1d1d6;
 }
 .level-controls, .level-complete-message, .game-complete-message {
     display: flex;
-    justify-content: space-around;
+    justify-content: center; /* Center the buttons */
     align-items: center;
+    gap: 10px;
     width: 100%;
 }
 .level-controls button, .level-complete-message button, .game-complete-message button {
     padding: 12px 20px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px; /* More modern, rounded corners */
     background-color: #007aff;
     color: white;
-    font-size: clamp(0.9rem, 4vw, 1rem);
+    font-size: clamp(0.95rem, 4vw, 1rem);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
-    flex-basis: 45%; /* Each button takes up space */
-    text-align: center;
+    transition: all 0.2s ease-in-out;
+    width: 100%; /* Full width for single button */
+    max-width: 400px; /* Max width for larger screens */
 }
-.level-complete-message button, .game-complete-message button {
-    flex-basis: 90%; /* Single button takes more space */
-    background-color: #34c759; /* Green for success */
+.level-controls {
+    justify-content: space-between; /* Space out the two buttons */
 }
+.level-controls button {
+    width: 48%; /* Each button takes up nearly half the space */
+}
+.level-complete-message button { background-color: #34c759; }
+.game-complete-message button { background-color: #ff9500; }
+
 .level-controls button:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 122, 255, 0.2);
+    transform: scale(1.03);
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25);
 }
 .level-controls button:disabled {
     background-color: #e5e5ea;
-    color: #9c9c9c;
+    color: #8e8e93;
     cursor: not-allowed;
 }
 
 
-/* --- Loading and Error States --- */
+/* --- Loading and Error States (no change needed) --- */
 .game-state-container {
     display: flex;
     flex-direction: column;
@@ -131,10 +147,12 @@ html, body, #root {
     align-items: center;
     height: 100dvh;
     color: white;
+    padding: 20px;
+    text-align: center;
 }
 .loader {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #3498db;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top: 4px solid #ffffff;
     border-radius: 50%;
     width: 40px;
     height: 40px;

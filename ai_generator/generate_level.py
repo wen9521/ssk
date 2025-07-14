@@ -11,7 +11,6 @@ from PIL import Image, ImageDraw, ImageFont
 
 # --- Configuration from Render Environment Variables ---
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-# ... (rest of the config remains the same)
 CLOUDFLARE_ACCOUNT_ID = os.environ.get('CLOUDFLARE_ACCOUNT_ID')
 R2_BUCKET_NAME = os.environ.get('R2_BUCKET_NAME')
 R2_ACCESS_KEY_ID = os.environ.get('R2_ACCESS_KEY_ID')
@@ -31,7 +30,6 @@ def generate_creative_prompt_with_gemini():
     try:
         model = genai.GenerativeModel('gemini-1.5-flash-latest')
         
-        # More sophisticated prompt to guide the AI
         theme = random.choice(['a beautiful woman', 'a stunning landscape'])
         style = random.choice(['photorealistic style', 'digital art', 'anime style', 'oil painting'])
         
@@ -44,7 +42,7 @@ def generate_creative_prompt_with_gemini():
         )
         
         response = model.generate_content(instruction)
-        # CORRECTED: The newline character replacement is now on a single, valid line.
+        # FINAL FIX: Ensuring the string replacement is a single, valid line.
         prompt_text = response.text.strip().replace("*", "").replace("
 ", " ")
         print(f"Generated Prompt: {prompt_text}")
@@ -58,9 +56,8 @@ def create_placeholder_image(prompt_text):
     print("Creating a placeholder image...")
     width, height = 1024, 1024
     
-    # Create a gradient background
-    top_color = (25, 35, 60) # Dark blue
-    bottom_color = (75, 95, 130) # Lighter blue
+    top_color = (25, 35, 60)
+    bottom_color = (75, 95, 130)
     img = Image.new('RGB', (width, height))
     for y in range(height):
         r = int(top_color[0] + (bottom_color[0] - top_color[0]) * y / height)
@@ -77,7 +74,7 @@ def create_placeholder_image(prompt_text):
         font_title = ImageFont.load_default()
         font_text = ImageFont.load_default()
 
-    d.text((50,50), "AI Image Placeholder", font=font_title, fill=(255, 255, 255, 220))
+    d.text((50,50), "AI Image Placeholder", font=title_font, fill=(255, 255, 255, 220))
     y_text = 150
     lines = [prompt_text[i:i+55] for i in range(0, len(prompt_text), 55)]
     for line in lines:
@@ -88,14 +85,11 @@ def create_placeholder_image(prompt_text):
     img.save(buffer, format="PNG")
     return buffer.getvalue()
 
-# --- The rest of the functions (create_difference, upload_to_r2, add_level_to_kv, main) remain the same ---
-
 def create_difference(image_bytes):
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     modified_image = image.copy()
     draw = ImageDraw.Draw(modified_image)
     x, y, r = random.randint(200,800), random.randint(200,800), random.randint(20,30)
-    # Erase a small circle to create a difference
     patch_source_x = x - 150 if x > 200 else x + 150
     patch = image.crop((patch_source_x, y, patch_source_x + (r*2), y + (r*2)))
     modified_image.paste(patch, (x, y))
@@ -113,7 +107,6 @@ def upload_to_r2(data, object_name, content_type):
 def add_level_to_kv(level_id):
     headers = {'Content-Type': 'application/json', 'x-internal-api-key': WORKER_SECRET_KEY}
     payload = {'newLevelId': level_id}
-    # Corrected: use WORKER_URL from env
     response = requests.post(f"{WORKER_URL}", headers=headers, json=payload, timeout=10)
     response.raise_for_status()
     print(f"Successfully added level {level_id} to KV via worker.")
