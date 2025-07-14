@@ -9,6 +9,7 @@ import HomePage from './components/HomePage';
 import GameLobby from './components/GameLobby';
 import CardTable from './components/CardTable';
 import DoudizhuTable from './components/DoudizhuTable';
+import SpotTheDifference from './components/SpotTheDifference';
 
 function App() {
     return (
@@ -47,6 +48,7 @@ function AppRoutes() {
             <Route path="/" element={<HomePage />} />
             <Route path="/lobby" element={roomId ? <GameLobby /> : <Navigate to="/" />} />
             <Route path="/play" element={getGameTableElement()} />
+            <Route path="/spot-the-difference" element={<SpotTheDifference />} />
             <Route path="*" element={<Navigate to="/" />} />
         </Routes>
     );

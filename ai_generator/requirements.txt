@@ -1,0 +1,6 @@
+# requirements.txt for the AI generator service
+
+requests
+Pillow
+openai
+boto3

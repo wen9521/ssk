@@ -7,6 +7,7 @@ const games = [
     { id: 'thirteen_water', name: '十三水', status: '已上线' },
     { id: 'doudizhu', name: '斗地主', status: '已上线' },
     { id: 'big_two', name: '锄大地', status: '已上线' },
+    { id: 'spot_the_difference', name: '大家来找茬', status: '已上线' },
 ];
 
 function GameSelector() {

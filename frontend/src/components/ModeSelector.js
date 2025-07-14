@@ -1,5 +1,6 @@
 // frontend/src/components/ModeSelector.js
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
 import './styles/ModeSelector.css';
 
@@ -15,25 +16,44 @@ function ModeSelector() {
         handleCancelMatchmaking // 获取取消函数
     } = useGame();
     
+    const navigate = useNavigate();
+
     const getGameName = (type) => {
         const gameMap = {
-            'thirteen_water': '十三水', 'doudizhu': '斗地主', 'big_two': '锄大地'
+            'thirteen_water': '十三水', 'doudizhu': '斗地主', 'big_two': '锄大地', 'spot_the_difference': '大家来找茬'
         };
         return gameMap[type] || '未知游戏';
     }
 
-    const renderDefaultView = () => (
-        <div className="mode-selector-actions">
-            <button className="mode-button" onClick={handleQuickPlay} disabled={isLoading}>
-                人机试玩
-                <span className="mode-button-desc">立刻与AI开始一局游戏</span>
-            </button>
-            <button className="mode-button" onClick={handleMatchmaking} disabled={isLoading}>
-                自动匹配
-                <span className="mode-button-desc">寻找旗鼓相当的对手</span>
-            </button>
-        </div>
-    );
+    const handleStartSpotTheDifference = () => {
+        navigate('/spot-the-difference');
+    };
+
+    const renderDefaultView = () => {
+        if (gameType === 'spot_the_difference') {
+            return (
+                <div className="mode-selector-actions">
+                    <button className="mode-button" onClick={handleStartSpotTheDifference} disabled={isLoading}>
+                        开始游戏
+                        <span className="mode-button-desc">挑战你的观察力</span>
+                    </button>
+                </div>
+            );
+        }
+
+        return (
+            <div className="mode-selector-actions">
+                <button className="mode-button" onClick={handleQuickPlay} disabled={isLoading}>
+                    人机试玩
+                    <span className="mode-button-desc">立刻与AI开始一局游戏</span>
+                </button>
+                <button className="mode-button" onClick={handleMatchmaking} disabled={isLoading}>
+                    自动匹配
+                    <span className="mode-button-desc">寻找旗鼓相当的对手</span>
+                </button>
+            </div>
+        );
+    };
 
     const renderMatchingView = () => (
         <div className="mode-selector-actions">
