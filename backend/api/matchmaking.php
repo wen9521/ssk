@@ -2,10 +2,11 @@
 // backend/api/matchmaking.php
 // 描述: 处理自动匹配队列的加入、离开、状态查询和核心匹配逻辑。
 
-require_once '../db.php';
-require_once '../utils/response.php';
-require_once '../utils/cardUtils.php';
-require_once '../utils/DoudizhuCardUtils.php';
+// 修复：使用 __DIR__ 来确保文件包含路径的可靠性
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../utils/response.php';
+require_once __DIR__ . '/../utils/cardUtils.php';
+require_once __DIR__ . '/../utils/DoudizhuCardUtils.php';
 
 setCorsHeaders(); // 调用新的CORS头部设置函数
 header("Content-Type: application/json; charset=UTF-8");

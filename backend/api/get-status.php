@@ -2,8 +2,9 @@
 // backend/api/get-status.php
 // 描述: 获取指定房间的当前状态、游戏类型和玩家列表。
 
-require_once '../db.php';
-require_once '../utils/response.php';
+// 修复：使用 __DIR__ 来确保文件包含路径的可靠性
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../utils/response.php';
 
 setCorsHeaders(); // 调用新的CORS头部设置函数
 header("Content-Type: application/json; charset=UTF-8");

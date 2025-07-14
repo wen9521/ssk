@@ -2,10 +2,11 @@
 // backend/api/quick-play.php
 // 描述: 处理“人机试玩”请求，自动创建房间、填充AI、开始游戏。
 
-require_once '../db.php';
-require_once '../utils/response.php';
-require_once '../utils/cardUtils.php';
-require_once '../utils/DoudizhuCardUtils.php';
+// 修复：使用 __DIR__ 来确保文件包含路径的可靠性
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../utils/response.php';
+require_once __DIR__ . '/../utils/cardUtils.php';
+require_once __DIR__ . '/../utils/DoudizhuCardUtils.php';
 
 setCorsHeaders(); // 调用新的CORS头部设置函数
 header("Content-Type: application/json; charset=UTF-8");

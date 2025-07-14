@@ -2,9 +2,10 @@
 // backend/api/set-dun.php
 // 描述: 玩家提交自己整理好的三墩牌。
 
-require_once '../db.php';
-require_once '../utils/response.php';
-// require_once '../utils/scoring.php'; // 未来用于验证牌型和计分
+// 修复：使用 __DIR__ 来确保文件包含路径的可靠性
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../utils/response.php';
+// require_once __DIR__ . '/../utils/scoring.php'; // 未来用于验证牌型和计分
 
 setCorsHeaders(); // 调用新的CORS头部设置函数
 header("Content-Type: application/json; charset=UTF-8");
