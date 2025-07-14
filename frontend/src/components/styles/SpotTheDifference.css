@@ -1,53 +1,98 @@
 /* frontend/src/components/styles/SpotTheDifference.css */
+
+/* General container styles */
 .spot-the-difference-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 20px;
-    background-color: #f0f0f0;
-    border-radius: 10px;
+    width: 100%;
+    max-width: 900px; /* Max width for desktop */
+    margin: auto;
+    background-color: #ffffff; /* Cleaner background */
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    box-sizing: border-box;
 }
 
+h1 {
+    color: #333;
+    font-size: 1.5em; /* Responsive font size */
+    margin-bottom: 15px;
+}
+
+p {
+    color: #555;
+    font-size: 1em;
+}
+
+/* Images container - flexbox for responsiveness */
 .images-container {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 20px;
     margin-bottom: 20px;
+    width: 100%;
+    flex-wrap: wrap; /* Allows items to wrap to the next line */
 }
 
 .image-wrapper {
     position: relative;
     cursor: crosshair;
+    flex-shrink: 1;
+    flex-grow: 1;
+    max-width: 100%; /* Default max width */
 }
 
 .image-wrapper img {
-    max-width: 400px;
+    width: 100%;
+    height: auto;
+    display: block;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .difference-marker {
     position: absolute;
-    border: 2px solid red;
+    border: 3px solid #ff4757; /* Brighter red */
     border-radius: 50%;
-    pointer-events: none; /* Allows clicks to pass through to the image */
+    transform: translate(-50%, -50%); /* Center the marker on the click point */
+    pointer-events: none;
+    box-shadow: 0 0 10px #ff4757;
 }
 
-.level-controls {
+/* Level controls and messages */
+.level-controls,
+.level-complete-message,
+.game-complete-message {
     display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 10px;
     margin-top: 20px;
+    width: 100%;
 }
 
-.level-controls button {
-    padding: 10px 20px;
+.level-controls button,
+.level-complete-message button,
+.game-complete-message button {
+    padding: 12px 25px;
     border: none;
-    border-radius: 5px;
-    background-color: #4CAF50;
+    border-radius: 8px;
+    background-color: #007bff; /* A nice blue */
     color: white;
-    font-size: 16px;
+    font-size: 1.1em;
+    font-weight: bold;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.2s;
+    width: 80%;
+    max-width: 300px;
+}
+
+.level-controls button:hover:not(:disabled) {
+    background-color: #0056b3;
+    transform: translateY(-2px);
 }
 
 .level-controls button:disabled {
@@ -55,31 +100,30 @@
     cursor: not-allowed;
 }
 
-.level-controls button:hover:not(:disabled) {
-    background-color: #45a049;
-}
-
-.level-complete-message, .game-complete-message {
-    text-align: center;
-    margin-top: 20px;
-}
-
 .level-complete-message h3, .game-complete-message h2 {
-    color: #4CAF50;
+    color: #28a745; /* Success green */
 }
 
-.level-complete-message button, .game-complete-message button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    background-color: #008CBA;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    margin-top: 10px;
-}
+/* --- Mobile-First Responsive Design --- */
 
-.level-complete-message button:hover, .game-complete-message button:hover {
-    background-color: #007bb5;
+/* For screens smaller than 768px (e.g., phones) */
+@media (max-width: 768px) {
+    .spot-the-difference-container {
+        padding: 15px;
+    }
+
+    .images-container {
+        flex-direction: column; /* Stack images vertically */
+        gap: 15px;
+    }
+
+    .image-wrapper {
+        width: 100%; /* Each image takes full width */
+        max-width: 400px; /* But not too large on slightly bigger phones */
+        margin: 0 auto;
+    }
+    
+    h1 {
+        font-size: 1.3em;
+    }
 }

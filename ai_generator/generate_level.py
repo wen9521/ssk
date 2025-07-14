@@ -11,6 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 # --- Configuration from Render Environment Variables ---
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+# ... (rest of the config remains the same)
 CLOUDFLARE_ACCOUNT_ID = os.environ.get('CLOUDFLARE_ACCOUNT_ID')
 R2_BUCKET_NAME = os.environ.get('R2_BUCKET_NAME')
 R2_ACCESS_KEY_ID = os.environ.get('R2_ACCESS_KEY_ID')
@@ -19,65 +20,91 @@ R2_PUBLIC_URL = os.environ.get('R2_PUBLIC_URL')
 WORKER_URL = os.environ.get('WORKER_URL')
 WORKER_SECRET_KEY = os.environ.get('WORKER_SECRET_KEY')
 
+
 # Configure Gemini client
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
 def generate_creative_prompt_with_gemini():
-    """Uses Gemini to generate a creative prompt for an image."""
-    print("Generating a creative prompt with the latest Gemini model...")
+    """Uses Gemini to generate a high-quality prompt for an image."""
+    print("Generating a high-quality prompt with Gemini...")
     try:
-        # FINAL FIX: Use the 'latest' tag to ensure global availability
-        # gemini-1.5-flash-latest is fast, capable, and globally available.
         model = genai.GenerativeModel('gemini-1.5-flash-latest')
         
-        response = model.generate_content(
-            "Generate a short, visually rich, SFW (safe for work) description for a 'spot the difference' game image. "
-            "Focus on a single character with interesting details. "
-            "Example: A beautiful anime-style girl on a sunny beach, digital art. "
-            "Now, your turn:"
+        # More sophisticated prompt to guide the AI
+        theme = random.choice(['a beautiful woman', 'a stunning landscape'])
+        style = random.choice(['photorealistic style', 'digital art', 'anime style', 'oil painting'])
+        
+        instruction = (
+            f"Generate a short, SFW, visually-rich description for a 'spot the difference' game image. "
+            f"The theme is '{theme}'. The style should be '{style}'. "
+            f"Describe a single, clear scene with interesting details but avoid excessive complexity. "
+            f"Example: A beautiful anime-style princess with long silver hair, standing in a moonlit forest. "
+            f"Your turn:"
         )
-        prompt_text = response.text.strip().replace("*", "")
+        
+        response = model.generate_content(instruction)
+        prompt_text = response.text.strip().replace("*", "").replace("
+", " ")
         print(f"Generated Prompt: {prompt_text}")
         return prompt_text
     except Exception as e:
         print(f"Error calling Gemini API: {e}")
-        return "A cute cat wearing a wizard hat." # Fallback prompt
+        return "A beautiful woman sitting by a window, enjoying a cup of coffee." # Fallback
 
 def create_placeholder_image(prompt_text):
-    """Creates a placeholder image with the given text."""
+    """Creates a more aesthetically pleasing placeholder image."""
     print("Creating a placeholder image...")
-    img = Image.new('RGB', (1024, 1024), color=(23, 34, 56))
+    width, height = 1024, 1024
+    
+    # Create a gradient background
+    top_color = (25, 35, 60) # Dark blue
+    bottom_color = (75, 95, 130) # Lighter blue
+    img = Image.new('RGB', (width, height))
+    for y in range(height):
+        r = int(top_color[0] + (bottom_color[0] - top_color[0]) * y / height)
+        g = int(top_color[1] + (bottom_color[1] - top_color[1]) * y / height)
+        b = int(top_color[2] + (bottom_color[2] - top_color[2]) * y / height)
+        for x in range(width):
+            img.putpixel((x, y), (r, g, b))
+
     d = ImageDraw.Draw(img)
     try:
-        font = ImageFont.truetype("arial.ttf", 40)
+        font_title = ImageFont.truetype("arial.ttf", 50)
+        font_text = ImageFont.truetype("arial.ttf", 35)
     except IOError:
-        font = ImageFont.load_default()
-    d.text((50,50), "Image Placeholder", font=font, fill=(255, 255, 0))
+        font_title = ImageFont.load_default()
+        font_text = ImageFont.load_default()
+
+    d.text((50,50), "AI Image Placeholder", font=font_title, fill=(255, 255, 255, 220))
     y_text = 150
-    lines = [prompt_text[i:i+50] for i in range(0, len(prompt_text), 50)]
+    lines = [prompt_text[i:i+55] for i in range(0, len(prompt_text), 55)]
     for line in lines:
-        d.text((50, y_text), line, font=font, fill=(255, 255, 255))
+        d.text((50, y_text), line, font=font_text, fill=(255, 255, 255, 180))
         y_text += 50
     
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     return buffer.getvalue()
 
+# --- The rest of the functions (create_difference, upload_to_r2, add_level_to_kv, main) remain the same ---
+
 def create_difference(image_bytes):
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     modified_image = image.copy()
     draw = ImageDraw.Draw(modified_image)
     x, y, r = random.randint(200,800), random.randint(200,800), random.randint(20,30)
-    draw.ellipse((x-r, y-r, x+r, y+r), fill=(23, 34, 56)) # Match placeholder background
+    # Erase a small circle to create a difference
+    patch_source_x = x - 150 if x > 200 else x + 150
+    patch = image.crop((patch_source_x, y, patch_source_x + (r*2), y + (r*2)))
+    modified_image.paste(patch, (x, y))
     
     buffer = io.BytesIO()
     modified_image.save(buffer, format="PNG")
-    return buffer.getvalue(), [{"x": x, "y": y, "radius": r}]
+    return buffer.getvalue(), [{"x": x + r, "y": y + r, "radius": r}]
 
 def upload_to_r2(data, object_name, content_type):
     endpoint_url = f"https://{CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
-    print(f"Attempting to upload to endpoint: {endpoint_url}")
     r2_client = boto3.client('s3', endpoint_url=endpoint_url, aws_access_key_id=R2_ACCESS_KEY_ID, aws_secret_access_key=R2_SECRET_ACCESS_KEY, region_name='auto')
     r2_client.put_object(Bucket=R2_BUCKET_NAME, Key=object_name, Body=data, ContentType=content_type, ACL='public-read')
     print(f"Uploaded {object_name} to R2 bucket {R2_BUCKET_NAME}.")
@@ -85,12 +112,12 @@ def upload_to_r2(data, object_name, content_type):
 def add_level_to_kv(level_id):
     headers = {'Content-Type': 'application/json', 'x-internal-api-key': WORKER_SECRET_KEY}
     payload = {'newLevelId': level_id}
-    response = requests.post(f"{WORKER_URL}/levels", headers=headers, json=payload, timeout=10)
+    response = requests.post(f"{WORKER_URL}", headers=headers, json=payload, timeout=10)
     response.raise_for_status()
     print(f"Successfully added level {level_id} to KV via worker.")
 
 def main():
-    print("Cron Job Started: Using Gemini to generate level concept.")
+    print("Cron Job Started: Generating new high-quality level concept.")
     level_id = str(uuid.uuid4())
     base_path = f"levels/{level_id}"
     try:
