@@ -7,13 +7,14 @@ import './App.css';
 // 引入所有页面和游戏桌组件
 import HomePage from './components/HomePage';
 import GameLobby from './components/GameLobby';
-import CardTable from './components/CardTable';
-import DoudizhuTable from './components/DoudizhuTable';
+import CardTable from './components/CardTable'; // This is likely for ThirteenWater/BigTwo
+import DoudizhuTable from './components/DoudizhuTable'; // Import the new Doudizhu table
+import ThirteenWater from './components/ThirteenWater'; // Import the ThirteenWater table
 import SpotTheDifference from './components/SpotTheDifference';
 
 function App() {
     return (
-        <Router> {/* <-- Router 现在包裹了 GameProvider */}
+        <Router>
             <GameProvider>
                 <div className="AppContainer">
                     <AppRoutes />
@@ -23,22 +24,32 @@ function App() {
     );
 }
 
-// 路由组件保持不变
 function AppRoutes() {
     const { gameType, roomId, roomStatus } = useGame();
 
+    // A helper function to determine which game table to render
     const getGameTableElement = () => {
-        if (!roomId) return <Navigate to="/lobby" />;
+        if (!roomId) {
+            // If there's no room ID, the user shouldn't be on the play page.
+            return <Navigate to="/lobby" />;
+        }
         
+        // Render the correct game table based on the gameType from context
         switch (gameType) {
             case 'thirteen_water':
-            case 'big_two':
-                return (roomStatus === 'playing' || roomStatus === 'scoring' || roomStatus === 'finished') ? <CardTable /> : <Navigate to="/lobby" />;
+                // For thirteen water, we use the ThirteenWater component
+                return <ThirteenWater />;
             
             case 'doudizhu':
-                return (roomStatus === 'bidding' || roomStatus === 'playing' || roomStatus === 'finished') ? <DoudizhuTable /> : <Navigate to="/lobby" />;
+                // For Doudizhu, we now render the DoudizhuTable component
+                return <DoudizhuTable />;
+            
+            case 'big_two':
+                // Assuming Big Two might use a similar table to Thirteen Water for now
+                return <CardTable />;
             
             default:
+                // If gameType is unknown, redirect
                 return <Navigate to="/lobby" />;
         }
     };
@@ -47,8 +58,10 @@ function AppRoutes() {
         <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/lobby" element={roomId ? <GameLobby /> : <Navigate to="/" />} />
+            {/* The /play route now uses the logic from our helper function */}
             <Route path="/play" element={getGameTableElement()} />
             <Route path="/spot-the-difference" element={<SpotTheDifference />} />
+            {/* Catch-all route to redirect any unknown paths to the home page */}
             <Route path="*" element={<Navigate to="/" />} />
         </Routes>
     );
