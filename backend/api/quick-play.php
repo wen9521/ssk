@@ -2,12 +2,12 @@
 // backend/api/quick-play.php
 // 描述: 处理“人机试玩”请求，自动创建房间、填充AI、开始游戏。
 
-require_once '../utils/cors.php';
 require_once '../db.php';
 require_once '../utils/response.php';
 require_once '../utils/cardUtils.php';
 require_once '../utils/DoudizhuCardUtils.php';
 
+setCorsHeaders(); // 调用新的CORS头部设置函数
 header("Content-Type: application/json; charset=UTF-8");
 
 $input = json_decode(file_get_contents('php://input'), true);
@@ -42,7 +42,7 @@ try {
     // 步骤 3: 将所有玩家插入数据库
     $stmt = $conn->prepare("INSERT INTO players (room_id, user_id, is_creator) VALUES (?, ?, ?)");
     foreach($playerIds as $index => $pid) {
-        $isCreator = ($index === 0); // 第一个玩家是创建者
+        $isCreator = ($index === 0);
         $stmt->bind_param("ssi", $roomId, $pid, $isCreator);
         $stmt->execute();
     }

@@ -2,12 +2,12 @@
 // backend/api/play-card.php
 // 描述: 处理玩家的出牌请求，包含完整的游戏逻辑。
 
-require_once '../utils/cors.php';
 require_once '../db.php';
 require_once '../utils/response.php';
 require_once '../utils/DoudizhuRule.php';
 require_once '../utils/BigTwoRule.php'; // 引入锄大地规则
 
+setCorsHeaders(); // 调用新的CORS头部设置函数
 header("Content-Type: application/json; charset=UTF-8");
 
 $input = json_decode(file_get_contents('php://input'), true);

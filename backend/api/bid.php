@@ -2,11 +2,11 @@
 // backend/api/bid.php
 // 描述: 处理斗地主游戏的叫地主（叫分）逻辑。
 
-require_once '../utils/cors.php';
 require_once '../db.php';
 require_once '../utils/response.php';
 require_once '../utils/DoudizhuCardUtils.php'; // 引入卡牌工具
 
+setCorsHeaders(); // 调用新的CORS头部设置函数
 header("Content-Type: application/json; charset=UTF-8");
 
 $input = json_decode(file_get_contents('php://input'), true);

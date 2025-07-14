@@ -2,10 +2,10 @@
 // backend/api/get-status.php
 // 描述: 获取指定房间的当前状态、游戏类型和玩家列表。
 
-require_once '../utils/cors.php';
 require_once '../db.php';
 require_once '../utils/response.php';
 
+setCorsHeaders(); // 调用新的CORS头部设置函数
 header("Content-Type: application/json; charset=UTF-8");
 
 $roomId = '';
