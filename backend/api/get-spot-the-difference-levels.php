@@ -1,13 +1,16 @@
 <?php
 // backend/api/get-spot-the-difference-levels.php
 
+/**
+ * 这个API负责从Cloudflare获取找茬游戏的关卡列表，并返回给前端。
+ * 它充当了前端和Cloudflare服务之间的安全中间层。
+ */
+
 require_once '../utils/response.php';
 
-// !!! 请务必在这里填入您自己的真实地址 !!!
-// 1. 您在 Cloudflare 账号B 上部署的 Worker 的 URL
-const CLOUDFLARE_WORKER_URL = 'https://level-api-worker.yourname.workers.dev/levels'; 
-// 2. 您在 Cloudflare 账号B 上的 R2 存储桶的公开访问域名
-const R2_PUBLIC_URL_BASE = 'https://pub-xxxxxxxx.r2.dev'; 
+// 使用您提供的真实地址
+const CLOUDFLARE_WORKER_URL = 'https://render.wenge666.workers.dev/levels';
+const R2_PUBLIC_URL_BASE = 'https://pub-5a0d7fbdb4e94d9db5d2a074b6e346e4.r2.dev';
 
 /**
  * 使用 cURL 安全地获取 URL 内容的辅助函数。
