@@ -1,0 +1,18 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Rule 1: Allow direct access to existing files and directories in /backend
+  RewriteCond %{REQUEST_URI} ^/backend/ [NC]
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Rule 2: Serve existing files and directories directly (for images, css, etc.)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Rule 3: For all other requests, serve the main index.html (SPA Fallback)
+  # This allows React Router to handle client-side routing.
+  RewriteRule ^ index.html [L]
+</IfModule>
