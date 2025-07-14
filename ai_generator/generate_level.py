@@ -9,7 +9,7 @@ import google.generativeai as genai
 import boto3
 from PIL import Image, ImageDraw, ImageFont
 
-# --- Configuration ---
+# --- Configuration from Environment Variables ---
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 CLOUDFLARE_ACCOUNT_ID = os.environ.get('CLOUDFLARE_ACCOUNT_ID')
 R2_BUCKET_NAME = os.environ.get('R2_BUCKET_NAME')
@@ -17,8 +17,6 @@ R2_ACCESS_KEY_ID = os.environ.get('R2_ACCESS_KEY_ID')
 R2_SECRET_ACCESS_KEY = os.environ.get('R2_SECRET_ACCESS_KEY')
 WORKER_URL = os.environ.get('WORKER_URL')
 WORKER_SECRET_KEY = os.environ.get('WORKER_SECRET_KEY')
-
-# --- Main Functions ---
 
 def generate_creative_prompt_with_gemini():
     """Uses Gemini to generate a high-quality prompt for an image."""
@@ -40,12 +38,12 @@ def generate_creative_prompt_with_gemini():
         
         response = model.generate_content(instruction)
         
-        # --- CORRECTED AND SIMPLIFIED STRING CLEANING ---
+        # --- DEFINITIVELY CORRECTED STRING CLEANING ---
+        # This multi-line approach is more robust and avoids tool-related parsing errors.
         clean_text = response.text
         clean_text = clean_text.strip()
         clean_text = clean_text.replace('*', '')
         clean_text = clean_text.replace('\n', ' ')
-', ' ')
         
         print(f"Generated Prompt: {clean_text}")
         return clean_text
@@ -58,7 +56,7 @@ def create_placeholder_image(prompt_text):
     """Creates a more aesthetically pleasing placeholder image."""
     print("Creating a placeholder image...")
     width, height = 1024, 1024
-    img = Image.new('RGB', (width, height), color = (25, 35, 60))
+    img = Image.new('RGB', (width, height), color=(25, 35, 60))
     d = ImageDraw.Draw(img)
     try:
         font = ImageFont.truetype("arial.ttf", 35)
@@ -78,7 +76,7 @@ def create_placeholder_image(prompt_text):
 def create_difference(image_bytes):
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     modified_image = image.copy()
-    x, y, r = random.randint(200,800), random.randint(200,800), random.randint(20,30)
+    x, y, r = random.randint(200, 800), random.randint(200, 800), random.randint(20, 30)
     patch_source_x = x - 150 if x > 200 else x + 150
     patch = image.crop((patch_source_x, y, patch_source_x + (r*2), y + (r*2)))
     modified_image.paste(patch, (x, y))
