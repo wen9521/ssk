@@ -1,0 +1,11 @@
+# backend/.htaccess
+#
+# 这个文件用于解决前端因缓存问题而访问旧的 /backend/api/ 路径的问题。
+# 它会将所有对 /backend/api/ 的请求在服务器端透明地重写到 /api/。
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # 将所有指向 /backend/api/ 的请求重写到 /api/
+  RewriteRule ^backend/api/(.*)$ /api/$1 [L,NC]
+</IfModule>
