@@ -44,7 +44,7 @@ def generate_creative_prompt_with_gemini():
         clean_text = response.text
         clean_text = clean_text.strip()
         clean_text = clean_text.replace('*', '')
-        clean_text = clean_text.replace('
+        clean_text = clean_text.replace('\n', ' ')
 ', ' ')
         
         print(f"Generated Prompt: {clean_text}")
