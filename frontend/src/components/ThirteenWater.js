@@ -1,23 +1,21 @@
 // frontend/src/components/ThirteenWater.js
-import React, { useState, useEffect, useContext } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom'; // 移除了 setGameState 导入
-import { GameContext } from '../context/GameContext';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useGame } from '../context/GameContext'; // 导入 useGame 钩子
 import SmartSplit from './SmartSplit';
 import Opponent from './Opponent';
 import './styles/GameTable.css';
 
 const ThirteenWater = () => {
     const navigate = useNavigate();
-    const location = useLocation();
-    const { gameState } = useContext(GameContext);
+    const { roomId, userId } = useGame(); // 直接从 useGame 解构 roomId 和 userId
 
     // 游戏阶段: 'dealing', 'splitting', 'comparing', 'finished'
     const [phase, setPhase] = useState('dealing'); 
     const [hand, setHand] = useState([]);
     const [otherPlayersStatus, setOtherPlayersStatus] = useState({});
     
-    // 从路由状态获取房间信息，或从全局状态获取
-    const roomId = location.state?.roomId || gameState.roomId;
+    // roomId 现在直接从 useGame 获取，不再依赖 location.state
 
     useEffect(() => {
         if (!roomId) {
@@ -39,7 +37,7 @@ const ThirteenWater = () => {
             'ai_player_3': { name: '小刚', isReady: false },
         });
 
-    }, [roomId, navigate, gameState.roomId]);
+    }, [roomId, navigate]); // 依赖数组更新，移除 gameState.roomId
 
     // 当本地玩家完成理牌时的回调
     const handleDunSet = () => {
@@ -58,7 +56,7 @@ const ThirteenWater = () => {
                     <SmartSplit 
                         playerHand={hand} 
                         roomId={roomId} 
-                        userId={gameState.userId} // 假设userId在GameContext中
+                        userId={userId} // 使用直接解构的 userId
                         onDunSet={handleDunSet} 
                     />
                 );
