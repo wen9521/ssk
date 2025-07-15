@@ -1,8 +1,36 @@
 // frontend/src/components/SmartSplit.js
-import React, { useState } from 'react'; // 移除 useEffect 导入
+import React, { useState } from 'react';
 import Card from './Card';
 import './styles/SmartSplit.css';
 import { setDun } from '../services/apiService';
+// 导入游戏核心逻辑以实现智能分牌
+import { autoArrangeCards as arrangeCards } from '../gameLogic/thirteenWater';
+
+// --- 新增的导出函数 ---
+
+/**
+ * AI 智能分牌逻辑
+ * @param {string[]} hand - 13张手牌
+ * @returns {object} - { front, middle, back }
+ */
+export const aiSmartSplit = (hand) => {
+    // 直接复用项目中已有的十三水游戏逻辑
+    return arrangeCards(hand);
+};
+
+/**
+ * 获取玩家的智能分牌建议
+ * @param {string[]} hand - 13张手牌
+ * @returns {Array<object>} - 返回一个包含建议方案的数组
+ */
+export const getPlayerSmartSplits = (hand) => {
+    // 简化实现：目前只返回一种AI推荐的方案
+    const bestSplit = arrangeCards(hand);
+    return [bestSplit]; // 以数组形式返回，以兼容未来扩展多种方案
+};
+
+
+// --- 原有的 React 组件保持不变 ---
 
 const SmartSplit = ({ playerHand, roomId, userId, onDunSet }) => {
     // 初始手牌区
