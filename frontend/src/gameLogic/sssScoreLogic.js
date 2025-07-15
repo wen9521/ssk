@@ -1,4 +1,4 @@
-// frontend/src/components/sssScore.js
+// frontend/src/gameLogic/sssScoreLogic.js
 const VALUE_ORDER = {
   '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
   '10': 10, 'jack': 11, 'queen': 12, 'king': 13, 'ace': 14
@@ -14,7 +14,8 @@ const SCORES = {
 
 export function calcSSSAllScores(players) {
   const N = players.length;
-  if (N < 2) return new Array(N).fill(0);
+  if (N < 2) return { scores: new Array(N).fill(0), playerInfos: players };
+
   let marks = new Array(N).fill(0);
   const playerInfos = players.map(p => {
     const foul = isFoul(p.head, p.middle, p.tail);
@@ -45,7 +46,13 @@ export function calcSSSAllScores(players) {
       marks[j] -= pairScore;
     }
   }
-  return marks;
+
+  // Add the final scores to the player info objects
+  playerInfos.forEach((p, index) => {
+      p.score = marks[index];
+  });
+  
+  return { scores: marks, playerInfos };
 }
 
 function calculateTotalBaseScore(p) {
@@ -54,6 +61,7 @@ function calculateTotalBaseScore(p) {
 }
 
 export function isFoul(head, middle, tail) {
+    if(!head || !middle || !tail) return true; // Not properly arranged
   const headRank = areaTypeRank(getAreaType(head, 'head'), 'head');
   const midRank = areaTypeRank(getAreaType(middle, 'middle'), 'middle');
   const tailRank = areaTypeRank(getAreaType(tail, 'tail'), 'tail');
@@ -64,6 +72,7 @@ export function isFoul(head, middle, tail) {
 }
 
 function getAreaType(cards, area) {
+  if(!cards || cards.length === 0) return "高牌";
   const grouped = getGroupedValues(cards);
   const isF = isFlush(cards);
   const isS = isStraight(cards);
