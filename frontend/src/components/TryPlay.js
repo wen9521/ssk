@@ -2,8 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { aiSmartSplit, getPlayerSmartSplits } from './SmartSplit';
-// [修正1]: 从正确的 gameLogic 目录导入逻辑函数
-import { calcSSSAllScores, isFoul } from '../gameLogic/sssScoreLogic'; 
+import { calcSSSAllScores, isFoul } from '../gameLogic/sssScoreLogic';
 import { getShuffledDeck, dealHands } from './DealCards';
 import './Play.css';
 
@@ -38,7 +37,6 @@ export default function TryPlay() {
   function handleReady() {
     if (!isReady) {
       const deck = getShuffledDeck();
-      // [修正2]: 调用dealHands时传入正确的玩家数量4
       const [myHand, ...aiHands] = dealHands(deck, 4); 
       setHead(myHand.slice(0, 3));
       setMiddle(myHand.slice(3, 8));
@@ -312,7 +310,6 @@ export default function TryPlay() {
             whiteSpace: 'nowrap'
           }}
         >
-          {/* [修正3]: 确保所有括号都是半角 */}
           {label}({arr.length})
         </div>
       </div>
@@ -347,10 +344,8 @@ export default function TryPlay() {
               <div style={{ fontWeight: 700, color: i === 0 ? '#23e67a' : '#4f8cff', marginBottom: 8 }}>
                 {i === 0 ? '你' : aiPlayers[i - 1].name}
                 {foulStates[i] && (
-                  // [修正3]: 确保所有括号都是半角
                   <span style={{ color: 'red', fontWeight: 800, marginLeft: 6 }}>(倒水)</span>
                 )}
-                {/* [修正3]: 确保所有括号都是半角 */}
                 ({scores[i]}分)
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginBottom: 3 }}>
