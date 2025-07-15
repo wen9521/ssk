@@ -3,7 +3,7 @@ import { createDeck, shuffleDeck, dealDoudizhu, dealBigTwo, dealThirteenWater, s
 import * as doudizhu from './doudizhu';
 import * as bigTwo from './bigTwo';
 import * as thirteenWater from './thirteenWater';
-import { calcSSSAllScores } from './sssScoreLogic'; // Corrected import path
+import { calcSSSAllScores, isFoul } from './sssScoreLogic'; // Corrected import path, now including isFoul
 
 // --- Initializers ---
 const initializeDoudizhu = () => {
@@ -98,7 +98,8 @@ const handleThirteenWaterAction = (state, action) => {
              throw new Error("牌墩数量不正确！");
         }
         
-        if (thirteenWater.isFoul(arrangement.front, arrangement.middle, arrangement.back)) {
+        // Now correctly use the imported isFoul function
+        if (isFoul(arrangement.front, arrangement.middle, arrangement.back)) {
             throw new Error("倒水了！你的牌墩设置不符合规则。");
         }
 
