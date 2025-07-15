@@ -12,6 +12,7 @@ import DoudizhuTable from './components/DoudizhuTable';
 import ThirteenWater from './components/ThirteenWater';
 import SpotTheDifference from './components/SpotTheDifference';
 import LocalGameHost from './components/LocalGameHost'; // 引入新的本地游戏组件
+import TryPlay from './components/TryPlay'; // 引入我们修改后的十三水游戏牌桌
 
 function App() {
     return (
@@ -57,7 +58,9 @@ function AppRoutes() {
             <Route path="/" element={<HomePage />} />
             <Route path="/lobby" element={roomId ? <GameLobby /> : <Navigate to="/" />} />
             <Route path="/play" element={getGameTableElement()} />
-            <Route path="/play-local/:gameType" element={<LocalGameHost />} /> {/* 新增的本地游戏路由 */}
+            {/* Specific route for thirteen water local play must come before the general one */}
+            <Route path="/play-local/thirteen_water" element={<TryPlay />} />
+            <Route path="/play-local/:gameType" element={<LocalGameHost />} />
             <Route path="/spot-the-difference" element={<SpotTheDifference />} />
             <Route path="*" element={<Navigate to="/" />} />
         </Routes>
