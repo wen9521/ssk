@@ -68,6 +68,8 @@ export const getHandType = (cards) => {
                  return { type: 'Straight', value: Math.max(...cardValues) };
              }
              break;
+        default:
+             break;
     }
     
      // More complex hands

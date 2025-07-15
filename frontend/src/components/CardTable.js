@@ -39,7 +39,7 @@ const CardTable = (props) => {
         webSocketService.addMessageListener(handleWebSocketMessage);
         contextData.refreshRoomStatus();
         return () => webSocketService.removeMessageListener(handleWebSocketMessage);
-    }, [isLocal, contextData.roomId, contextData.refreshRoomStatus]);
+    }, [isLocal, contextData.roomId, contextData.refreshRoomStatus, contextData]);
 
 
     // --- UI Rendering ---

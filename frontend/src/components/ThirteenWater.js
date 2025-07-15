@@ -1,5 +1,5 @@
 // frontend/src/components/ThirteenWater.js
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
 import SmartSplit from './SmartSplit';
@@ -64,7 +64,6 @@ const ThirteenWater = (props) => {
         return <div className="game-phase-message">正在加载...</div>;
     };
 
-    const me = players.find(p => p.id === userId || p.user_id === userId);
     const opponents = players.filter(p => p.id !== userId && p.user_id !== userId);
 
     return (
