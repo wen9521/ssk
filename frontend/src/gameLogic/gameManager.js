@@ -70,18 +70,18 @@ export const initializeGame = (gameType) => {
 
 
 // --- AI Logic ---
-// ... (Omitted for brevity, no changes here)
+// Omitted for brevity, no changes here
 
 
 // --- Action Handlers ---
 const handleDoudizhuAction = (state, action) => {
-    // ... (Omitted for brevity, no changes here)
-    return state; // Placeholder return
+    // Omitted for brevity, no changes here
+    return state;
 };
 
 const handleBigTwoAction = (state, action) => {
-    // ... (Omitted for brevity, no changes here)
-    return state; // Placeholder return
+    // Omitted for brevity, no changes here
+    return state;
 };
 
 const handleThirteenWaterAction = (state, action) => {
@@ -112,10 +112,10 @@ const handleThirteenWaterAction = (state, action) => {
             tail: p.arrangement.back,
         }));
         
-        const { playerInfos } = calcSSSAllScores(scoringData);
+        const { playerInfos, scores } = calcSSSAllScores(scoringData);
         
-        // The scores and foul status are now part of the returned playerInfos
         newState.players = playerInfos; 
+        newState.scores = scores;
         newState.gamePhase = 'scoring';
         
         return newState;
@@ -130,5 +130,9 @@ export const handleAction = (currentState, action) => {
         'big_two': handleBigTwoAction,
         'thirteen_water': handleThirteenWaterAction,
     };
-    return handlers[currentState.gameType] ? handlers[currentState.gameType](currentState, action) : new Error('Unsupported game state');
+    const handler = handlers[currentState.gameType];
+    if (handler) {
+        return handler(currentState, action);
+    }
+    throw new Error('Unsupported game state');
 };
