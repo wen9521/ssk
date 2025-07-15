@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DoudizhuTable from './DoudizhuTable';
-import ThirteenWater from './ThirteenWater';
+import TryPlay from './TryPlay'; // 修正：将导入从 ThirteenWater 改为 TryPlay
 import CardTable from './CardTable'; // For Big Two
 import * as gameLogic from '../gameLogic/gameManager';
 
@@ -70,7 +70,7 @@ function LocalGameHost() {
         case 'doudizhu':
             return <DoudizhuTable {...gameProps} />;
         case 'thirteen_water':
-            return <ThirteenWater {...gameProps} />;
+            return <TryPlay {...gameProps} />; // 修正：渲染的组件从 ThirteenWater 改为 TryPlay
         case 'big_two':
             return <CardTable {...gameProps} />;
         default:
