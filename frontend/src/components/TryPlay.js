@@ -1,10 +1,11 @@
+// frontend/src/components/TryPlay.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { aiSmartSplit, getPlayerSmartSplits } from './SmartSplit';
-import { calcSSSAllScores } from './sssScore';
+// 修正: 从正确的 gameLogic 目录导入计分和犯规判断函数
+import { calcSSSAllScores, isFoul } from '../gameLogic/sssScoreLogic'; 
 import { getShuffledDeck, dealHands } from './DealCards';
 import './Play.css';
-import { isFoul } from './sssScore';
 
 const AI_NAMES = ['小明', '小红', '小刚'];
 
@@ -162,7 +163,7 @@ export default function TryPlay() {
       ...aiPlayers.map(ai => ({ name: ai.name, head: ai.head, middle: ai.middle, tail: ai.tail }))
     ];
     // 比牌+倒水判定
-    const resScores = calcSSSAllScores(allPlayers);
+    const { scores: resScores } = calcSSSAllScores(allPlayers); // 修正: calcSSSAllScores返回的是一个对象
     // 计算倒水状态
     const fouls = allPlayers.map(p => isFoul(p.head, p.middle, p.tail));
     setScores(resScores);
@@ -423,7 +424,7 @@ export default function TryPlay() {
             }}
             onClick={() => navigate('/')}
           >
-            &lt; 退出房间
+            < 退出房间
           </button>
           <div style={{
             flex: 1,
@@ -528,6 +529,3 @@ export default function TryPlay() {
     </div>
   );
 }
-
-// 导出isFoul供外部引用（如有TreeShaking可忽略）
-export { isFoul } from './sssScore';
