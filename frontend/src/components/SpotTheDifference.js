@@ -5,7 +5,7 @@ import { localLevels } from '../gameLogic/levels'; // Local levels for offline f
 
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual R2 public URL.
-const R2_PUBLIC_URL = "https://pub-f11317373b6441d591b72b85c1387d5e.r2.dev"; 
+const R2_PUBLIC_URL = "https://pub-5a0d7fbdb4e94d9db5d2a074b6e346e4.r2.dev"; 
 const LEVELS_JSON_URL = `${R2_PUBLIC_URL}/levels.json`;
 
 // --- Components ---
