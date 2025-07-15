@@ -1,6 +1,2 @@
-# requirements.txt for the AI generator service
-
-requests
 Pillow
-google-generativeai
 boto3

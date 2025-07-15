@@ -1,10 +1,14 @@
 // frontend/src/components/SpotTheDifference.js
 import React, { useState, useEffect, useMemo } from 'react';
 import './styles/SpotTheDifference.css';
-import { localLevels } from '../gameLogic/levels'; // Import local levels
+import { localLevels } from '../gameLogic/levels'; // Local levels for offline fallback
 
-const API_URL = 'https://render.wenge666.workers.dev/levels';
+// --- Configuration ---
+// IMPORTANT: Replace this with your actual R2 public URL.
+const R2_PUBLIC_URL = "https://pub-f11317373b6441d591b72b85c1387d5e.r2.dev"; 
+const LEVELS_JSON_URL = `${R2_PUBLIC_URL}/levels.json`;
 
+// --- Components ---
 const GameStateDisplay = ({ message, isLoading = false }) => (
     <div className="game-state-container">
         {isLoading && <div className="loader"></div>}
@@ -12,6 +16,7 @@ const GameStateDisplay = ({ message, isLoading = false }) => (
     </div>
 );
 
+// --- Main Component ---
 const SpotTheDifference = () => {
     const [levels, setLevels] = useState([]);
     const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
@@ -20,29 +25,28 @@ const SpotTheDifference = () => {
     const [error, setError] = useState(null);
     const [isOfflineMode, setIsOfflineMode] = useState(false);
 
-    // --- Data Fetching Effect with Offline Fallback ---
     useEffect(() => {
         const fetchLevels = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch(API_URL);
-                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                // Fetch with a cache-busting parameter to always get the latest version
+                const response = await fetch(`${LEVELS_JSON_URL}?cb=${new Date().getTime()}`);
+                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
                 const data = await response.json();
-                if (data.success && data.data.length > 0) {
-                    setLevels(data.data);
+                
+                if (Array.isArray(data) && data.length > 0) {
+                    setLevels(data);
                     setIsOfflineMode(false);
                 } else {
-                    // API returned success but no data, fall back to local
-                    throw new Error('No levels returned from API');
+                    throw new Error('No levels found in levels.json');
                 }
             } catch (err) {
-                // If API fails, use local levels as a fallback
-                console.warn(`API request failed: ${err.message}. Loading local fallback levels.`);
+                console.warn(`Failed to fetch from R2: ${err.message}. Using local fallback.`);
                 setLevels(localLevels);
                 setIsOfflineMode(true);
             } finally {
                 setIsLoading(false);
-                setError(null); // Clear previous errors
+                setError(null);
             }
         };
         fetchLevels();
@@ -53,7 +57,6 @@ const SpotTheDifference = () => {
     const isLevelComplete = useMemo(() => differences.length > 0 && foundDifferences.length === differences.length, [foundDifferences, differences]);
     const isGameComplete = useMemo(() => isLevelComplete && currentLevelIndex === levels.length - 1, [isLevelComplete, currentLevelIndex, levels]);
 
-    // --- Game Logic Handlers ---
     const handleImageClick = (e) => {
         if (isLevelComplete || !currentLevel) return;
         const imgElement = e.target;
@@ -77,11 +80,12 @@ const SpotTheDifference = () => {
 
         const x = e.clientX - rect.left - offsetX;
         const y = e.clientY - rect.top - offsetY;
-        const scaleFactor = imgDisplayedWidth / 1024; // Assuming original images are 1024px wide
+        const scaleFactor = imgDisplayedWidth / 1024;
 
         differences.forEach((diff, index) => {
+            if (foundDifferences.includes(index)) return;
             const distance = Math.sqrt(Math.pow(x - (diff.x * scaleFactor), 2) + Math.pow(y - (diff.y * scaleFactor), 2));
-            if (distance < (diff.radius * scaleFactor) && !foundDifferences.includes(index)) {
+            if (distance < (diff.radius * scaleFactor)) {
                 setFoundDifferences(prev => [...prev, index]);
             }
         });
@@ -99,7 +103,6 @@ const SpotTheDifference = () => {
         goToLevel(0);
     };
 
-    // --- Render Logic ---
     if (isLoading) return <GameStateDisplay message="正在加载关卡..." isLoading={true} />;
     if (error) return <GameStateDisplay message={error} />;
     if (!currentLevel) return <GameStateDisplay message="太棒了！您已完成所有当前关卡！" />;
@@ -107,41 +110,34 @@ const SpotTheDifference = () => {
     return (
         <div className="spot-the-difference-container">
             <header className="game-header">
-                {isOfflineMode && <p className="offline-notice">离线模式</p>}
+                {isOfflineMode && <p className="offline-notice">离线模式 (无法连接到服务器)</p>}
                 <h1>第 {currentLevelIndex + 1} / {levels.length} 关</h1>
                 <p>找到的差异点: {foundDifferences.length} / {differences.length}</p>
             </header>
-
             <main className="images-container">
                 <div className="image-wrapper" onClick={handleImageClick}>
                     <img src={currentLevel.original} alt="Original" crossOrigin="anonymous" />
                     {foundDifferences.map(index => {
                         const diff = differences[index];
-                        return <div key={index} className="difference-marker" style={{ left: `${(diff.x/1024)*100}%`, top: `${(diff.y/1024)*100}%`, width: `${diff.radius*2}px`, height: `${diff.radius*2}px`, transform: 'translate(-50%, -50%)' }} />;
+                        return <div key={index} className="difference-marker" style={{ left: `${(diff.x/1024)*100}%`, top: `${(diff.y/1024)*100}%`, width: `${diff.radius*2}px`, height: `${diff.radius*2}px` }} />;
                     })}
                 </div>
                 <div className="image-wrapper" onClick={handleImageClick}>
                     <img src={currentLevel.modified} alt="Modified" crossOrigin="anonymous" />
-                    {foundDifferences.map(index => {
+                     {foundDifferences.map(index => {
                         const diff = differences[index];
-                        return <div key={index} className="difference-marker" style={{ left: `${(diff.x/1024)*100}%`, top: `${(diff.y/1024)*100}%`, width: `${diff.radius*2}px`, height: `${diff.radius*2}px`, transform: 'translate(-50%, -50%)' }} />;
+                        return <div key={index} className="difference-marker" style={{ left: `${(diff.x/1024)*100}%`, top: `${(diff.y/1024)*100}%`, width: `${diff.radius*2}px`, height: `${diff.radius*2}px` }} />;
                     })}
                 </div>
             </main>
-
             <footer className="game-footer">
                 {isGameComplete ? (
-                    <div className="game-complete-message">
-                        <button onClick={handleRestartGame}>🎉 恭喜通关！再玩一次 🎉</button>
-                    </div>
+                    <button onClick={handleRestartGame}>🎉 恭喜通关！再玩一次 🎉</button>
                 ) : isLevelComplete ? (
-                    <div className="level-complete-message">
-                        <button onClick={() => goToLevel(currentLevelIndex + 1)}>✔️ 太棒了！下一关</button>
-                    </div>
+                    <button onClick={() => goToLevel(currentLevelIndex + 1)}>✔️ 太棒了！下一关</button>
                 ) : (
                     <div className="level-controls">
                         <button onClick={() => goToLevel(currentLevelIndex - 1)} disabled={currentLevelIndex === 0}>上一关</button>
-                        <button onClick={() => goToLevel(currentLevelIndex + 1)} disabled={!isLevelComplete}>下一关</button>
                     </div>
                 )}
             </footer>

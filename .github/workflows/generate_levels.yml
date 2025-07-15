@@ -1,0 +1,57 @@
+name: Generate Spot-the-Difference Levels
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'images_for_ai/**'
+
+jobs:
+  generate-level:
+    runs-on: ubuntu-latest
+    
+    # Granting permissions for the job to read the repository content
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          # We need to fetch the history to compare commits
+          fetch-depth: 2 
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install -r ai_generator/requirements.txt
+
+      - name: Find new images
+        id: find_new_images
+        # This command gets the list of files that were added or modified in the last push
+        # and filters for those inside the 'images_for_ai' directory.
+        run: |
+          echo "Finding new images in the last push..."
+          FILES=$(git diff --name-only HEAD^ HEAD | grep '^images_for_ai/.*\.\(png\|jpg\|jpeg\)$' || true)
+          if [ -z "$FILES" ]; then
+            echo "No new images found in images_for_ai/. Exiting."
+            exit 0
+          fi
+          echo "::set-output name=new_files::$FILES"
+
+      - name: Generate level for each new image
+        if: steps.find_new_images.outputs.new_files
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_ACCESS_KEY_ID: ${{ secrets.CF_ACCESS_KEY_ID }}
+          CF_SECRET_ACCESS_KEY: ${{ secrets.CF_SECRET_ACCESS_KEY }}
+          CF_BUCKET_NAME: ${{ secrets.CF_BUCKET_NAME }}
+        run: |
+          for file in ${{ steps.find_new_images.outputs.new_files }}; do
+            echo "Processing $file..."
+            python ai_generator/generate_level.py "$file"
+          done
