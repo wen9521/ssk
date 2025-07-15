@@ -2,8 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { aiSmartSplit, getPlayerSmartSplits } from './SmartSplit';
-// 修正: 从正确的 gameLogic 目录导入计分和犯规判断函数
-import { calcSSSAllScores, isFoul } from '../gameLogic/sssScoreLogic'; 
+import { calcSSSAllScores, isFoul } from '../gameLogic/sssScoreLogic';
 import { getShuffledDeck, dealHands } from './DealCards';
 import './Play.css';
 
@@ -44,7 +43,8 @@ export default function TryPlay() {
     if (!isReady) {
       // 发牌
       const deck = getShuffledDeck();
-      const [myHand, ...aiHands] = dealHands(deck);
+      // 修正: 调用dealHands时传入玩家数量4
+      const [myHand, ...aiHands] = dealHands(deck, 4); 
       setHead(myHand.slice(0, 3));
       setMiddle(myHand.slice(3, 8));
       setTail(myHand.slice(8, 13));
@@ -163,7 +163,7 @@ export default function TryPlay() {
       ...aiPlayers.map(ai => ({ name: ai.name, head: ai.head, middle: ai.middle, tail: ai.tail }))
     ];
     // 比牌+倒水判定
-    const { scores: resScores } = calcSSSAllScores(allPlayers); // 修正: calcSSSAllScores返回的是一个对象
+    const { scores: resScores } = calcSSSAllScores(allPlayers);
     // 计算倒水状态
     const fouls = allPlayers.map(p => isFoul(p.head, p.middle, p.tail));
     setScores(resScores);
@@ -323,7 +323,8 @@ export default function TryPlay() {
             whiteSpace: 'nowrap'
           }}
         >
-          {label}（{arr.length}）
+          {/* 修正: 使用半角括号 */}
+          {label}({arr.length})
         </div>
       </div>
     );
@@ -357,9 +358,11 @@ export default function TryPlay() {
               <div style={{ fontWeight: 700, color: i === 0 ? '#23e67a' : '#4f8cff', marginBottom: 8 }}>
                 {i === 0 ? '你' : aiPlayers[i - 1].name}
                 {foulStates[i] && (
-                  <span style={{ color: 'red', fontWeight: 800, marginLeft: 6 }}>（倒水）</span>
+                   // 修正: 使用半角括号
+                  <span style={{ color: 'red', fontWeight: 800, marginLeft: 6 }}>(倒水)</span>
                 )}
-                （{scores[i]}分）
+                 {/* 修正: 使用半角括号 */}
+                ({scores[i]}分)
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginBottom: 3 }}>
                 {i === 0
