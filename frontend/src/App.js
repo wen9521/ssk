@@ -8,9 +8,10 @@ import './App.css';
 import HomePage from './components/HomePage';
 import GameLobby from './components/GameLobby';
 import CardTable from './components/CardTable'; // This is likely for ThirteenWater/BigTwo
-import DoudizhuTable from './components/DoudizhuTable'; // Import the new Doudizhu table
-import ThirteenWater from './components/ThirteenWater'; // Import the ThirteenWater table
+import DoudizhuTable from './components/DoudizhuTable';
+import ThirteenWater from './components/ThirteenWater';
 import SpotTheDifference from './components/SpotTheDifference';
+import LocalGameHost from './components/LocalGameHost'; // 引入新的本地游戏组件
 
 function App() {
     return (
@@ -37,15 +38,12 @@ function AppRoutes() {
         // Render the correct game table based on the gameType from context
         switch (gameType) {
             case 'thirteen_water':
-                // For thirteen water, we use the ThirteenWater component
                 return <ThirteenWater />;
             
             case 'doudizhu':
-                // For Doudizhu, we now render the DoudizhuTable component
                 return <DoudizhuTable />;
             
             case 'big_two':
-                // Assuming Big Two might use a similar table to Thirteen Water for now
                 return <CardTable />;
             
             default:
@@ -58,10 +56,9 @@ function AppRoutes() {
         <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/lobby" element={roomId ? <GameLobby /> : <Navigate to="/" />} />
-            {/* The /play route now uses the logic from our helper function */}
             <Route path="/play" element={getGameTableElement()} />
+            <Route path="/play-local/:gameType" element={<LocalGameHost />} /> {/* 新增的本地游戏路由 */}
             <Route path="/spot-the-difference" element={<SpotTheDifference />} />
-            {/* Catch-all route to redirect any unknown paths to the home page */}
             <Route path="*" element={<Navigate to="/" />} />
         </Routes>
     );

@@ -1,6 +1,7 @@
 // frontend/src/components/SpotTheDifference.js
 import React, { useState, useEffect, useMemo } from 'react';
 import './styles/SpotTheDifference.css';
+import { localLevels } from '../gameLogic/levels'; // Import local levels
 
 const API_URL = 'https://render.wenge666.workers.dev/levels';
 
@@ -17,8 +18,9 @@ const SpotTheDifference = () => {
     const [foundDifferences, setFoundDifferences] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isOfflineMode, setIsOfflineMode] = useState(false);
 
-    // --- Data Fetching Effect ---
+    // --- Data Fetching Effect with Offline Fallback ---
     useEffect(() => {
         const fetchLevels = async () => {
             setIsLoading(true);
@@ -28,13 +30,19 @@ const SpotTheDifference = () => {
                 const data = await response.json();
                 if (data.success && data.data.length > 0) {
                     setLevels(data.data);
+                    setIsOfflineMode(false);
                 } else {
-                    setError('暂无可用关卡，我们的AI正在努力生成中，请稍后重试。');
+                    // API returned success but no data, fall back to local
+                    throw new Error('No levels returned from API');
                 }
             } catch (err) {
-                setError(`获取关卡失败: ${err.message}`);
+                // If API fails, use local levels as a fallback
+                console.warn(`API request failed: ${err.message}. Loading local fallback levels.`);
+                setLevels(localLevels);
+                setIsOfflineMode(true);
             } finally {
                 setIsLoading(false);
+                setError(null); // Clear previous errors
             }
         };
         fetchLevels();
@@ -51,17 +59,16 @@ const SpotTheDifference = () => {
         const imgElement = e.target;
         const rect = imgElement.getBoundingClientRect();
         
-        // Calculate the real image size inside the object-fit container
         const naturalRatio = imgElement.naturalWidth / imgElement.naturalHeight;
         const clientRatio = imgElement.clientWidth / imgElement.clientHeight;
         let imgDisplayedWidth, imgDisplayedHeight, offsetX, offsetY;
 
-        if (naturalRatio > clientRatio) { // Image is wider, letterboxed top/bottom
+        if (naturalRatio > clientRatio) {
             imgDisplayedWidth = imgElement.clientWidth;
             imgDisplayedHeight = imgDisplayedWidth / naturalRatio;
             offsetX = 0;
             offsetY = (imgElement.clientHeight - imgDisplayedHeight) / 2;
-        } else { // Image is taller, letterboxed left/right
+        } else {
             imgDisplayedHeight = imgElement.clientHeight;
             imgDisplayedWidth = imgDisplayedHeight * naturalRatio;
             offsetY = 0;
@@ -70,7 +77,7 @@ const SpotTheDifference = () => {
 
         const x = e.clientX - rect.left - offsetX;
         const y = e.clientY - rect.top - offsetY;
-        const scaleFactor = imgDisplayedWidth / 1024;
+        const scaleFactor = imgDisplayedWidth / 1024; // Assuming original images are 1024px wide
 
         differences.forEach((diff, index) => {
             const distance = Math.sqrt(Math.pow(x - (diff.x * scaleFactor), 2) + Math.pow(y - (diff.y * scaleFactor), 2));
@@ -93,13 +100,14 @@ const SpotTheDifference = () => {
     };
 
     // --- Render Logic ---
-    if (isLoading) return <GameStateDisplay message="正在从云端加载关卡..." isLoading={true} />;
+    if (isLoading) return <GameStateDisplay message="正在加载关卡..." isLoading={true} />;
     if (error) return <GameStateDisplay message={error} />;
     if (!currentLevel) return <GameStateDisplay message="太棒了！您已完成所有当前关卡！" />;
 
     return (
         <div className="spot-the-difference-container">
             <header className="game-header">
+                {isOfflineMode && <p className="offline-notice">离线模式</p>}
                 <h1>第 {currentLevelIndex + 1} / {levels.length} 关</h1>
                 <p>找到的差异点: {foundDifferences.length} / {differences.length}</p>
             </header>

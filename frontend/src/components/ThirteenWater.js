@@ -1,97 +1,106 @@
 // frontend/src/components/ThirteenWater.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGame } from '../context/GameContext'; // 导入 useGame 钩子
+import { useGame } from '../context/GameContext';
 import SmartSplit from './SmartSplit';
 import Opponent from './Opponent';
+import Card from './Card'; // To display final arrangements
 import './styles/GameTable.css';
 
-const ThirteenWater = () => {
-    const navigate = useNavigate();
-    const { roomId, userId } = useGame(); // 直接从 useGame 解构 roomId 和 userId
-
-    // 游戏阶段: 'dealing', 'splitting', 'comparing', 'finished'
-    const [phase, setPhase] = useState('dealing'); 
-    const [hand, setHand] = useState([]);
-    const [otherPlayersStatus, setOtherPlayersStatus] = useState({});
+const ThirteenWater = (props) => {
+    const isLocal = props.isLocal || false;
     
-    // roomId 现在直接从 useGame 获取，不再依赖 location.state
+    const contextData = useGame();
+    const navigate = useNavigate();
 
-    useEffect(() => {
-        if (!roomId) {
-            console.error("没有房间ID，正在返回首页...");
-            navigate('/');
-            return;
-        }
+    // --- State Derivation ---
+    const players = isLocal ? props.players : contextData.players || [];
+    const userId = isLocal ? 0 : contextData.userId;
+    const hand = isLocal ? props.players.find(p => p.id === 0)?.hand : contextData.hand;
+    const gamePhase = isLocal ? props.gamePhase : contextData.roomStatus;
 
-        // 初始化或刷新游戏状态
-        // 在真实应用中，这里会调用 getRoomStatus(roomId)
-        const mockHand = ["ace_of_spades", "king_of_spades", "queen_of_spades", "jack_of_spades", "10_of_spades", "2_of_hearts", "3_of_diamonds", "4_of_clubs", "5_of_hearts", "6_of_diamonds", "7_of_clubs", "8_of_hearts", "9_of_diamonds"];
-        setHand(mockHand);
-        setPhase('splitting'); // 假设已从后端拿到牌，进入理牌阶段
+    // --- Actions ---
+    const handleSetDun = isLocal ? props.onSetDun : contextData.handleSetDun;
+    const handleReturn = isLocal ? props.handleReturn : () => navigate('/lobby');
 
-        // 模拟其他玩家的状态
-        setOtherPlayersStatus({
-            'ai_player_1': { name: '小红', isReady: false },
-            'ai_player_2': { name: '小明', isReady: false },
-            'ai_player_3': { name: '小刚', isReady: false },
-        });
-
-    }, [roomId, navigate]); // 依赖数组更新，移除 gameState.roomId
-
-    // 当本地玩家完成理牌时的回调
-    const handleDunSet = () => {
-        // 更新UI，显示"已准备"
-        // 在真实应用中，可以发送一个WebSocket消息通知其他人
-        console.log("您已完成理牌，等待其他玩家...");
-        setPhase('comparing'); // 暂时直接进入比牌阶段
+    // --- UI Rendering ---
+    
+    const renderArrangement = (arrangement) => {
+        if (!arrangement) return <p>理牌中...</p>;
+        return (
+            <div className="arrangement-display">
+                <div className="dun">{arrangement.front.map(c => <Card key={c} cardName={c} />)}</div>
+                <div className="dun">{arrangement.middle.map(c => <Card key={c} cardName={c} />)}</div>
+                <div className="dun">{arrangement.back.map(c => <Card key={c} cardName={c} />)}</div>
+            </div>
+        );
     };
 
     const renderGameContent = () => {
-        switch (phase) {
-            case 'dealing':
-                return <div className="game-phase-message">正在发牌...</div>;
-            case 'splitting':
-                return (
-                    <SmartSplit 
-                        playerHand={hand} 
-                        roomId={roomId} 
-                        userId={userId} // 使用直接解构的 userId
-                        onDunSet={handleDunSet} 
-                    />
-                );
-            case 'comparing':
-                return <div className="game-phase-message">等待其他玩家理牌...</div>;
-            case 'finished':
-                 // TODO: 在此渲染比牌结果和得分
-                return <div className="game-phase-message">游戏结束</div>;
-            default:
-                return <div className="game-phase-message">正在加载游戏...</div>;
+        if (gamePhase === 'arranging') {
+            const me = players.find(p => p.id === userId);
+            // If my arrangement is set, show waiting message. Otherwise, show SmartSplit.
+            if (me && me.arrangement) {
+                 return <div className="game-phase-message">等待AI完成理牌...</div>;
+            }
+            return (
+                <SmartSplit 
+                    playerHand={hand} 
+                    onDunSet={handleSetDun} 
+                />
+            );
         }
+        
+        if (gamePhase === 'scoring') {
+            return (
+                <div className="game-phase-message">
+                    <h2>比牌结果</h2>
+                    {/* TODO: Add scoring display logic here */}
+                    <p>比牌阶段逻辑待实现。</p>
+                </div>
+            );
+        }
+
+        return <div className="game-phase-message">正在加载...</div>;
     };
+
+    const me = players.find(p => p.id === userId || p.user_id === userId);
+    const opponents = players.filter(p => p.id !== userId && p.user_id !== userId);
 
     return (
         <div className="game-table-container thirteen-water-bg">
             <div className="game-table">
                 <div className="opponent-seats">
-                    {Object.entries(otherPlayersStatus).map(([id, player]) => (
+                    {opponents.map(p => (
                         <Opponent 
-                            key={id} 
-                            name={player.name} 
-                            isReady={player.isReady} 
+                            key={p.id ?? p.user_id} 
+                            name={p.name ?? p.user_id} 
+                            isReady={!!p.arrangement} 
                         />
                     ))}
                 </div>
 
                 <div className="main-area">
-                    {renderGameContent()}
+                    {gamePhase === 'scoring' 
+                        ? (
+                             <div className="all-arrangements">
+                                {players.map(p => (
+                                    <div key={p.id} className="player-final-hand">
+                                        <h4>{p.name}</h4>
+                                        {renderArrangement(p.arrangement)}
+                                    </div>
+                                ))}
+                             </div>
+                        )
+                        : renderGameContent()
+                    }
                 </div>
 
                 <div className="player-seat-area">
-                    {/* 可以放置玩家信息或手牌概要 */}
+                   {gamePhase === 'arranging' && <p>请将您的13张牌分为三墩</p>}
                 </div>
             </div>
-            <button onClick={() => navigate('/')} className="exit-button">返回大厅</button>
+            <button onClick={handleReturn} className="exit-button">返回</button>
         </div>
     );
 };

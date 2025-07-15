@@ -10,7 +10,6 @@ function ModeSelector() {
         isLoading, 
         error,
         goBackToGameSelection,
-        handleQuickPlay,
         handleMatchmaking,
         isMatching, // 获取是否正在匹配的状态
         handleCancelMatchmaking // 获取取消函数
@@ -25,6 +24,10 @@ function ModeSelector() {
         return gameMap[type] || '未知游戏';
     }
 
+    const handleLocalPlay = () => {
+        navigate(`/play-local/${gameType}`);
+    };
+    
     const handleStartSpotTheDifference = () => {
         navigate('/spot-the-difference');
     };
@@ -43,12 +46,12 @@ function ModeSelector() {
 
         return (
             <div className="mode-selector-actions">
-                <button className="mode-button" onClick={handleQuickPlay} disabled={isLoading}>
-                    人机试玩
-                    <span className="mode-button-desc">立刻与AI开始一局游戏</span>
+                <button className="mode-button" onClick={handleLocalPlay} disabled={isLoading}>
+                    单机试玩
+                    <span className="mode-button-desc">在本地与AI进行游戏</span>
                 </button>
                 <button className="mode-button" onClick={handleMatchmaking} disabled={isLoading}>
-                    自动匹配
+                    在线匹配
                     <span className="mode-button-desc">寻找旗鼓相当的对手</span>
                 </button>
             </div>

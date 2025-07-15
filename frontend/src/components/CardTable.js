@@ -1,64 +1,115 @@
 // frontend/src/components/CardTable.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
 import Hand from './Hand';
-import './styles/GameTable.css'; // 复用游戏桌的CSS
+import Opponent from './Opponent';
+import Card from './Card';
+import webSocketService from '../services/websocketService';
+import './styles/GameTable.css';
+import './styles/GameControls.css';
 
-function CardTable() {
-    const {
-        roomId, players, userId, roomStatus, gameType,
-        isLoading, error,
-    } = useGame();
+// This component is now for Big Two
+const CardTable = (props) => {
+    const isLocal = props.isLocal || false;
+    
+    const contextData = useGame();
+    const navigate = useNavigate();
 
-    // const me = players.find(p => p.user_id === userId); // 修复: 移除未使用的变量
-    const others = players.filter(p => p.user_id !== userId);
+    // --- State Derivation ---
+    const players = isLocal ? props.players : contextData.players || [];
+    const userId = isLocal ? 0 : contextData.userId;
+    const hand = isLocal ? props.players.find(p => p.id === 0)?.hand : contextData.hand;
+    const gamePhase = isLocal ? props.gamePhase : contextData.roomStatus;
+    const currentPlayerId = isLocal ? props.currentPlayer : contextData.bigTwoState?.currentPlayerId;
+    const lastPlayedHand = isLocal ? props.lastPlayedHand : contextData.bigTwoState?.lastPlayedHand;
     
-    // TODO: 完善回合逻辑
-    const myTurn = true;
+    // --- Actions ---
+    const handlePlayCard = isLocal ? (selectedCards) => props.onPlay(selectedCards) : contextData.handlePlayCard;
+    const handlePass = isLocal ? props.onPass : () => contextData.handlePlayCard([]);
+    const handleReturn = isLocal ? props.handleReturn : () => navigate('/lobby');
     
-    const getGameTitle = () => {
-        if (gameType === 'big_two') return '锄大地';
-        if (gameType === 'thirteen_water') return '十三水';
-        return '游戏';
-    }
+    // --- Local state for card selection ---
+    const [selectedCards, setSelectedCards] = useState([]);
+
+    // --- Effects for Online Mode ---
+    useEffect(() => {
+        if (isLocal || !contextData.roomId) return;
+        const handleWebSocketMessage = () => contextData.refreshRoomStatus();
+        webSocketService.addMessageListener(handleWebSocketMessage);
+        contextData.refreshRoomStatus();
+        return () => webSocketService.removeMessageListener(handleWebSocketMessage);
+    }, [isLocal, contextData.roomId, contextData.refreshRoomStatus]);
+
+
+    // --- UI Rendering ---
+    const renderPlayingControls = () => {
+        if (gamePhase === 'playing' && currentPlayerId === userId) {
+            // First turn D3 rule for local play
+            if (isLocal && !props.lastPlayedHand && !selectedCards.includes('D3')) {
+                 return (
+                    <div className="game-controls glass-card">
+                        <p style={{color: 'yellow', 'textAlign': 'center'}}>必须出包含方块3的牌</p>
+                    </div>
+                );
+            }
+            return (
+                <div className="game-controls glass-card">
+                    <button onClick={handlePass} disabled={!lastPlayedHand}>Pass</button>
+                    <button onClick={() => { handlePlayCard(selectedCards); setSelectedCards([]); }}>Play</button>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    const me = players.find(p => p.id === userId || p.user_id === userId);
+    const opponents = players.filter(p => p.id !== userId && p.user_id !== userId);
 
     return (
-        <div className="game-table">
-            <header className="table-header">
-                <h3>{getGameTitle()} - 房间 {roomId}</h3>
-                <div className="game-info">状态: {roomStatus}</div>
-            </header>
+        <div className="game-table-container big-two-bg">
+            <div className="game-table">
+                <div className="opponent-seats">
+                    {opponents.map(p => (
+                        <Opponent
+                            key={p.id ?? p.user_id}
+                            name={p.name ?? p.user_id}
+                            cardCount={p.hand.length}
+                            isCurrentPlayer={currentPlayerId === (p.id ?? p.user_id)}
+                        />
+                    ))}
+                </div>
 
-            <section className="player-area">
-                {/* 这是一个示例布局，可以根据具体游戏调整 */}
-                <div className="top-player">
-                    <div className="player-avatar">{others[1]?.user_id.substring(0, 2)}</div>
-                    <div className="player-name">{others[1]?.user_id}</div>
-                </div>
-                <div className="side-players">
-                    <div className="left-player">
-                         <div className="player-avatar">{others[0]?.user_id.substring(0, 2)}</div>
-                         <div className="player-name">{others[0]?.user_id}</div>
-                    </div>
-                    <div className="right-player">
-                         <div className="player-avatar">{others[2]?.user_id.substring(0, 2)}</div>
-                         <div className="player-name">{others[2]?.user_id}</div>
+                <div className="main-area">
+                    <div className="play-area">
+                         {lastPlayedHand && lastPlayedHand.cards?.map(card => <Card key={card} cardName={card} />)}
                     </div>
                 </div>
-            </section>
+
+                <div className="player-seat-area">
+                    {me && (
+                        <Hand 
+                            initialCards={hand || []}
+                            selectedCards={selectedCards}
+                            setSelectedCards={setSelectedCards}
+                        />
+                    )}
+                </div>
+            </div>
             
-            <section className="table-center">
-                 {error && <p className="error-message">{error}</p>}
-                 {isLoading && <div className="loading-spinner" />}
-                 {/* 十三水/锄大地可以在这里显示出牌区 */}
-            </section>
+            {renderPlayingControls()}
+            
+            {props.winner !== null && (
+                 <div className="game-over-overlay">
+                    <h2>游戏结束</h2>
+                    <p>{ (props.winner === userId) ? "你赢了!" : `玩家 ${props.winner} 胜利!` }</p>
+                    <button onClick={handleReturn}>返回</button>
+                </div>
+            )}
 
-            <footer className="hand-placeholder">
-                <Hand myTurn={myTurn} />
-                 {/* 十三水可以在这里放“理牌完成”按钮 */}
-            </footer>
+            <button onClick={handleReturn} className="exit-button">返回</button>
         </div>
     );
-}
+};
 
 export default CardTable;
