@@ -310,7 +310,8 @@ export default function TryPlay() {
             whiteSpace: 'nowrap'
           }}
         >
-          {label}({arr.length})
+          {/* 终极修正: 使用模板字符串确保JSX语法正确 */}
+          {`${label}(${arr.length})`}
         </div>
       </div>
     );
@@ -346,7 +347,8 @@ export default function TryPlay() {
                 {foulStates[i] && (
                   <span style={{ color: 'red', fontWeight: 800, marginLeft: 6 }}>(倒水)</span>
                 )}
-                ({scores[i]}分)
+                {/* 终极修正: 使用模板字符串确保JSX语法正确 */}
+                {`(${scores[i]}分)`}
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginBottom: 3 }}>
                 {i === 0
