@@ -21,8 +21,17 @@ const ThirteenWater = (props) => {
     
     // --- Actions ---
     const handleSetDun = isLocal ? props.onSetDun : contextData.handleSetDun;
-    const handleRestart = isLocal ? () => props.onRestart() : () => { /* Online restart logic */ };
-    const handleReturn = isLocal ? handleRestart : () => navigate('/lobby'); // In local, the button always restarts
+    
+    // Refactored handleReturn logic to avoid unused-vars warning
+    const handleReturnClick = () => {
+        if (isLocal) {
+            // In local mode, the "Return" button always restarts the game
+            props.onRestart();
+        } else {
+            // In online mode, it navigates back to the lobby
+            navigate('/lobby');
+        }
+    };
 
     const renderGameContent = () => {
         switch (gamePhase) {
@@ -50,7 +59,7 @@ const ThirteenWater = (props) => {
             
             case 'scoring':
                 return (
-                     <SssScore players={players} onRestart={handleRestart} />
+                     <SssScore players={players} onRestart={handleReturnClick} />
                 );
 
             default:
@@ -83,7 +92,7 @@ const ThirteenWater = (props) => {
             </div>
              {/* The exit button is now part of the SssScore component for the scoring phase */}
              {gamePhase === 'arranging' && 
-                <button onClick={() => navigate('/')} className="exit-button">返回大厅</button>
+                <button onClick={handleReturnClick} className="exit-button">返回大厅</button>
              }
         </div>
     );
