@@ -3,6 +3,7 @@ import { createDeck, shuffleDeck, dealDoudizhu, dealBigTwo, dealThirteenWater, s
 import * as doudizhu from './doudizhu';
 import * as bigTwo from './bigTwo';
 import * as thirteenWater from './thirteenWater';
+import { calcSSSAllScores } from './sssScoreLogic'; // Import the scoring logic from its new location
 
 // --- Initializers (Doudizhu part is complete, others are basic) ---
 const initializeDoudizhu = () => {
@@ -48,10 +49,19 @@ const initializeBigTwo = () => {
 const initializeThirteenWater = () => {
     const deck = shuffleDeck(createDeck());
     const { hands } = dealThirteenWater(deck);
+    const players = [
+        { id: 0, name: '玩家', hand: sortCards(hands[0], 'thirteen_water'), isAI: false, arrangement: null },
+        ...[1,2,3].map(i => {
+            const hand = sortCards(hands[i], 'thirteen_water');
+            const arrangement = thirteenWater.autoArrangeCards(hand); // AI auto-arranges
+            return {id: i, name: `AI ${i}`, hand: hand, isAI: true, arrangement: arrangement };
+        })
+    ];
     return {
         gameType: 'thirteen_water',
-        players: [ { id: 0, name: '玩家', hand: sortCards(hands[0]) }, ...[1,2,3].map(i => ({id: i, name: `AI ${i}`, hand: sortCards(hands[i]), isAI: true})) ],
-        gamePhase: 'arranging', scores: null
+        players: players,
+        gamePhase: 'arranging', // arranging, scoring
+        scores: null
     };
 }
 
@@ -83,7 +93,7 @@ const doudizhuAIThinkAndPlay = (state) => {
     const { hand } = player;
     // Basic AI: find smallest valid hand
     for (const card of sortCards(hand, 'doudizhu').reverse()) {
-        if (bigTwo.canPlay([card], state.lastPlayedHand)) return { type: 'PLAY', payload: [card] };
+        if (doudizhu.canPlay(doudizhu.getHandType([card]), state.lastPlayedHand)) return { type: 'PLAY', payload: [card] };
     }
     // TODO: Add logic for pairs, straights, etc.
     return { type: 'PASS' };
@@ -188,18 +198,47 @@ const handleBigTwoAction = (state, action) => {
 };
 
 const handleThirteenWaterAction = (state, action) => {
-    // Player sets their hand
+    let newState = JSON.parse(JSON.stringify(state));
+    
     if (action.type === 'SET_DUN' && state.gamePhase === 'arranging') {
-        let newState = JSON.parse(JSON.stringify(state));
         const { payload: arrangement } = action; // {front, middle, back}
-        if (!thirteenWater.validateArrangement(arrangement.front, arrangement.middle, arrangement.back)) {
-            throw new Error("Invalid card arrangement.");
+        
+        // This validation should be done in the UI layer before sending, but good to have it here too.
+        if (arrangement.front.length !== 3 || arrangement.middle.length !== 5 || arrangement.back.length !== 5) {
+             throw new Error("牌墩数量不正确！");
         }
-        newState.players[0].arrangement = arrangement;
-        // Once player sets, we can consider the "scoring" phase
+
+        const player = newState.players.find(p => p.id === 0);
+        player.arrangement = arrangement;
+        
+        const scoringData = newState.players.map(p => ({
+            ...p,
+            head: p.arrangement.front,
+            middle: p.arrangement.middle,
+            tail: p.arrangement.back,
+        }));
+
+        // Check for foul play (倒水) before calculating scores
+        const playerFoul = thirteenWater.isFoul(scoringData[0].head, scoringData[0].middle, scoringData[0].tail);
+        if (playerFoul) {
+            // In a real game, you might want to handle this more gracefully than an error.
+            // For now, we can throw an error to notify the user.
+             throw new Error("倒水了！你的牌墩设置不符合规则。");
+        }
+        
+        const finalScores = calcSSSAllScores(scoringData);
+        
+        newState.players.forEach((p, index) => {
+            p.score = finalScores[index];
+            p.isFoul = thirteenWater.isFoul(scoringData[index].head, scoringData[index].middle, scoringData[index].tail);
+        });
+
+        newState.scores = finalScores;
         newState.gamePhase = 'scoring';
-        // TODO: Implement scoring logic against AI hands
+        
         return newState;
+    } else if (action.type === 'RESTART') {
+        return initializeThirteenWater();
     }
     return state; 
 }

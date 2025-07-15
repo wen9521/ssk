@@ -3,8 +3,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
 import SmartSplit from './SmartSplit';
+import SssScore from './sssScore'; 
 import Opponent from './Opponent';
-import Card from './Card'; // To display final arrangements
 import './styles/GameTable.css';
 
 const ThirteenWater = (props) => {
@@ -16,90 +16,75 @@ const ThirteenWater = (props) => {
     // --- State Derivation ---
     const players = isLocal ? props.players : contextData.players || [];
     const userId = isLocal ? 0 : contextData.userId;
-    const hand = isLocal ? props.players.find(p => p.id === 0)?.hand : contextData.hand;
+    const hand = isLocal ? props.players.find(p => p.id === 0)?.hand : [];
     const gamePhase = isLocal ? props.gamePhase : contextData.roomStatus;
-
+    
     // --- Actions ---
     const handleSetDun = isLocal ? props.onSetDun : contextData.handleSetDun;
-    const handleReturn = isLocal ? props.handleReturn : () => navigate('/lobby');
-
-    // --- UI Rendering ---
-    
-    const renderArrangement = (arrangement) => {
-        if (!arrangement) return <p>理牌中...</p>;
-        return (
-            <div className="arrangement-display">
-                <div className="dun">{arrangement.front.map(c => <Card key={c} cardName={c} />)}</div>
-                <div className="dun">{arrangement.middle.map(c => <Card key={c} cardName={c} />)}</div>
-                <div className="dun">{arrangement.back.map(c => <Card key={c} cardName={c} />)}</div>
-            </div>
-        );
-    };
+    const handleRestart = isLocal ? () => props.onRestart() : () => { /* Online restart logic */ };
+    const handleReturn = isLocal ? handleRestart : () => navigate('/lobby'); // In local, the button always restarts
 
     const renderGameContent = () => {
-        if (gamePhase === 'arranging') {
-            const me = players.find(p => p.id === userId);
-            // If my arrangement is set, show waiting message. Otherwise, show SmartSplit.
-            if (me && me.arrangement) {
-                 return <div className="game-phase-message">等待AI完成理牌...</div>;
-            }
-            return (
-                <SmartSplit 
-                    playerHand={hand} 
-                    onDunSet={handleSetDun} 
-                />
-            );
-        }
-        
-        if (gamePhase === 'scoring') {
-            return (
-                <div className="game-phase-message">
-                    <h2>比牌结果</h2>
-                    {/* TODO: Add scoring display logic here */}
-                    <p>比牌阶段逻辑待实现。</p>
-                </div>
-            );
-        }
+        switch (gamePhase) {
+            case 'arranging':
+                const me = players.find(p => p.id === userId);
+                if (me && me.arrangement) {
+                    return (
+                        <div className="game-phase-message">
+                            <h2>等待比牌</h2>
+                            <p>您已理好牌，所有玩家准备好后将自动进入比牌环节。</p>
+                            <div className="loading-spinner"></div>
+                        </div>
+                    );
+                }
+                return (
+                    <div className="thirteen-water-arranging">
+                        <h2>理牌阶段</h2>
+                        <p>请将你的13张牌拖拽到前、中、后三墩。完成后点击“理牌完成”按钮。</p>
+                        <SmartSplit 
+                            playerHand={hand} 
+                            onDunSet={handleSetDun} 
+                        />
+                    </div>
+                );
+            
+            case 'scoring':
+                return (
+                     <SssScore players={players} onRestart={handleRestart} />
+                );
 
-        return <div className="game-phase-message">正在加载...</div>;
+            default:
+                return <div className="game-phase-message">正在加载游戏...</div>;
+        }
     };
 
-    const opponents = players.filter(p => p.id !== userId && p.user_id !== userId);
+    const opponents = players.filter(p => (p.id ?? p.user_id) !== userId);
 
     return (
         <div className="game-table-container thirteen-water-bg">
             <div className="game-table">
-                <div className="opponent-seats">
-                    {opponents.map(p => (
-                        <Opponent 
-                            key={p.id ?? p.user_id} 
-                            name={p.name ?? p.user_id} 
-                            isReady={!!p.arrangement} 
-                        />
-                    ))}
-                </div>
+                {/* We only show opponents during the arranging phase */}
+                {gamePhase === 'arranging' && (
+                    <div className="opponent-seats">
+                        {opponents.map(p => (
+                            <Opponent 
+                                key={p.id ?? p.user_id} 
+                                name={p.name ?? p.user_id} 
+                                // All AIs are ready by default in our local game
+                                isReady={!!p.arrangement} 
+                            />
+                        ))}
+                    </div>
+                )}
 
                 <div className="main-area">
-                    {gamePhase === 'scoring' 
-                        ? (
-                             <div className="all-arrangements">
-                                {players.map(p => (
-                                    <div key={p.id} className="player-final-hand">
-                                        <h4>{p.name}</h4>
-                                        {renderArrangement(p.arrangement)}
-                                    </div>
-                                ))}
-                             </div>
-                        )
-                        : renderGameContent()
-                    }
-                </div>
-
-                <div className="player-seat-area">
-                   {gamePhase === 'arranging' && <p>请将您的13张牌分为三墩</p>}
+                    {renderGameContent()}
                 </div>
             </div>
-            <button onClick={handleReturn} className="exit-button">返回</button>
+             {/* The exit button is now part of the SssScore component for the scoring phase */}
+             {gamePhase === 'arranging' && 
+                <button onClick={() => navigate('/')} className="exit-button">返回大厅</button>
+             }
         </div>
     );
 };
