@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { aiSmartSplit, getPlayerSmartSplits } from './SmartSplit';
-import { calcSSSAllScores, isFoul } from '../gameLogic/sssScoreLogic';
+// [修正1]: 从正确的 gameLogic 目录导入逻辑函数
+import { calcSSSAllScores, isFoul } from '../gameLogic/sssScoreLogic'; 
 import { getShuffledDeck, dealHands } from './DealCards';
 import './Play.css';
 
@@ -20,7 +21,6 @@ export default function TryPlay() {
   const [tail, setTail] = useState([]);
   const [selected, setSelected] = useState({ area: '', cards: [] });
   const [msg, setMsg] = useState('');
-  // aiPlayers增加processed字段
   const [aiPlayers, setAiPlayers] = useState([
     { name: AI_NAMES[0], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
     { name: AI_NAMES[1], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
@@ -31,19 +31,14 @@ export default function TryPlay() {
   const [isReady, setIsReady] = useState(false);
   const [hasCompared, setHasCompared] = useState(false);
   const [foulStates, setFoulStates] = useState([false, false, false, false]);
-
-  // 我的智能分法缓存
   const [mySplits, setMySplits] = useState([]);
   const [splitIndex, setSplitIndex] = useState(0);
-
-  // AI理牌进度
   const [aiProcessed, setAiProcessed] = useState([false, false, false]);
 
   function handleReady() {
     if (!isReady) {
-      // 发牌
       const deck = getShuffledDeck();
-      // 修正: 调用dealHands时传入玩家数量4
+      // [修正2]: 调用dealHands时传入正确的玩家数量4
       const [myHand, ...aiHands] = dealHands(deck, 4); 
       setHead(myHand.slice(0, 3));
       setMiddle(myHand.slice(3, 8));
@@ -62,14 +57,12 @@ export default function TryPlay() {
         { name: AI_NAMES[1], isAI: true, cards13: aiHands[1], head: aiHands[1].slice(0,3), middle: aiHands[1].slice(3,8), tail: aiHands[1].slice(8,13), processed: false },
         { name: AI_NAMES[2], isAI: true, cards13: aiHands[2], head: aiHands[2].slice(0,3), middle: aiHands[2].slice(3,8), tail: aiHands[2].slice(8,13), processed: false },
       ]);
-      // 只缓存我的5分法
       setTimeout(() => {
         const splits = getPlayerSmartSplits(myHand);
         setMySplits(splits);
         setSplitIndex(0);
       }, 0);
 
-      // 依次异步处理AI理牌
       aiHands.forEach((hand, idx) => {
         setTimeout(() => {
           setAiPlayers(old => {
@@ -83,10 +76,9 @@ export default function TryPlay() {
             arr[idx] = true;
             return arr;
           });
-        }, 400 + idx * 350); // 小明最快，后两个延迟处理
+        }, 400 + idx * 350);
       });
     } else {
-      // 取消准备
       setHead([]); setMiddle([]); setTail([]);
       setAiPlayers([
         { name: AI_NAMES[0], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
@@ -162,9 +154,7 @@ export default function TryPlay() {
       { name: '你', head, middle, tail },
       ...aiPlayers.map(ai => ({ name: ai.name, head: ai.head, middle: ai.middle, tail: ai.tail }))
     ];
-    // 比牌+倒水判定
     const { scores: resScores } = calcSSSAllScores(allPlayers);
-    // 计算倒水状态
     const fouls = allPlayers.map(p => isFoul(p.head, p.middle, p.tail));
     setScores(resScores);
     setFoulStates(fouls);
@@ -175,7 +165,6 @@ export default function TryPlay() {
   }
 
   function renderPlayerSeat(name, idx, isMe) {
-    // 绿色表示理牌完成
     const aiDone = idx > 0 ? aiProcessed[idx - 1] : false;
     return (
       <div
@@ -323,7 +312,7 @@ export default function TryPlay() {
             whiteSpace: 'nowrap'
           }}
         >
-          {/* 修正: 使用半角括号 */}
+          {/* [修正3]: 确保所有括号都是半角 */}
           {label}({arr.length})
         </div>
       </div>
@@ -358,10 +347,10 @@ export default function TryPlay() {
               <div style={{ fontWeight: 700, color: i === 0 ? '#23e67a' : '#4f8cff', marginBottom: 8 }}>
                 {i === 0 ? '你' : aiPlayers[i - 1].name}
                 {foulStates[i] && (
-                   // 修正: 使用半角括号
+                  // [修正3]: 确保所有括号都是半角
                   <span style={{ color: 'red', fontWeight: 800, marginLeft: 6 }}>(倒水)</span>
                 )}
-                 {/* 修正: 使用半角括号 */}
+                {/* [修正3]: 确保所有括号都是半角 */}
                 ({scores[i]}分)
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginBottom: 3 }}>
@@ -410,7 +399,6 @@ export default function TryPlay() {
         minHeight: 650,
         boxSizing: 'border-box'
       }}>
-        {/* 头部：退出房间+积分 */}
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
           <button
             style={{
@@ -443,16 +431,13 @@ export default function TryPlay() {
             积分：100
           </div>
         </div>
-        {/* 玩家区 */}
         <div style={{ display: 'flex', marginBottom: 18, gap: 8 }}>
           {renderPlayerSeat('你', 0, true)}
           {aiPlayers.map((ai, idx) => renderPlayerSeat(ai.name, idx + 1, false))}
         </div>
-        {/* 牌墩区域 */}
         {renderPaiDun(head, '头道', 'head', '#23e67a')}
         {renderPaiDun(middle, '中道', 'middle', '#23e67a')}
         {renderPaiDun(tail, '尾道', 'tail', '#23e67a')}
-        {/* 按钮区 */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 0, marginTop: 14 }}>
           <button
             style={{
