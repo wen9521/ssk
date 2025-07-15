@@ -1,9 +1,9 @@
 // frontend/src/gameLogic/gameManager.js
 import { createDeck, shuffleDeck, dealDoudizhu, dealBigTwo, dealThirteenWater, sortCards } from './cardUtils';
-import * as doudizhu from './doudizhu';
-import * as bigTwo from './bigTwo';
+import { canPlay as doudizhuCanPlay, getHandType as doudizhuGetHandType } from './doudizhu';
+import { canPlay as bigTwoCanPlay, getHandType as bigTwoGetHandType } from './bigTwo';
 import * as thirteenWater from './thirteenWater';
-import { calcSSSAllScores, isFoul } from './sssScoreLogic'; // Corrected import path, now including isFoul
+import { calcSSSAllScores, isFoul } from './sssScoreLogic';
 
 // --- Initializers ---
 const initializeDoudizhu = () => {
@@ -70,18 +70,116 @@ export const initializeGame = (gameType) => {
 
 
 // --- AI Logic ---
-// Omitted for brevity, no changes here
+const doudizhuAIThinkAndBid = (state) => {
+    const player = state.players[state.currentPlayer];
+    const hasRJ = player.hand.includes('RJ');
+    const hasBJ = player.hand.includes('BJ');
+    const numTwos = player.hand.filter(c => c.includes('2')).length;
+    let bid = 0;
+    if (state.landlordBid < 3 && (hasRJ || hasBJ) && numTwos > 1) bid = 3;
+    else if (state.landlordBid < 2 && (hasRJ || hasBJ || numTwos > 1)) bid = 2;
+    else if (state.landlordBid < 1 && (numTwos > 0 || hasBJ || hasRJ)) bid = 1;
+    return { type: 'BID', payload: bid };
+}
+
+const doudizhuAIThinkAndPlay = (state) => {
+    const player = state.players[state.currentPlayer];
+    const { hand } = player;
+    for (const card of sortCards(hand, 'doudizhu').reverse()) {
+        if (doudizhuCanPlay(doudizhuGetHandType([card]), state.lastPlayedHand)) return { type: 'PLAY', payload: [card] };
+    }
+    return { type: 'PASS' };
+}
+
+const bigTwoAIThinkAndPlay = (state) => {
+    const player = state.players[state.currentPlayer];
+    const { hand } = player;
+    for (const card of sortCards(hand, 'big_two')) {
+        if (bigTwoCanPlay([card], state.lastPlayedHand)) {
+            return { type: 'PLAY', payload: [card] };
+        }
+    }
+    return { type: 'PASS' };
+}
 
 
 // --- Action Handlers ---
 const handleDoudizhuAction = (state, action) => {
-    // Omitted for brevity, no changes here
-    return state;
+    let newState = JSON.parse(JSON.stringify(state));
+    if (newState.gamePhase === 'bidding') {
+        const { payload: bid } = action;
+        if(bid > newState.landlordBid) {
+            newState.landlordBid = bid;
+            newState.landlord = newState.currentPlayer;
+        }
+        newState.bids[newState.currentPlayer] = bid;
+        const bidders = newState.bids.filter(b => b !== -1).length;
+        const passes = newState.bids.filter(b => b === 0).length;
+        if ((bidders === 3 && passes === 2) || bid === 3) {
+            newState.gamePhase = 'playing';
+            const landlord = newState.players.find(p => p.id === newState.landlord);
+            landlord.hand = sortCards([...landlord.hand, ...newState.landlordCards], 'doudizhu');
+            newState.currentPlayer = newState.landlord;
+            return newState;
+        }
+    } else if (newState.gamePhase === 'playing') {
+        if (action.type === 'PASS') { /* Pass */ } 
+        else if (action.type === 'PLAY') {
+            const { payload: cards } = action;
+            const handType = doudizhuGetHandType(cards);
+            if (handType.type === 'Invalid' || !doudizhuCanPlay(handType, newState.lastPlayedHand)) {
+                throw new Error("Invalid hand.");
+            }
+            newState.players[newState.currentPlayer].hand = newState.players[newState.currentPlayer].hand.filter(c => !cards.includes(c));
+            newState.lastPlayedHand = handType;
+            newState.lastPlayer = newState.currentPlayer;
+            if (newState.players[newState.currentPlayer].hand.length === 0) {
+                newState.gamePhase = 'gameover';
+                newState.winner = newState.currentPlayer;
+                return newState;
+            }
+        }
+        newState.currentPlayer = (newState.currentPlayer + 1) % 3;
+        if(newState.currentPlayer === newState.lastPlayer) {
+            newState.lastPlayedHand = null;
+        }
+    }
+    if (newState.players[newState.currentPlayer].isAI && newState.gamePhase !== 'gameover') {
+        const aiAction = newState.gamePhase === 'bidding' ? doudizhuAIThinkAndBid(newState) : doudizhuAIThinkAndPlay(newState);
+        return handleDoudizhuAction(newState, aiAction);
+    }
+    return newState;
 };
 
 const handleBigTwoAction = (state, action) => {
-    // Omitted for brevity, no changes here
-    return state;
+    let newState = JSON.parse(JSON.stringify(state));
+    if (action.type === 'PASS') { /* Pass */ } 
+    else if (action.type === 'PLAY') {
+        const { payload: cards } = action;
+        if (newState.lastPlayer === null && !cards.includes('D3')) {
+            throw new Error("First play must include Diamond 3.");
+        }
+        if (!bigTwoCanPlay(cards, newState.lastPlayedHand)) {
+            throw new Error("Invalid hand.");
+        }
+        newState.players[newState.currentPlayer].hand = newState.players[newState.currentPlayer].hand.filter(c => !cards.includes(c));
+        newState.lastPlayedHand = bigTwoGetHandType(cards);
+        newState.lastPlayer = newState.currentPlayer;
+        if (newState.players[newState.currentPlayer].hand.length === 0) {
+            newState.gamePhase = 'gameover';
+            newState.winner = newState.currentPlayer;
+            return newState;
+        }
+    }
+    newState.currentPlayer = (newState.currentPlayer + 1) % 4;
+    if (newState.currentPlayer === newState.lastPlayer) {
+        newState.lastPlayedHand = null;
+    }
+    if (newState.players[newState.currentPlayer].isAI && newState.gamePhase !== 'gameover') {
+        const aiAction = bigTwoAIThinkAndPlay(newState);
+        return handleBigTwoAction(newState, aiAction);
+    }
+    return newState;
 };
 
 const handleThirteenWaterAction = (state, action) => {
@@ -98,7 +196,6 @@ const handleThirteenWaterAction = (state, action) => {
              throw new Error("牌墩数量不正确！");
         }
         
-        // Now correctly use the imported isFoul function
         if (isFoul(arrangement.front, arrangement.middle, arrangement.back)) {
             throw new Error("倒水了！你的牌墩设置不符合规则。");
         }
