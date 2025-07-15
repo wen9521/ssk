@@ -7,12 +7,11 @@ import './App.css';
 // 引入所有页面和游戏桌组件
 import HomePage from './components/HomePage';
 import GameLobby from './components/GameLobby';
-import CardTable from './components/CardTable'; // This is likely for ThirteenWater/BigTwo
+import CardTable from './components/CardTable'; // This is likely for BigTwo
 import DoudizhuTable from './components/DoudizhuTable';
-import ThirteenWater from './components/ThirteenWater';
 import SpotTheDifference from './components/SpotTheDifference';
-import LocalGameHost from './components/LocalGameHost'; // 引入新的本地游戏组件
-import TryPlay from './components/TryPlay'; // 引入我们修改后的十三水游戏牌桌
+import LocalGameHost from './components/LocalGameHost';
+import TryPlay from './components/TryPlay'; // Our new Thirteen Water component
 
 function App() {
     return (
@@ -29,26 +28,19 @@ function App() {
 function AppRoutes() {
     const { gameType, roomId } = useGame();
 
-    // A helper function to determine which game table to render
     const getGameTableElement = () => {
         if (!roomId) {
-            // If there's no room ID, the user shouldn't be on the play page.
             return <Navigate to="/lobby" />;
         }
         
-        // Render the correct game table based on the gameType from context
         switch (gameType) {
-            case 'thirteen_water':
-                return <ThirteenWater />;
-            
             case 'doudizhu':
                 return <DoudizhuTable />;
-            
             case 'big_two':
                 return <CardTable />;
-            
+            // The 'thirteen_water' case for online play has been removed to prevent build errors,
+            // as the corresponding component was deleted.
             default:
-                // If gameType is unknown, redirect
                 return <Navigate to="/lobby" />;
         }
     };
@@ -58,7 +50,6 @@ function AppRoutes() {
             <Route path="/" element={<HomePage />} />
             <Route path="/lobby" element={roomId ? <GameLobby /> : <Navigate to="/" />} />
             <Route path="/play" element={getGameTableElement()} />
-            {/* Specific route for thirteen water local play must come before the general one */}
             <Route path="/play-local/thirteen_water" element={<TryPlay />} />
             <Route path="/play-local/:gameType" element={<LocalGameHost />} />
             <Route path="/spot-the-difference" element={<SpotTheDifference />} />
