@@ -32,7 +32,7 @@ s3 = boto3.client(
     aws_secret_access_key=S3_SECRET_KEY,
     config=Config(
         signature_version='s3v4',
-        region_name='us-east-1' # A common placeholder region for R2
+        region_name='us-east-1'
     )
 )
 
@@ -75,7 +75,6 @@ def main():
     levels_data = []
     valid_extensions = ['.png', '.jpg', '.jpeg']
     try:
-        # CORRECTED: Removed the trailing backslash '\' from the end of this line
         source_files = [f for f in os.listdir(SOURCE_IMAGE_DIR) if os.path.splitext(f)[1].lower() in valid_extensions]
     except FileNotFoundError:
         print(f"Error: Source directory '{SOURCE_IMAGE_DIR}' not found.")
