@@ -23,11 +23,12 @@ const DifferenceMarker = ({ diff, scaleFactor }) => {
     return <div className="difference-marker" style={style} />;
 };
 
+// This component now directly uses the full URL from the levels file.
 const GameImage = ({ src, onClick, children }) => {
-    const imageUrl = `${process.env.PUBLIC_URL}${src}`;
     return (
         <div className="image-wrapper" onClick={onClick}>
-            <img src={imageUrl} alt={src} crossOrigin="anonymous" />
+            {/* The `src` is now a complete URL, no prefix needed */}
+            <img src={src} alt={src} crossOrigin="anonymous" />
             {children}
         </div>
     );
@@ -43,6 +44,8 @@ const SpotTheDifference = () => {
     const [imageScaleFactor, setImageScaleFactor] = useState(1);
 
     const loadLevels = useCallback(() => {
+        setIsLoading(true);
+        setError(null);
         try {
             const shuffledLevels = [...localLevels].sort(() => Math.random() - 0.5);
             setLevels(shuffledLevels);
