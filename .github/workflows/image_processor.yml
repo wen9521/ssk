@@ -37,13 +37,3 @@ jobs:
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
         run: python ai_generator/generate_level.py
-
-      - name: Purge Cloudflare Cache (Optional but Recommended)
-        # This step ensures that clients get the latest levels.json immediately.
-        # You need to create a Cloudflare API Token with "Cache Purge" permissions.
-        if: success() && secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ZONE_ID != ''
-        uses: jakejarvis/cloudflare-purge-action@v0.5.1
-        env:
-          CLOUDFLARE_ZONE: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-          CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_PURGE_URLS: ${{ secrets.R2_PUBLIC_URL }}/levels.json
