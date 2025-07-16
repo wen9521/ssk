@@ -1,180 +1,154 @@
-# ai_generator/generate_level.py
+
 import os
-import sys
 import json
 import random
-import boto3
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 # --- Configuration ---
-# These will be set as environment variables in the Render service
-S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL") # e.g., https://<account_id>.r2.cloudflarestorage.com
-S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
-S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
-S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME")
+SOURCE_IMAGE_DIR = "images_for_ai"
+OUTPUT_DIR = "frontend/public/generated_levels"
+LEVELS_JSON_FILE = os.path.join(OUTPUT_DIR, "levels.json")
 
-# The public URL of your R2 bucket. Update this if you have a custom domain.
-# This should be the same URL used by your frontend application.
-CF_PUBLIC_URL = "https://pub-5a0d7fbdb4e94d9db5d2a074b6e346e4.r2.dev"
-
-
-# S3-compatible client for Cloudflare R2
-s3 = boto3.client(
-    service_name='s3',
-    endpoint_url=S3_ENDPOINT_URL,
-    aws_access_key_id=S3_ACCESS_KEY,
-    aws_secret_access_key=S3_SECRET_KEY,
-    region_name='auto', # This can be 'auto' or a specific region
-)
+# --- Ensure output directory exists ---
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # --- Image Modification Functions ---
 
-def add_small_shape(draw, max_width, max_height):
+def add_small_shape(draw, width, height):
     """Adds a small, semi-transparent shape to the image."""
-    x = random.randint(50, max_width - 50)
-    y = random.randint(50, max_height - 50)
-    radius = random.randint(5, 15)
-    color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), 100)
-    draw.ellipse((x-radius, y-radius, x+radius, y+radius), fill=color)
-    return {"type": "add_shape", "x": x, "y": y, "radius": radius * 2}
+    x = random.randint(int(width * 0.1), int(width * 0.9))
+    y = random.randint(int(height * 0.1), int(height * 0.9))
+    radius = random.randint(8, 20)
+    color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), 128)
+    # Use an ellipse for the shape
+    draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=color)
+    return {"type": "add_shape", "x": x, "y": y, "radius": radius, "details": "A small shape was added."}
 
-def change_color_area(image, draw, max_width, max_height):
-    """Changes the hue of a small area."""
-    x = random.randint(50, max_width - 50)
-    y = random.randint(50, max_height - 50)
-    radius = random.randint(20, 40)
+def change_color_area(image, width, height):
+    """Applies a subtle color filter to a small circular area."""
+    x = random.randint(int(width * 0.1), int(width * 0.9))
+    y = random.randint(int(height * 0.1), int(height * 0.9))
+    radius = random.randint(25, 50)
+
+    # Create a mask
+    mask = Image.new('L', image.size, 0)
+    draw = ImageDraw.Draw(mask)
+    draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=255)
+
+    # Apply a color change (e.g., sepia tone)
+    colorized = Image.new('RGB', (radius * 2, radius * 2), (112, 66, 20)) # Sepia-like color
     
-    # This is a simplified color change, a more advanced one would be better
-    draw.rectangle((x-radius, y-radius, x+radius, y+radius), fill=(random.randint(0,50), 0, 0, 30))
-    return {"type": "color_change", "x": x, "y": y, "radius": radius}
+    # Paste the colorized area using the mask
+    image.paste(colorized, (x-radius, y-radius), mask.crop((x-radius, y-radius, x+radius, y+radius)))
 
-def remove_small_detail(image, draw, max_width, max_height):
+    return {"type": "color_change", "x": x, "y": y, "radius": radius, "details": "The color of an area was changed."}
+
+
+def remove_small_detail(image, width, height):
     """Clones a nearby area to cover up a small detail."""
-    x = random.randint(100, max_width - 100)
-    y = random.randint(100, max_height - 100)
-    radius = random.randint(10, 20)
+    # Find a good spot to remove something from
+    x = random.randint(int(width * 0.2), int(width * 0.8))
+    y = random.randint(int(height * 0.2), int(height * 0.8))
+    radius = random.randint(15, 30)
+
+    # Define source and destination boxes
+    source_x = x + random.choice([-1, 1]) * radius * 3
+    source_y = y + random.choice([-1, 1]) * radius * 3
     
-    # Clone from just above
-    source_box = (x - radius, y - radius - (radius*2), x + radius, y - radius)
+    # Ensure source is within bounds
+    source_x = max(radius, min(source_x, width - radius))
+    source_y = max(radius, min(source_y, height - radius))
+
+    source_box = (source_x - radius, source_y - radius, source_x + radius, source_y + radius)
+    
+    # Crop the source region
     region = image.crop(source_box)
     
-    # Paste over the original spot
+    # Paste it over the target area
     image.paste(region, (x - radius, y - radius))
-    return {"type": "removal", "x": x, "y": y, "radius": radius * 1.5}
+    
+    return {"type": "removal", "x": x, "y": y, "radius": radius, "details": "A small detail was removed."}
+
 
 # --- Main Logic ---
 
-def generate_differences(original_image_path):
+def process_all_images():
     """
-    Creates a modified version of an image with several differences and
-    returns the details of those differences.
+    Processes all images in the source directory, generates modified versions,
+    and creates a JSON file with level data.
     """
-    with Image.open(original_image_path).convert("RGBA") as img:
-        modified_img = img.copy()
-        draw = ImageDraw.Draw(modified_img)
-        width, height = img.size
-        
-        differences = []
-        num_diffs = random.randint(3, 5)
-        
-        modification_functions = [add_small_shape, change_color_area, remove_small_detail]
-        
-        for _ in range(num_diffs):
-            func = random.choice(modification_functions)
-            if func == remove_small_detail:
-                diff = func(modified_img, draw, width, height)
-            else:
-                diff = func(draw, width, height)
-            differences.append(diff)
-            
-        modified_image_path = "modified.png"
-        modified_img.save(modified_image_path, "PNG")
-        
-        return modified_image_path, differences
-
-def upload_to_r2(local_path, remote_name):
-    """Uploads a file to Cloudflare R2 and returns its public URL."""
-    try:
-        s3.upload_file(local_path, S3_BUCKET_NAME, remote_name, ExtraArgs={'ContentType': 'image/png'})
-        public_url = f"{CF_PUBLIC_URL}/{remote_name}"
-        print(f"Successfully uploaded {local_path} to {public_url}")
-        return public_url
-    except Exception as e:
-        print(f"Error uploading {local_path}: {e}")
-        sys.exit(1)
-
-
-def update_levels_json(new_level_data):
-    """Downloads, updates, and re-uploads the levels.json file."""
-    levels_key = 'levels.json'
-    try:
-        response = s3.get_object(Bucket=S3_BUCKET_NAME, Key=levels_key)
-        levels = json.loads(response['Body'].read())
-    except s3.exceptions.NoSuchKey:
-        print(f"{levels_key} not found, creating a new one.")
-        levels = []
-    except Exception as e:
-        print(f"Error downloading {levels_key}: {e}")
-        sys.exit(1)
-
-    levels.append(new_level_data)
+    levels_data = []
     
-    try:
-        new_json_content = json.dumps(levels, indent=4)
-        s3.put_object(
-            Bucket=S3_BUCKET_NAME,
-            Key=levels_key,
-            Body=new_json_content,
-            ContentType='application/json'
-        )
-        print(f"{levels_key} updated successfully.")
-    except Exception as e:
-        print(f"Error uploading {levels_key}: {e}")
-        sys.exit(1)
+    # Get list of valid images
+    valid_extensions = ['.png', '.jpg', '.jpeg']
+    source_files = [f for f in os.listdir(SOURCE_IMAGE_DIR) if os.path.splitext(f)[1].lower() in valid_extensions]
 
+    if not source_files:
+        print("No images found in the source directory.")
+        return
+
+    print(f"Found {len(source_files)} images to process.")
+
+    for filename in source_files:
+        original_path = os.path.join(SOURCE_IMAGE_DIR, filename)
+        base_name = os.path.splitext(filename)[0]
+
+        try:
+            with Image.open(original_path).convert("RGBA") as img:
+                width, height = img.size
+                
+                # --- Create original copy ---
+                original_copy_path = os.path.join(OUTPUT_DIR, f"{base_name}_original.png")
+                img.save(original_copy_path, "PNG")
+
+                # --- Create modified version ---
+                modified_img = img.copy()
+                draw = ImageDraw.Draw(modified_img)
+                
+                differences = []
+                num_diffs = random.randint(4, 7) # Generate more differences
+                
+                # Make sure modification functions are suitable for the image size
+                modification_functions = [add_small_shape, remove_small_detail]
+                # change_color_area can be too obvious, use it less
+                if random.random() > 0.5:
+                    modification_functions.append(lambda i, w, h: change_color_area(i, w, h))
+
+
+                for _ in range(num_diffs):
+                    func = random.choice(modification_functions)
+                    if func == add_small_shape:
+                       diff = func(draw, width, height)
+                    else:
+                        # Pass the image for modifications like removal or color change
+                       diff = func(modified_img, width, height)
+                    differences.append(diff)
+
+                modified_copy_path = os.path.join(OUTPUT_DIR, f"{base_name}_modified.png")
+                modified_img.save(modified_copy_path, "PNG")
+
+                # --- Add to level data ---
+                level_id = base_name.replace(" ", "_").lower()
+                levels_data.append({
+                    "id": level_id,
+                    "name": base_name.replace("_", " ").title(),
+                    "original": f"/generated_levels/{os.path.basename(original_copy_path)}",
+                    "modified": f"/generated_levels/{os.path.basename(modified_copy_path)}",
+                    "differences": differences
+                })
+                
+                print(f"Successfully processed '{filename}'")
+
+        except Exception as e:
+            print(f"Could not process image {filename}. Error: {e}")
+
+    # --- Write the JSON file ---
+    with open(LEVELS_JSON_FILE, 'w') as f:
+        json.dump(levels_data, f, indent=2)
+    
+    print(f"
+Successfully generated {len(levels_data)} levels.")
+    print(f"Level data saved to {LEVELS_JSON_FILE}")
 
 if __name__ == "__main__":
-    # The cron job on Render will pass the path to the image.
-    # We'll use a default for local testing.
-    # In production, the startCommand will be like: "python generate_level.py ./images_for_ai/image1.png"
-    if len(sys.argv) < 2:
-        # Use a default image for testing if none is provided
-        print("Usage: python generate_level.py <path_to_original_image>")
-        print("Using default image: ../images_for_ai/image1.png")
-        original_path = "../images_for_ai/image1.png"
-    else:
-        original_path = sys.argv[1]
-
-    if not os.path.exists(original_path):
-        print(f"Error: Original image not found at {original_path}")
-        sys.exit(1)
-
-    base_name = os.path.splitext(os.path.basename(original_path))[0]
-    
-    print(f"Processing {original_path}...")
-    
-    # 1. Generate differences and the modified image
-    modified_path, differences = generate_differences(original_path)
-    
-    # 2. Upload both images to R2
-    original_url = upload_to_r2(original_path, f"{base_name}_original.png")
-    modified_url = upload_to_r2(modified_path, f"{base_name}_modified.png")
-    
-    print(f"Uploaded original to: {original_url}")
-    print(f"Uploaded modified to: {modified_url}")
-    
-    # 3. Create the new level data structure
-    new_level = {
-        "id": base_name,
-        "original": original_url,
-        "modified": modified_url,
-        "differences": differences
-    }
-    
-    # 4. Update the central levels.json
-    update_levels_json(new_level)
-
-    # 5. Clean up local modified file
-    os.remove(modified_path)
-    
-    print("Level generation complete.")
+    process_all_images()
