@@ -4,10 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import './styles/SpotTheDifference.css';
 import { localLevels } from '../gameLogic/levels'; 
 
-// --- Configuration ---
-const R2_PUBLIC_URL = "https://pub-5a0d7fbdb4e94d9db5d2a074b6e346e4.r2.dev"; 
-const LEVELS_JSON_URL = `${R2_PUBLIC_URL}/levels.json`;
-
 // --- Components ---
 const GameStateDisplay = ({ message, isLoading = false, onRetry }) => (
     <div className="game-state-container">
@@ -46,27 +42,17 @@ const SpotTheDifference = () => {
     const [foundDifferences, setFoundDifferences] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isOfflineMode, setIsOfflineMode] = useState(false);
     const [imageScaleFactor, setImageScaleFactor] = useState(1);
 
-    const fetchLevels = useCallback(async () => {
+    const loadLevels = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch(`${LEVELS_JSON_URL}?cb=${new Date().getTime()}`, { signal: AbortSignal.timeout(5000) });
-            if (!response.ok) throw new Error('网络响应不佳，请稍后再试。');
-            
-            const data = await response.json();
-            if (Array.isArray(data) && data.length > 0) {
-                setLevels(data.sort(() => Math.random() - 0.5)); // Shuffle levels
-                setIsOfflineMode(false);
-            } else {
-                throw new Error('在线关卡加载失败，切换至离线模式。');
-            }
+            // Always use local levels and shuffle them
+            const shuffledLevels = [...localLevels].sort(() => Math.random() - 0.5);
+            setLevels(shuffledLevels);
         } catch (err) {
-            console.warn(`无法从服务器加载关卡: ${err.message}`);
-            setLevels(localLevels.sort(() => Math.random() - 0.5)); // Shuffle local levels
-            setIsOfflineMode(true);
+            setError('加载关卡失败，请刷新页面重试。');
         } finally {
             setIsLoading(false);
             setCurrentLevelIndex(0);
@@ -75,8 +61,8 @@ const SpotTheDifference = () => {
     }, []);
 
     useEffect(() => {
-        fetchLevels();
-    }, [fetchLevels]);
+        loadLevels();
+    }, [loadLevels]);
 
     const currentLevel = useMemo(() => levels[currentLevelIndex], [levels, currentLevelIndex]);
     const differences = useMemo(() => currentLevel?.differences || [], [currentLevel]);
@@ -114,12 +100,11 @@ const SpotTheDifference = () => {
     }, [levels.length]);
 
     const handleRestartGame = useCallback(() => {
-        setLevels(prevLevels => [...prevLevels].sort(() => Math.random() - 0.5));
-        goToLevel(0);
-    }, [goToLevel]);
+        loadLevels();
+    }, [loadLevels]);
 
     if (isLoading) return <GameStateDisplay message="正在加载关卡..." isLoading={true} />;
-    if (error) return <GameStateDisplay message={error} onRetry={fetchLevels} />;
+    if (error) return <GameStateDisplay message={error} onRetry={loadLevels} />;
     if (!currentLevel) return <GameStateDisplay message="恭喜！您已完成所有关卡！" />;
 
     return (
@@ -129,7 +114,6 @@ const SpotTheDifference = () => {
                 <div className="game-info">
                     <h1>第 {currentLevelIndex + 1} / {levels.length} 关</h1>
                     <p>
-                        {isOfflineMode && <span className="offline-badge">离线</span>}
                         找到的差异: {foundDifferences.length} / {differences.length}
                     </p>
                 </div>
