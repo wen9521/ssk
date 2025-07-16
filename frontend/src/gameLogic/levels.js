@@ -50,24 +50,21 @@ const fetchLevels = async () => {
 export const getLevels = async () => {
     const onlineLevels = await fetchLevels();
     if (onlineLevels && onlineLevels.length > 0) {
-        // *** FIX: Correct the image URLs from the fetched data ***
-        // The URLs in the fetched JSON might be missing the `/render` part.
+        // *** ROBUST FIX: Rebuild the URL from the filename to ensure correctness ***
         const correctedLevels = onlineLevels.map(level => {
-            // Ensure we don't accidentally double-up the `/render` part.
-            const correctOriginal = level.original.includes('/render/levels/') 
-                ? level.original 
-                : level.original.replace('/levels/', '/render/levels/');
-            const correctModified = level.modified.includes('/render/levels/')
-                ? level.modified
-                : level.modified.replace('/levels/', '/render/levels/');
+            const baseUrl = 'https://render.wenxiuxiu.eu.org/render/levels/';
+            
+            // Extract the filename from the end of the provided URL path.
+            const originalFilename = level.original.split('/').pop();
+            const modifiedFilename = level.modified.split('/').pop();
 
             return {
                 ...level,
-                original: correctOriginal,
-                modified: correctModified,
+                original: baseUrl + originalFilename,
+                modified: baseUrl + modifiedFilename,
             };
         });
-        console.log("Corrected online levels:", correctedLevels);
+        console.log("Corrected online levels with robust URL builder:", correctedLevels);
         return correctedLevels;
     }
     // If fetching fails or returns no levels, use the local fallback data.
