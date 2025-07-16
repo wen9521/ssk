@@ -1,4 +1,3 @@
-
 import os
 import sys
 import json
@@ -86,8 +85,7 @@ def main():
 
     for filename in source_files:
         # This is the corrected, single-line print statement
-        print(f"
-Processing '{filename}'...")
+        print(f"\nProcessing '{filename}'...")
         
         original_path = os.path.join(SOURCE_IMAGE_DIR, filename)
         base_name = os.path.splitext(filename)[0]
@@ -141,17 +139,14 @@ Processing '{filename}'...")
         with open(levels_json_path, 'w') as f:
             json.dump(levels_data, f, indent=2)
         
-        print("
-Uploading final levels.json...")
+        print("\nUploading final levels.json...")
         s3.upload_file(levels_json_path, S3_BUCKET_NAME, 'levels.json', ExtraArgs={'ContentType': 'application/json'})
         os.remove(levels_json_path)
         print("levels.json uploaded successfully.")
     else:
-        print("
-No levels were generated. Skipping levels.json upload.")
+        print("\nNo levels were generated. Skipping levels.json upload.")
 
-    print("
-Level generation process complete.")
+    print("\nLevel generation process complete.")
 
 if __name__ == "__main__":
     main()
