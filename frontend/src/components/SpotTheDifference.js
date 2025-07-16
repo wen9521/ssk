@@ -2,7 +2,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './styles/SpotTheDifference.css';
-import { localLevels } from '../gameLogic/levels'; 
+import { localLevels } from '../gameLogic/levels'; // Fallback levels
+
+// The public URL for the R2 bucket where levels are stored.
+const LEVELS_JSON_URL = "https://pub-5a0d7fbdb4e94d9db5d2a074b6e346e4.r2.dev/levels.json";
+
 
 const GameStateDisplay = ({ message, isLoading = false, onRetry }) => (
     <div className="game-state-container">
@@ -23,12 +27,10 @@ const DifferenceMarker = ({ diff, scaleFactor }) => {
     return <div className="difference-marker" style={style} />;
 };
 
-// This component now directly uses the full URL from the levels file.
 const GameImage = ({ src, onClick, children }) => {
     return (
         <div className="image-wrapper" onClick={onClick}>
-            {/* The `src` is now a complete URL, no prefix needed */}
-            <img src={src} alt={src} crossOrigin="anonymous" />
+            <img src={src} alt="Spot the difference" crossOrigin="anonymous" />
             {children}
         </div>
     );
@@ -43,14 +45,32 @@ const SpotTheDifference = () => {
     const [error, setError] = useState(null);
     const [imageScaleFactor, setImageScaleFactor] = useState(1);
 
-    const loadLevels = useCallback(() => {
+    const loadLevels = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
-            const shuffledLevels = [...localLevels].sort(() => Math.random() - 0.5);
-            setLevels(shuffledLevels);
+            // Try to fetch levels from the remote URL
+            const response = await fetch(`${LEVELS_JSON_URL}?cachebust=${new Date().getTime()}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const remoteLevels = await response.json();
+            
+            // Ensure remoteLevels is an array and not empty
+            if (Array.isArray(remoteLevels) && remoteLevels.length > 0) {
+                 const shuffledLevels = [...remoteLevels].sort(() => Math.random() - 0.5);
+                setLevels(shuffledLevels);
+            } else {
+                // Fallback to local levels if remote data is invalid
+                console.warn("Remote levels were empty or invalid. Falling back to local levels.");
+                setLevels([...localLevels].sort(() => Math.random() - 0.5));
+            }
+
         } catch (err) {
-            setError('加载关卡失败，请刷新页面重试。');
+            console.error("Failed to load remote levels, falling back to local ones:", err);
+            setError('加载在线关卡失败，已为你加载基础关卡。');
+            // Use local levels as a fallback
+            setLevels([...localLevels].sort(() => Math.random() - 0.5));
         } finally {
             setIsLoading(false);
             setCurrentLevelIndex(0);
@@ -61,7 +81,7 @@ const SpotTheDifference = () => {
     useEffect(() => {
         loadLevels();
     }, [loadLevels]);
-
+    
     const currentLevel = useMemo(() => levels[currentLevelIndex], [levels, currentLevelIndex]);
     const differences = useMemo(() => currentLevel?.differences || [], [currentLevel]);
     const isLevelComplete = useMemo(() => differences.length > 0 && foundDifferences.length === differences.length, [foundDifferences, differences]);
@@ -101,8 +121,8 @@ const SpotTheDifference = () => {
     }, [loadLevels]);
 
     if (isLoading) return <GameStateDisplay message="正在加载关卡..." isLoading={true} />;
-    if (error) return <GameStateDisplay message={error} onRetry={loadLevels} />;
-    if (!currentLevel) return <GameStateDisplay message="所有关卡已完成！" onRetry={handleRestartGame} />;
+    if (error && levels.length === 0) return <GameStateDisplay message={error} onRetry={loadLevels} />;
+    if (!currentLevel) return <GameStateDisplay message="没有可玩的关卡。" onRetry={handleRestartGame} />;
 
     return (
         <div className="spot-the-difference-container">
@@ -111,6 +131,7 @@ const SpotTheDifference = () => {
                 <div className="game-info">
                     <h1>第 {currentLevelIndex + 1} / {levels.length} 关</h1>
                     <p>找到的差异: {foundDifferences.length} / {differences.length}</p>
+                    {error && <p className="error-message">{error}</p>}
                 </div>
             </header>
 

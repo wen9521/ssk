@@ -7,20 +7,24 @@ import boto3
 from PIL import Image, ImageDraw
 
 # --- Configuration ---
-# These will be set as environment variables in the GitHub Action
-CF_ACCOUNT_ID = os.environ.get("CF_ACCOUNT_ID")
-CF_ACCESS_KEY_ID = os.environ.get("CF_ACCESS_KEY_ID")
-CF_SECRET_ACCESS_KEY = os.environ.get("CF_SECRET_ACCESS_KEY")
-CF_BUCKET_NAME = os.environ.get("CF_BUCKET_NAME")
-CF_PUBLIC_URL = f"https://{CF_BUCKET_NAME}.{CF_ACCOUNT_ID}.r2.cloudflarestorage.com"
+# These will be set as environment variables in the Render service
+S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL") # e.g., https://<account_id>.r2.cloudflarestorage.com
+S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
+S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
+S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME")
+
+# The public URL of your R2 bucket. Update this if you have a custom domain.
+# This should be the same URL used by your frontend application.
+CF_PUBLIC_URL = "https://pub-5a0d7fbdb4e94d9db5d2a074b6e346e4.r2.dev"
+
 
 # S3-compatible client for Cloudflare R2
 s3 = boto3.client(
     service_name='s3',
-    endpoint_url=f'https://{CF_ACCOUNT_ID}.r2.cloudflarestorage.com',
-    aws_access_key_id=CF_ACCESS_KEY_ID,
-    aws_secret_access_key=CF_SECRET_ACCESS_KEY,
-    region_name='auto',
+    endpoint_url=S3_ENDPOINT_URL,
+    aws_access_key_id=S3_ACCESS_KEY,
+    aws_secret_access_key=S3_SECRET_KEY,
+    region_name='auto', # This can be 'auto' or a specific region
 )
 
 # --- Image Modification Functions ---
@@ -90,36 +94,61 @@ def generate_differences(original_image_path):
 
 def upload_to_r2(local_path, remote_name):
     """Uploads a file to Cloudflare R2 and returns its public URL."""
-    s3.upload_file(local_path, CF_BUCKET_NAME, remote_name, ExtraArgs={'ContentType': 'image/png'})
-    return f"{CF_PUBLIC_URL}/{remote_name}"
+    try:
+        s3.upload_file(local_path, S3_BUCKET_NAME, remote_name, ExtraArgs={'ContentType': 'image/png'})
+        public_url = f"{CF_PUBLIC_URL}/{remote_name}"
+        print(f"Successfully uploaded {local_path} to {public_url}")
+        return public_url
+    except Exception as e:
+        print(f"Error uploading {local_path}: {e}")
+        sys.exit(1)
+
 
 def update_levels_json(new_level_data):
     """Downloads, updates, and re-uploads the levels.json file."""
+    levels_key = 'levels.json'
     try:
-        response = s3.get_object(Bucket=CF_BUCKET_NAME, Key='levels.json')
+        response = s3.get_object(Bucket=S3_BUCKET_NAME, Key=levels_key)
         levels = json.loads(response['Body'].read())
     except s3.exceptions.NoSuchKey:
-        print("levels.json not found, creating a new one.")
+        print(f"{levels_key} not found, creating a new one.")
         levels = []
-    
+    except Exception as e:
+        print(f"Error downloading {levels_key}: {e}")
+        sys.exit(1)
+
     levels.append(new_level_data)
     
-    new_json_content = json.dumps(levels, indent=4)
-    s3.put_object(
-        Bucket=CF_BUCKET_NAME,
-        Key='levels.json',
-        Body=new_json_content,
-        ContentType='application/json'
-    )
-    print("levels.json updated successfully.")
+    try:
+        new_json_content = json.dumps(levels, indent=4)
+        s3.put_object(
+            Bucket=S3_BUCKET_NAME,
+            Key=levels_key,
+            Body=new_json_content,
+            ContentType='application/json'
+        )
+        print(f"{levels_key} updated successfully.")
+    except Exception as e:
+        print(f"Error uploading {levels_key}: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
+    # The cron job on Render will pass the path to the image.
+    # We'll use a default for local testing.
+    # In production, the startCommand will be like: "python generate_level.py ./images_for_ai/image1.png"
     if len(sys.argv) < 2:
+        # Use a default image for testing if none is provided
         print("Usage: python generate_level.py <path_to_original_image>")
+        print("Using default image: ../images_for_ai/image1.png")
+        original_path = "../images_for_ai/image1.png"
+    else:
+        original_path = sys.argv[1]
+
+    if not os.path.exists(original_path):
+        print(f"Error: Original image not found at {original_path}")
         sys.exit(1)
-        
-    original_path = sys.argv[1]
+
     base_name = os.path.splitext(os.path.basename(original_path))[0]
     
     print(f"Processing {original_path}...")
@@ -128,8 +157,8 @@ if __name__ == "__main__":
     modified_path, differences = generate_differences(original_path)
     
     # 2. Upload both images to R2
-    original_url = upload_to_r2(original_path, f"images/{base_name}_orig.png")
-    modified_url = upload_to_r2(modified_path, f"images/{base_name}_mod.png")
+    original_url = upload_to_r2(original_path, f"{base_name}_original.png")
+    modified_url = upload_to_r2(modified_path, f"{base_name}_modified.png")
     
     print(f"Uploaded original to: {original_url}")
     print(f"Uploaded modified to: {modified_url}")
@@ -144,5 +173,8 @@ if __name__ == "__main__":
     
     # 4. Update the central levels.json
     update_levels_json(new_level)
+
+    # 5. Clean up local modified file
+    os.remove(modified_path)
     
     print("Level generation complete.")
