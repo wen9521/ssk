@@ -25,9 +25,10 @@ const DifferenceMarker = ({ diff, scaleFactor }) => {
 };
 
 const GameImage = ({ src, onClick, children }) => {
+    const imageUrl = `${process.env.PUBLIC_URL}${src}`;
     return (
         <div className="image-wrapper" onClick={onClick}>
-            <img src={src} alt={src.includes('original') ? 'Original' : 'Modified'} crossOrigin="anonymous" />
+            <img src={imageUrl} alt={src.includes('original') ? 'Original' : 'Modified'} crossOrigin="anonymous" />
             {children}
         </div>
     );
