@@ -10,10 +10,9 @@ from PIL import Image, ImageDraw
 try:
     S3_ENDPOINT_URL = os.environ['R2_ENDPOINT_URL']
     S3_ACCESS_KEY = os.environ['R2_ACCESS_KEY_ID']
-    S3_SECRET_KEY = os.environ['R2_SECRET_ACCESS_KEY']
+    S3_SECRET_KEY = os.environ['R2_SECRET_KEY']
     S3_BUCKET_NAME = os.environ['R2_BUCKET_NAME']
-    # The public URL of your R2 bucket, with your custom domain.
-    CF_PUBLIC_URL = os.environ['R2_PUBLIC_URL'] 
+    CF_PUBLIC_URL = os.environ['R2_PUBLIC_URL']
 except KeyError as e:
     print(f"Error: Missing environment variable {e}. Please set it in GitHub Secrets.")
     sys.exit(1)
@@ -30,7 +29,7 @@ s3 = boto3.client(
     region_name='auto',
 )
 
-# --- Image Modification Functions (Simplified for clarity) ---
+# --- Image Modification Functions ---
 def add_small_shape(draw, width, height):
     x = random.randint(int(width * 0.1), int(width * 0.9))
     y = random.randint(int(height * 0.1), int(height * 0.9))
@@ -86,14 +85,14 @@ def main():
     print(f"Found {len(source_files)} images to process.")
 
     for filename in source_files:
-        original_path = os.path.join(SOURCE_IMAGE_DIR, filename)
-        base_name = os.path.splitext(filename)[0]
+        # Corrected, simple print statement
         print(f"
 Processing '{filename}'...")
+        original_path = os.path.join(SOURCE_IMAGE_DIR, filename)
+        base_name = os.path.splitext(filename)[0]
 
         try:
             with Image.open(original_path).convert("RGBA") as img:
-                # 1. Generate modified image
                 modified_img = img.copy()
                 draw = ImageDraw.Draw(modified_img)
                 width, height = img.size
@@ -110,24 +109,21 @@ Processing '{filename}'...")
                         diff = func(modified_img, width, height)
                     differences.append(diff)
                 
-                # Save modified image locally for upload
                 modified_path = f"/tmp/{base_name}_modified.png"
                 modified_img.save(modified_path, "PNG")
 
-                # 2. Upload both original and modified images to R2
                 remote_original_name = f"levels/{base_name}_original.png"
                 remote_modified_name = f"levels/{base_name}_modified.png"
                 
                 original_url = upload_to_r2(original_path, remote_original_name)
                 modified_url = upload_to_r2(modified_path, remote_modified_name)
 
-                os.remove(modified_path) # Clean up temp file
+                os.remove(modified_path)
 
                 if not original_url or not modified_url:
                     print(f"Skipping level for '{filename}' due to upload error.")
                     continue
 
-                # 3. Add level data for the JSON file
                 levels_data.append({
                     "id": base_name.replace(" ", "_").lower(),
                     "name": base_name.replace("_", " ").title(),
@@ -139,7 +135,6 @@ Processing '{filename}'...")
         except Exception as e:
             print(f"Could not process image {filename}. Error: {e}")
 
-    # 4. Upload the final levels.json to R2
     if levels_data:
         levels_json_path = "/tmp/levels.json"
         with open(levels_json_path, 'w') as f:
@@ -159,4 +154,3 @@ Level generation process complete.")
 
 if __name__ == "__main__":
     main()
-
