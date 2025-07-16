@@ -1,57 +1,66 @@
 name: Generate Spot-the-Difference Levels
 
+# --- 触发器 ---
+# 这个工作流程会在以下情况被触发：
+# 1. 当有代码推送到 main 分支时
+# 2. 当您在 GitHub Actions 页面手动点击 "Run workflow" 按钮时
 on:
   push:
     branches:
       - main
-    paths:
-      - 'images_for_ai/**'
+  workflow_dispatch:
 
 jobs:
-  generate-level:
-    runs-on: ubuntu-latest
-    
-    # Granting permissions for the job to read the repository content
-    permissions:
-      contents: read
+  build:
+    runs-on: ubuntu-latest # 使用最新的 Ubuntu 虚拟机环境
 
     steps:
+      # 第 1 步：检出代码
+      # 将您的代码仓库复制到虚拟机中，以便脚本可以被访问
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          # We need to fetch the history to compare commits
-          fetch-depth: 2 
 
+      # 第 2 步：设置 Python 环境
+      # 安装 Python 3.9，为我们的脚本做好准备
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
+      # 第 3 步：安装 Python 依赖
+      # 根据 requirements.txt 文件，安装脚本需要的所有库（如 boto3, Pillow）
       - name: Install dependencies
-        run: pip install -r ai_generator/requirements.txt
-
-      - name: Find new images
-        id: find_new_images
-        # This command gets the list of files that were added or modified in the last push
-        # and filters for those inside the 'images_for_ai' directory.
         run: |
-          echo "Finding new images in the last push..."
-          FILES=$(git diff --name-only HEAD^ HEAD | grep '^images_for_ai/.*\.\(png\|jpg\|jpeg\)$' || true)
-          if [ -z "$FILES" ]; then
-            echo "No new images found in images_for_ai/. Exiting."
-            exit 0
+          python -m pip install --upgrade pip
+          if [ -f ai_generator/requirements.txt ]; then
+            pip install -r ai_generator/requirements.txt
+          else
+            echo "requirements.txt not found, skipping dependency installation."
           fi
-          echo "::set-output name=new_files::$FILES"
 
-      - name: Generate level for each new image
-        if: steps.find_new_images.outputs.new_files
+      # 第 4 步：运行关卡生成脚本
+      # --- 这是最关键的修复 ---
+      # 我们在这里通过 `env` 关键字，将您在 GitHub Secrets 中设置的秘密
+      # 注入到脚本的运行环境中，作为环境变量。
+      - name: Run level generation script
         env:
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CF_ACCESS_KEY_ID: ${{ secrets.CF_ACCESS_KEY_ID }}
-          CF_SECRET_ACCESS_KEY: ${{ secrets.CF_SECRET_ACCESS_KEY }}
-          CF_BUCKET_NAME: ${{ secrets.CF_BUCKET_NAME }}
-        run: |
-          for file in ${{ steps.find_new_images.outputs.new_files }}; do
-            echo "Processing $file..."
-            python ai_generator/generate_level.py "$file"
-          done
+          # 将 GitHub Secret "R2_ENDPOINT_URL" 映射为脚本可以读取的环境变量
+          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+          # 将您的自定义域映射为环境变量
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          # 映射存储桶名称
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          # 映射访问密钥 ID
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          # 映射秘密访问密钥
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: python ai_generator/generate_level.py
+
+      # (可选) 第 5 步：如果需要，可以在这里添加部署到 Firebase 的步骤
+      # 例如：
+      # - name: Deploy to Firebase
+      #   uses: w9jds/firebase-action@master
+      #   with:
+      #     args: deploy --only functions,hosting
+      #   env:
+      #     FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
