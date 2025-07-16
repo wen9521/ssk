@@ -1,3 +1,4 @@
+
 import os
 import sys
 import json
@@ -6,15 +7,27 @@ import boto3
 from PIL import Image, ImageDraw
 
 # --- Configuration from Environment Variables (GitHub Secrets) ---
-try:
-    S3_ENDPOINT_URL = os.environ['R2_ENDPOINT_URL']
-    S3_ACCESS_KEY = os.environ['R2_ACCESS_KEY_ID']
-    S3_SECRET_KEY = os.environ['R2_SECRET_KEY']
-    S3_BUCKET_NAME = os.environ['R2_BUCKET_NAME']
-    CF_PUBLIC_URL = os.environ['R2_PUBLIC_URL']
-except KeyError as e:
-    print(f"Error: Missing environment variable {e}. Please set it in GitHub Secrets.")
+def get_secret(key, fallback_key=None):
+    """Gets a secret from environment variables, trying a fallback key if the first one fails."""
+    value = os.environ.get(key)
+    if value:
+        return value
+    if fallback_key:
+        value = os.environ.get(fallback_key)
+        if value:
+            return value
+    # If neither key is found, print an error and exit.
+    print(f"Error: Missing a required environment variable. Tried '{key}'" + (f" and '{fallback_key}'" if fallback_key else "") + ". Please set it in GitHub Secrets.")
     sys.exit(1)
+
+# --- Get all required secrets using the new flexible method ---
+S3_ENDPOINT_URL = get_secret('R2_ENDPOINT_URL')
+S3_ACCESS_KEY = get_secret('R2_ACCESS_KEY_ID')
+S3_BUCKET_NAME = get_secret('R2_BUCKET_NAME')
+CF_PUBLIC_URL = get_secret('R2_PUBLIC_URL')
+# **The key change is here: Try 'R2_SECRET_KEY' first, then fall back to 'R2_SECRET_ACCESS_KEY'**
+S3_SECRET_KEY = get_secret('R2_SECRET_KEY', 'R2_SECRET_ACCESS_KEY')
+
 
 # Source directory for original images
 SOURCE_IMAGE_DIR = "images_for_ai"
@@ -28,7 +41,7 @@ s3 = boto3.client(
     region_name='auto',
 )
 
-# --- Image Modification Functions ---
+# --- Image Modification Functions (unchanged) ---
 def add_small_shape(draw, width, height):
     x = random.randint(int(width * 0.1), int(width * 0.9))
     y = random.randint(int(height * 0.1), int(height * 0.9))
@@ -84,8 +97,8 @@ def main():
     print(f"Found {len(source_files)} images to process.")
 
     for filename in source_files:
-        # This is the corrected, single-line print statement
-        print(f"\nProcessing '{filename}'...")
+        print(f"
+Processing '{filename}'...")
         
         original_path = os.path.join(SOURCE_IMAGE_DIR, filename)
         base_name = os.path.splitext(filename)[0]
@@ -139,14 +152,17 @@ def main():
         with open(levels_json_path, 'w') as f:
             json.dump(levels_data, f, indent=2)
         
-        print("\nUploading final levels.json...")
+        print("
+Uploading final levels.json...")
         s3.upload_file(levels_json_path, S3_BUCKET_NAME, 'levels.json', ExtraArgs={'ContentType': 'application/json'})
         os.remove(levels_json_path)
         print("levels.json uploaded successfully.")
     else:
-        print("\nNo levels were generated. Skipping levels.json upload.")
+        print("
+No levels were generated. Skipping levels.json upload.")
 
-    print("\nLevel generation process complete.")
+    print("
+Level generation process complete.")
 
 if __name__ == "__main__":
     main()
