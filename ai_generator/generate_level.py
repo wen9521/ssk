@@ -1,4 +1,3 @@
-
 import os
 import sys
 import json
@@ -8,9 +7,7 @@ import boto3
 from botocore.config import Config
 from PIL import Image, ImageDraw
 
-# --- Configuration from Environment Variables (GitHub Secrets) ---
 def get_secret(key, fallback_key=None):
-    """Gets a secret from environment variables, trying a fallback key if the first one fails."""
     value = os.environ.get(key)
     if value:
         return value
@@ -21,7 +18,6 @@ def get_secret(key, fallback_key=None):
     print(f"Error: Missing a required environment variable. Tried '{key}'" + (f" and '{fallback_key}'" if fallback_key else "") + ". Please set it in GitHub Secrets.")
     sys.exit(1)
 
-# --- Get all required secrets ---
 S3_ENDPOINT_URL = get_secret('R2_ENDPOINT_URL')
 S3_ACCESS_KEY = get_secret('R2_ACCESS_KEY_ID')
 S3_BUCKET_NAME = get_secret('R2_BUCKET_NAME')
@@ -29,8 +25,6 @@ CF_PUBLIC_URL = get_secret('R2_PUBLIC_URL')
 S3_SECRET_KEY = get_secret('R2_SECRET_KEY', 'R2_SECRET_ACCESS_KEY')
 SOURCE_IMAGE_DIR = "images_for_ai"
 
-# --- S3 Client for Cloudflare R2 with Explicit Configuration ---
-# This is the key fix: explicitly set the signature version and a placeholder region.
 s3 = boto3.client(
     service_name='s3',
     endpoint_url=S3_ENDPOINT_URL,
@@ -42,16 +36,13 @@ s3 = boto3.client(
     )
 )
 
-# --- Helper Function to Sanitize Filenames (unchanged) ---
 def sanitize_filename(name):
-    """Cleans a string to be a safe filename for URLs and object storage."""
     name = name.lower()
     name = re.sub(r'[\s_]+', '-', name)
     name = re.sub(r'[^a-z0-9\-\.]', '', name)
     name = name.strip('-')
     return name
 
-# --- Image Modification Functions (unchanged) ---
 def add_small_shape(draw, width, height):
     x, y = random.randint(int(width*0.1), int(width*0.9)), random.randint(int(height*0.1), int(height*0.9))
     radius = random.randint(10, 25)
@@ -69,7 +60,6 @@ def remove_small_detail(image, width, height):
     image.paste(region, (x-radius, y-radius))
     return {"type": "removal", "x": x, "y": y, "radius": radius}
 
-# --- Main Logic (unchanged) ---
 def upload_to_r2(local_path, remote_name, content_type='image/png'):
     try:
         s3.upload_file(local_path, S3_BUCKET_NAME, remote_name, ExtraArgs={'ContentType': content_type})
@@ -90,7 +80,6 @@ def main():
     except FileNotFoundError:
         print(f"Error: Source directory '{SOURCE_IMAGE_DIR}' not found.")
         sys.exit(1)
-
     if not source_files:
         print("No images found. Exiting.")
         return
@@ -98,8 +87,8 @@ def main():
     print(f"Found {len(source_files)} images to process.")
 
     for filename in source_files:
-        print(f"
-Processing '{filename}'...")
+        # Corrected: Ensuring print statements are single line or triple quoted.
+        print(f"\nProcessing '{filename}'...")
         original_path = os.path.join(SOURCE_IMAGE_DIR, filename)
         base_name = os.path.splitext(filename)[0]
         safe_base_name = sanitize_filename(base_name)
@@ -132,23 +121,19 @@ Processing '{filename}'...")
                     "modified": modified_url,
                     "differences": differences
                 })
-        except Exception as e:
-            # Catching the "cannot identify image file" error specifically
-            print(f"Could not process image '{filename}'. It may be corrupt or not a valid image. Error: {e}")
+            except Exception as e:
+                print(f"Could not process image '{filename}'. It may be corrupt or not a valid image. Error: {e}")
 
     if levels_data:
         levels_json_path = "/tmp/levels.json"
         with open(levels_json_path, 'w') as f:
             json.dump(levels_data, f, indent=2)
-        print("
-Uploading final levels.json...")
+        print("\nUploading final levels.json...")
         upload_to_r2(levels_json_path, 'levels.json', 'application/json')
         os.remove(levels_json_path)
     else:
-        print("
-No levels were generated. Skipping levels.json upload.")
-    print("
-Level generation process complete.")
+        print("\nNo levels were generated. Skipping levels.json upload.")
+    print("\nLevel generation process complete.")
 
 if __name__ == "__main__":
     main()
