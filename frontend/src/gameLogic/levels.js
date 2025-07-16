@@ -1,27 +1,80 @@
 // frontend/src/gameLogic/levels.js
 
-// Cloudflare R2 public bucket URL
-const R2_PUBLIC_URL = "https://pub-5a0d7fbdb4e94d9db5d2a074b6e346e4.r2.dev";
+// The public URL for your Cloudflare R2 bucket where levels are stored.
+// This URL may require a proxy to access.
+const R2_LEVELS_JSON_URL = "https://render.wenxiuxiu.eu.org/render/levels.json";
 
-// Fallback levels using the correct R2 paths.
-export const localLevels = [
+// Fallback levels in case the network request fails.
+// These serve as a backup to ensure the game is always playable.
+const fallbackLevels = [
     {
-        id: 'r2_level_1',
-        original: `${R2_PUBLIC_URL}/image1.png`,
-        modified: `${R2_PUBLIC_URL}/image2.png`,
+        id: 'fallback_level_1',
+        name: "Fallback Level 1",
+        original: `https://render.wenxiuxiu.eu.org/render/levels/adaa_original.png`,
+        modified: `https://render.wenxiuxiu.eu.org/render/levels/adaa_modified.png`,
         differences: [
-            { "x": 512, "y": 512, "radius": 50 },
-            { "x": 200, "y": 300, "radius": 40 },
-            { "x": 800, "y": 700, "radius": 60 }
-        ]
-    },
-    {
-        id: 'r2_level_2',
-        original: `${R2_PUBLIC_URL}/image2.png`,
-        modified: `${R2_PUBLIC_URL}/image1.png`,
-        differences: [
-            { "x": 100, "y": 800, "radius": 55 },
-            { "x": 900, "y": 150, "radius": 45 },
+            { "type": "shape", "x": 512, "y": 512, "radius": 50 },
+            { "type": "removal", "x": 200, "y": 300, "radius": 40 }
         ]
     }
 ];
+
+/**
+ * Asynchronously fetches the latest level data from the R2 bucket.
+ * 
+ * @returns {Promise<Array|null>} A promise that resolves to an array of level objects, or null if the fetch fails.
+ */
+const fetchLevels = async () => {
+    try {
+        const response = await fetch(R2_LEVELS_JSON_URL);
+        if (!response.ok) {
+            // If the response is not successful (e.g., 404 Not Found), throw an error.
+            throw new Error(`Network response was not ok: ${response.statusText}`);
+        }
+        const levels = await response.json();
+        console.log("Successfully fetched levels from R2:", levels);
+        return levels;
+    } catch (error) {
+        // Log the error and return null to indicate failure.
+        console.error("Failed to fetch levels from R2:", error);
+        return null;
+    }
+};
+
+/**
+ * Gets the game levels, prioritizing fetching from the network and using fallbacks if necessary.
+ * This is the main function that should be used by other parts of the application.
+ *
+ * @returns {Promise<Array>} A promise that resolves to an array of level objects.
+ */
+export const getLevels = async () => {
+    const onlineLevels = await fetchLevels();
+    if (onlineLevels && onlineLevels.length > 0) {
+        // *** FIX: Correct the image URLs from the fetched data ***
+        // The URLs in the fetched JSON might be missing the `/render` part.
+        const correctedLevels = onlineLevels.map(level => {
+            // Ensure we don't accidentally double-up the `/render` part.
+            const correctOriginal = level.original.includes('/render/levels/') 
+                ? level.original 
+                : level.original.replace('/levels/', '/render/levels/');
+            const correctModified = level.modified.includes('/render/levels/')
+                ? level.modified
+                : level.modified.replace('/levels/', '/render/levels/');
+
+            return {
+                ...level,
+                original: correctOriginal,
+                modified: correctModified,
+            };
+        });
+        console.log("Corrected online levels:", correctedLevels);
+        return correctedLevels;
+    }
+    // If fetching fails or returns no levels, use the local fallback data.
+    console.warn("Using fallback levels.");
+    return fallbackLevels;
+};
+
+// For backward compatibility or direct use, you can still export localLevels.
+// Note: `getLevels` is the preferred way to get level data.
+export const localLevels = fallbackLevels;
