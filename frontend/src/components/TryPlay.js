@@ -37,10 +37,11 @@ export default function TryPlay() {
   function handleReady() {
     if (!isReady) {
       const deck = getShuffledDeck();
-      const [myHand, ...aiHands] = dealHands(deck, 4); 
-      setHead(myHand.slice(0, 3));
-      setMiddle(myHand.slice(3, 8));
-      setTail(myHand.slice(8, 13));
+      const [myHand, ...aiHands] = dealHands(deck, 4);
+      const myInitialSplit = aiSmartSplit(myHand);
+      setHead(myInitialSplit.front);
+      setMiddle(myInitialSplit.middle);
+      setTail(myInitialSplit.back);
       setIsReady(true);
       setHasCompared(false);
       setMsg('');
@@ -51,9 +52,9 @@ export default function TryPlay() {
       setMySplits([]); setSplitIndex(0);
       setAiProcessed([false, false, false]);
       setAiPlayers([
-        { name: AI_NAMES[0], isAI: true, cards13: aiHands[0], head: aiHands[0].slice(0,3), middle: aiHands[0].slice(3,8), tail: aiHands[0].slice(8,13), processed: false },
-        { name: AI_NAMES[1], isAI: true, cards13: aiHands[1], head: aiHands[1].slice(0,3), middle: aiHands[1].slice(3,8), tail: aiHands[1].slice(8,13), processed: false },
-        { name: AI_NAMES[2], isAI: true, cards13: aiHands[2], head: aiHands[2].slice(0,3), middle: aiHands[2].slice(3,8), tail: aiHands[2].slice(8,13), processed: false },
+        { name: AI_NAMES[0], isAI: true, cards13: aiHands[0], head: [], middle: [], tail: [], processed: false },
+        { name: AI_NAMES[1], isAI: true, cards13: aiHands[1], head: [], middle: [], tail: [], processed: false },
+        { name: AI_NAMES[2], isAI: true, cards13: aiHands[2], head: [], middle: [], tail: [], processed: false },
       ]);
       setTimeout(() => {
         const splits = getPlayerSmartSplits(myHand);
@@ -66,7 +67,7 @@ export default function TryPlay() {
           setAiPlayers(old => {
             const newAis = [...old];
             const split = aiSmartSplit(hand);
-            newAis[idx] = { ...newAis[idx], ...split, processed: true };
+            newAis[idx] = { ...newAis[idx], head: split.front, middle: split.middle, tail: split.back, processed: true };
             return newAis;
           });
           setAiProcessed(proc => {
@@ -133,9 +134,9 @@ export default function TryPlay() {
     const nextIdx = (splitIndex + 1) % mySplits.length;
     setSplitIndex(nextIdx);
     const split = mySplits[nextIdx];
-    setHead(split.head);
+    setHead(split.front);
     setMiddle(split.middle);
-    setTail(split.tail);
+    setTail(split.back);
     setMsg(`已切换智能分牌方案 ${nextIdx + 1}/${mySplits.length}`);
   }
 
@@ -194,6 +195,7 @@ export default function TryPlay() {
   }
 
   function renderPaiDunCards(arr, area, cardSize) {
+    if (!arr) return null; // Add a guard clause
     const paddingX = 16;
     const maxWidth = OUTER_MAX_WIDTH - 2 * paddingX - 70;
     let overlap = Math.floor((cardSize?.width ?? CARD_WIDTH) / 3);
@@ -278,7 +280,7 @@ export default function TryPlay() {
           alignItems: 'center',
           minWidth: 0,
         }}>
-          {arr.length === 0 &&
+          {(!arr || arr.length === 0) &&
             <div style={{
               width: '100%',
               height: '100%',
@@ -310,7 +312,7 @@ export default function TryPlay() {
             whiteSpace: 'nowrap'
           }}
         >
-          {`${label}(${arr.length})`}
+          {`${label}(${(arr || []).length})`}
         </div>
       </div>
     );
