@@ -3,23 +3,27 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    position: fixed; /* 固定在屏幕底部 */
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     padding: 1rem;
-    background: rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(5px);
+    /* 使用更深的半透明背景，与牌桌协调 */
+    background: rgba(15, 61, 30, 0.5); /* 从牌桌颜色提取 */
+    backdrop-filter: blur(10px);
+    /* 添加一个顶部边框，以区分手牌区和牌桌 */
+    border-top: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.4);
 }
 
 .hand-scroll-area {
     display: flex;
     justify-content: center;
-    align-items: flex-end; /* 卡牌底部对齐 */
+    align-items: flex-end;
     width: 100%;
-    padding-bottom: 1rem; /* 为选中效果留出空间 */
+    padding-bottom: 1rem;
     margin-bottom: 1rem;
-    overflow-x: auto; /* 手牌多时可以横向滚动 */
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
 
@@ -33,21 +37,23 @@
 }
 
 .card-wrapper {
-    margin-left: -30px; /* 卡牌部分重叠 */
-    transition: transform 0.2s ease-out;
+    margin-left: -35px; /* 增加一点重叠 */
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.2s;
+    filter: drop-shadow(5px 5px 5px rgba(0,0,0,0.3)); /* 添加阴影以增强立体感 */
 }
 .card-wrapper:first-child {
     margin-left: 0;
 }
 .card-wrapper:hover {
-    transform: translateY(-5px); /* 悬停时轻微上浮 */
+    transform: translateY(-10px); /* 悬停上浮更明显 */
 }
 
 .card-wrapper.selected {
-    transform: translateY(-25px); /* 选中时明显上浮 */
+    transform: translateY(-30px); /* 选中时上浮更多 */
+    filter: drop-shadow(5px 15px 10px rgba(0,0,0,0.5)) brightness(1.1); /* 选中时阴影更大更亮 */
 }
 .card-wrapper.selected:hover {
-    transform: translateY(-30px); /* 选中时悬停效果 */
+    transform: translateY(-35px); /* 选中时悬停效果微调 */
 }
 
 .hand-actions {

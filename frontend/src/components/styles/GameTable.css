@@ -6,29 +6,31 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+    width: 100%;
     padding: 20px;
     box-sizing: border-box;
+    /* 背景色将由 index.css 的 body 继承 */
 }
 
-.thirteen-water-bg {
-    background: radial-gradient(circle, #3D5A4B 0%, #2C4A3B 100%);
-}
-
+/* 移除特定游戏的背景，使用全局背景 */
 .game-table {
     width: 100%;
     max-width: 1200px;
     height: 80vh;
-    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
-    border-radius: 150px;
+    /* 使用深邃的绿色径向渐变，模拟高级毛毡牌桌 */
+    background: radial-gradient(ellipse at center, rgba(17, 82, 43, 0.8) 0%, rgba(15, 61, 30, 0.9) 70%);
+    border-radius: 150px; /* 保持椭圆形状 */
+    /* 调整阴影以匹配绿色主题，移除金色光晕 */
     box-shadow: 
-        inset 0 0 50px rgba(0,0,0,0.5), /* Inner shadow for depth */
-        0 20px 50px rgba(0,0,0,0.7),   /* Main shadow for lift */
-        0 0 20px rgba(255,215,0,0.4); /* Gold glow */
+        inset 0 0 70px rgba(0,0,0,0.6), /* 更强的内部阴影增加深度 */
+        0 30px 60px rgba(0,0,0,0.5),   /* 更柔和的外部阴影 */
+        inset 0 0 20px rgba(255,255,255,0.1); /* 轻微的内部高光 */
     position: relative;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     padding: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.2); /* 添加一个轻微的边框 */
 }
 
 .opponent-seats {
@@ -39,12 +41,15 @@
 }
 
 .opponent-seat {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-    color: white;
+    /* 使用与玻璃卡片类似的样式 */
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    color: var(--text-color);
     padding: 15px 25px;
     border-radius: 15px;
     text-align: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .opponent-name {
@@ -57,12 +62,15 @@
     font-size: 0.9em;
     padding: 3px 8px;
     border-radius: 20px;
+    font-weight: bold;
 }
 .status-waiting {
-    background-color: #f39c12;
+    background-color: #d39e00; /* 更优雅的黄色 */
+    color: #111;
 }
 .status-ready {
-    background-color: #2ecc71;
+    background-color: var(--success-color);
+    color: #fff;
 }
 
 .main-area {
@@ -77,23 +85,27 @@
     color: white;
     font-size: 2em;
     font-weight: bold;
-    text-shadow: 0 0 10px #000;
+    text-shadow: 0 0 15px #000;
 }
 
 .player-seat-area {
-    /* 为底部玩家区保留空间，暂时不用 */
     height: 60px;
 }
 
 .exit-button {
     margin-top: 20px;
-    background: linear-gradient(90deg, #e74c3c, #c0392b);
+    /* 改为中性或与主题协调的颜色 */
+    background: linear-gradient(145deg, #555, #333);
     color: #fff;
     font-weight: bold;
-    border: none;
+    border: 1px solid rgba(255,255,255,0.2);
     border-radius: 8px;
     padding: 10px 20px;
     cursor: pointer;
     font-size: 16px;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+
+.exit-button:hover {
+    background: linear-gradient(145deg, #666, #444);
 }

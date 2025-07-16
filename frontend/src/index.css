@@ -2,12 +2,12 @@
 /* 全局样式和设计体系 */
 
 :root {
-  --bg-color: #2c3e50; /* 深蓝灰色背景 */
-  --primary-color: #f1c40f; /* 金色主色调 */
-  --secondary-color: #e67e22; /* 橙色辅助色 */
-  --text-color: #ecf0f1; /* 浅灰色文本 */
-  --card-bg: rgba(255, 255, 255, 0.08);
-  --card-border: rgba(255, 255, 255, 0.2);
+  --bg-color: #0f3d1e; /* 深绿色背景，模拟牌桌 */
+  --primary-color: #f0f0f0; /* 亮白色，用于按钮和高亮 */
+  --secondary-color: #c0c0c0; /* 银色，用于辅助元素 */
+  --text-color: #f0f0f0; /* 亮白色文本 */
+  --card-bg: rgba(255, 255, 255, 0.1);
+  --card-border: rgba(255, 255, 255, 0.25);
   --card-shadow: rgba(0, 0, 0, 0.5);
   --success-color: #2ecc71;
   --error-color: #e74c3c;
@@ -51,7 +51,7 @@ body {
 /* --- 通用组件样式 --- */
 button {
   background: linear-gradient(145deg, var(--primary-color), var(--secondary-color));
-  color: #1a1a1d;
+  color: #0f3d1e; /* 按钮文字改为深绿色以保证对比度 */
   border: none;
   padding: 12px 24px;
   border-radius: 8px;
@@ -60,7 +60,7 @@ button {
   cursor: pointer;
   transition: all 0.2s ease-in-out;
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-  text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.2);
 }
 
 button:hover {
@@ -75,6 +75,7 @@ button:active {
 
 button:disabled {
   background: #555;
+  color: #aaa;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -91,7 +92,7 @@ input[type="text"] {
 
 /* --- 玻璃质感卡片容器 --- */
 .glass-card {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
   border: 1px solid var(--card-border);

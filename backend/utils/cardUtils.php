@@ -3,7 +3,7 @@
 // 描述: 提供与扑克牌相关的工具函数，如创建、洗牌和发牌。
 
 /**
- * 创建一副标准的52张扑克牌。
+ * 创建一副标准的54张扑克牌（包含大小王）。
  * 每张牌是一个代表其资源名称的字符串，例如 "ace_of_spades"。
  *
  * @return array 一副有序的扑克牌。
@@ -18,7 +18,40 @@ function createDeck() {
             $deck[] = "{$rank}_of_{$suit}";
         }
     }
+    
+    // 添加大小王
+    $deck[] = 'red_joker';
+    $deck[] = 'black_joker';
+    
     return $deck;
+}
+
+/**
+ * 为斗地主游戏发牌。
+ *
+ * @param array $playerIds 玩家ID数组，应包含3个玩家。
+ * @return array 包含玩家手牌和底牌的关联数组。
+ * @throws Exception 如果玩家数量不是3，则抛出异常。
+ */
+function dealCardsForDoudizhu(array $playerIds) {
+    if (count($playerIds) !== 3) {
+        throw new Exception("发牌失败: 斗地主玩家数量必须为3。");
+    }
+
+    $deck = createDeck();
+    shuffle($deck);
+
+    $hands = array_fill_keys($playerIds, []);
+    for ($i = 0; $i < 17; $i++) {
+        foreach ($playerIds as $playerId) {
+            $hands[$playerId][] = array_pop($deck);
+        }
+    }
+
+    return [
+        'hands' => $hands,
+        'kitty' => $deck // 剩下的3张是底牌
+    ];
 }
 
 /**
@@ -34,7 +67,11 @@ function dealCardsForPlayers(array $playerIds) {
     }
 
     $deck = createDeck();
-    shuffle($deck); // 内置的 shuffle 函数可以高效地打乱数组顺序
+    // 十三水不需要大小王
+    $deck = array_filter($deck, function($card) {
+        return $card !== 'red_joker' && $card !== 'black_joker';
+    });
+    shuffle($deck); 
 
     $hands = array_fill_keys($playerIds, []);
     $playerIndex = 0;
@@ -44,7 +81,6 @@ function dealCardsForPlayers(array $playerIds) {
         $currentPlayerId = $playerIds[$playerIndex];
         $hands[$currentPlayerId][] = $card;
         
-        // 移向下一位玩家
         $playerIndex = ($playerIndex + 1) % 4;
     }
 

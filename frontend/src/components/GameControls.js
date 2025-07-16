@@ -16,10 +16,10 @@ const GameControls = ({ phase, onBid, onPlay, onPass, onHint, canPlay }) => {
     if (phase === 'bidding') {
         return (
             <div className="game-controls">
-                <button onClick={() => onBid(1)} className="control-btn bid-btn">1分</button>
-                <button onClick={() => onBid(2)} className="control-btn bid-btn">2分</button>
-                <button onClick={() => onBid(3)} className="control-btn bid-btn">3分</button>
-                <button onClick={() => onBid(0)} className="control-btn pass-btn">不叫</button>
+                <button onClick={() => onBid(1)} className="control-btn">1分</button>
+                <button onClick={() => onBid(2)} className="control-btn">2分</button>
+                <button onClick={() => onBid(3)} className="control-btn">3分</button>
+                <button onClick={() => onBid(0)} className="control-btn secondary-btn">不叫</button>
             </div>
         );
     }
@@ -27,9 +27,9 @@ const GameControls = ({ phase, onBid, onPlay, onPass, onHint, canPlay }) => {
     if (phase === 'playing') {
         return (
             <div className="game-controls">
-                <button onClick={onPass} className="control-btn pass-btn">不出</button>
-                <button onClick={onHint} className="control-btn hint-btn">提示</button>
-                <button onClick={onPlay} className="control-btn play-btn" disabled={!canPlay}>出牌</button>
+                <button onClick={onPass} className="control-btn secondary-btn">不出</button>
+                <button onClick={onHint} className="control-btn secondary-btn">提示</button>
+                <button onClick={onPlay} className="control-btn" disabled={!canPlay}>出牌</button>
             </div>
         );
     }

@@ -44,7 +44,7 @@ try {
     $stmt = $conn->prepare("INSERT INTO players (room_id, user_id, is_creator) VALUES (?, ?, ?)");
     foreach($playerIds as $index => $pid) {
         $isCreator = ($index === 0);
-        $stmt->bind_param("ssi", $roomId, $pid, $isCreator);
+        $stmt->bind_param("ssi", $roomId, $pid,.isCreator);
         $stmt->execute();
     }
     $stmt->close();
@@ -56,9 +56,9 @@ try {
     } elseif ($gameType === 'doudizhu') {
         $dealResult = dealCardsForDoudizhu($playerIds);
         $hands = $dealResult['hands'];
-        $landlordCards = $dealResult['landlordCards'];
+        $kitty = $dealResult['kitty'];
         
-        $biddingState = ['landlordCards' => $landlordCards, 'playerIds' => $playerIds, 'bids' => [], 'turnIndex' => 0, 'highestBid' => 0, 'highestBidder' => null];
+        $biddingState = ['kitty' => $kitty, 'playerIds' => $playerIds, 'bids' => [], 'turnIndex' => 0, 'highestBid' => 0, 'highestBidder' => null];
         
         $stmt_extra = $conn->prepare("UPDATE rooms SET extra_data = ? WHERE room_id = ?");
         $stmt_extra->bind_param("ss", json_encode($biddingState), $roomId);
