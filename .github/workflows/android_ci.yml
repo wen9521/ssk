@@ -1,48 +1,63 @@
-name: Android CI
+# .github/workflows/android_ci.yml
+# This workflow builds the Android APK only when frontend code changes.
+
+name: Build Android APK on Frontend Change
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/android_ci.yml' # Also trigger on changes to this workflow file itself
+  workflow_dispatch: # Allows manual triggering from the Actions tab
 
 jobs:
-  build:
+  build-android-apk:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - name: 1. Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up JDK 17
+      - name: 2. Set up JDK 11
         uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'gradle'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with: {} # Empty with block for v3
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
-        working-directory: android
-
-      - name: Build with Gradle
-        run: ./gradlew assembleRelease
-        working-directory: ./android
-
-      - name: Add Android Build Tools to PATH
-        run: echo "$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)" >> $GITHUB_PATH
-
-      - name: Sign APK
-        run: |
-          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 --decode > release-key.jks
-          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore release-key.jks -storepass ${{ secrets.SIGNING_KEYSTORE_PASSWORD }} ./android/app/build/outputs/apk/release/app-release-unsigned.apk ${{ secrets.SIGNING_KEY_ALIAS }}
-          zipalign -v 4 ./android/app/build/outputs/apk/release/app-release-unsigned.apk ./android/app/build/outputs/apk/release/app-release-signed.apk
-        shell: bash
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: 3. Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          name: release-apk
-          path: ./android/app/build/outputs/apk/release/app-release-signed.apk
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 4. Build Frontend Application
+        run: |
+          echo "Building frontend..."
+          cd frontend
+          npm install
+          npm run build
+
+      - name: 5. Copy Frontend to Android Assets
+        run: |
+          echo "Copying frontend build to Android assets..."
+          rm -rf android/app/src/main/assets/*
+          mkdir -p android/app/src/main/assets
+          cp -r frontend/build/* android/app/src/main/assets/
+
+      - name: 6. Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: 7. Build Android APK
+        run: |
+          echo "Building APK..."
+          cd android
+          ./gradlew assembleDebug
+
+      - name: 8. Upload APK as Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-debug.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

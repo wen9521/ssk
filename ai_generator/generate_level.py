@@ -85,9 +85,10 @@ def main():
     print(f"Found {len(source_files)} images to process.")
 
     for filename in source_files:
-        # Corrected, simple print statement
+        # This is the corrected, single-line print statement
         print(f"
 Processing '{filename}'...")
+        
         original_path = os.path.join(SOURCE_IMAGE_DIR, filename)
         base_name = os.path.splitext(filename)[0]
 
