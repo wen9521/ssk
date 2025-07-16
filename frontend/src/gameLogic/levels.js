@@ -1,77 +1,79 @@
 // frontend/src/gameLogic/levels.js
 
 // The public URL for your Cloudflare R2 bucket where levels are stored.
-// This URL may require a proxy to access.
 const R2_LEVELS_JSON_URL = "https://render.wenxiuxiu.eu.org/render/levels.json";
 
 // Fallback levels in case the network request fails.
-// These serve as a backup to ensure the game is always playable.
 const fallbackLevels = [
     {
         id: 'fallback_level_1',
         name: "Fallback Level 1",
-        original: `https://render.wenxiuxiu.eu.org/render/levels/adaa_original.png`,
-        modified: `https://render.wenxiuxiu.eu.org/render/levels/adaa_modified.png`,
+        // The URLs here are now also built using the same logic for consistency
+        original: `https://render.wenxiuxiu.eu.org/render/levels/fallback_level_1_original.png`,
+        modified: `https://render.wenxiuxiu.eu.org/render/levels/fallback_level_1_modified.png`,
         differences: [
-            { "type": "shape", "x": 512, "y": 512, "radius": 50 },
-            { "type": "removal", "x": 200, "y": 300, "radius": 40 }
+            { "type": "shape", "x": 512, "y": 512, "radius": 50 }
         ]
     }
 ];
 
 /**
  * Asynchronously fetches the latest level data from the R2 bucket.
- * 
- * @returns {Promise<Array|null>} A promise that resolves to an array of level objects, or null if the fetch fails.
  */
 const fetchLevels = async () => {
     try {
         const response = await fetch(R2_LEVELS_JSON_URL);
         if (!response.ok) {
-            // If the response is not successful (e.g., 404 Not Found), throw an error.
             throw new Error(`Network response was not ok: ${response.statusText}`);
         }
         const levels = await response.json();
         console.log("Successfully fetched levels from R2:", levels);
         return levels;
     } catch (error) {
-        // Log the error and return null to indicate failure.
         console.error("Failed to fetch levels from R2:", error);
         return null;
     }
 };
 
 /**
- * Gets the game levels, prioritizing fetching from the network and using fallbacks if necessary.
- * This is the main function that should be used by other parts of the application.
- *
- * @returns {Promise<Array>} A promise that resolves to an array of level objects.
+ * Gets the game levels, constructing correct image URLs from the level ID.
+ * This is the main function to be used by the application.
  */
 export const getLevels = async () => {
     const onlineLevels = await fetchLevels();
-    if (onlineLevels && onlineLevels.length > 0) {
-        // *** ROBUST FIX: Rebuild the URL from the filename to ensure correctness ***
+    
+    if (onlineLevels && Array.isArray(onlineLevels) && onlineLevels.length > 0) {
+        // *** FINAL & CORRECT FIX: Construct image URLs directly from the level 'id' ***
         const correctedLevels = onlineLevels.map(level => {
-            const baseUrl = 'https://render.wenxiuxiu.eu.org/render/levels/';
+            // Handle cases where a level might be missing an 'id'
+            if (!level.id) {
+                console.error("Level is missing an 'id', cannot construct image URLs:", level);
+                // Return the level with empty image paths to avoid crashes and make debugging easier
+                return { ...level, original: '', modified: '', name: '无效关卡 (缺少ID)' };
+            }
             
-            // Extract the filename from the end of the provided URL path.
-            const originalFilename = level.original.split('/').pop();
-            const modifiedFilename = level.modified.split('/').pop();
+            const baseUrl = 'https://render.wenxiuxiu.eu.org/render/levels/';
+            const baseName = level.id;
+            
+            // As per your instruction, the only variable parts are the name (id) and extension.
+            // We will assume '.png' as the extension unless specified otherwise.
+            const extension = 'png';
 
             return {
                 ...level,
-                original: baseUrl + originalFilename,
-                modified: baseUrl + modifiedFilename,
+                original: `${baseUrl}${baseName}_original.${extension}`,
+                modified: `${baseUrl}${baseName}_modified.${extension}`,
             };
         });
-        console.log("Corrected online levels with robust URL builder:", correctedLevels);
+        
+        console.log("Final corrected levels built from ID:", correctedLevels);
         return correctedLevels;
     }
+    
     // If fetching fails or returns no levels, use the local fallback data.
     console.warn("Using fallback levels.");
     return fallbackLevels;
 };
 
-// For backward compatibility or direct use, you can still export localLevels.
-// Note: `getLevels` is the preferred way to get level data.
+// For backward compatibility
 export const localLevels = fallbackLevels;
