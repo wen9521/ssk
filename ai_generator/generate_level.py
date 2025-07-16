@@ -75,7 +75,8 @@ def main():
     levels_data = []
     valid_extensions = ['.png', '.jpg', '.jpeg']
     try:
-        source_files = [f for f in os.listdir(SOURCE_IMAGE_DIR) if os.path.splitext(f)[1].lower() in valid_extensions]\
+        # CORRECTED: Removed the trailing backslash '\' from the end of this line
+        source_files = [f for f in os.listdir(SOURCE_IMAGE_DIR) if os.path.splitext(f)[1].lower() in valid_extensions]
     except FileNotFoundError:
         print(f"Error: Source directory '{SOURCE_IMAGE_DIR}' not found.")
         sys.exit(1)
@@ -86,7 +87,6 @@ def main():
     print(f"Found {len(source_files)} images to process.")
 
     for filename in source_files:
-        # Corrected print statement: Now definitely single line
         print(f"\nProcessing '{filename}'...")
         original_path = os.path.join(SOURCE_IMAGE_DIR, filename)
         base_name = os.path.splitext(filename)[0]
@@ -123,19 +123,16 @@ def main():
         except Exception as e:
             print(f"Could not process image '{filename}'. It may be corrupt or not a valid image. Error: {e}")
 
-if levels_data:
-    levels_json_path = "/tmp/levels.json"
-    with open(levels_json_path, 'w') as f:
-        json.dump(levels_data, f, indent=2)
-    # Corrected print statement: Now definitely single line
-    print("\nUploading final levels.json...")
-    upload_to_r2(levels_json_path, 'levels.json', 'application/json')
-    os.remove(levels_json_path)
-else:
-    # Corrected print statement: Now definitely single line
-    print("\nNo levels were generated. Skipping levels.json upload.")
-# Corrected print statement: Now definitely single line
-print("\nLevel generation process complete.")
+    if levels_data:
+        levels_json_path = "/tmp/levels.json"
+        with open(levels_json_path, 'w') as f:
+            json.dump(levels_data, f, indent=2)
+        print("\nUploading final levels.json...")
+        upload_to_r2(levels_json_path, 'levels.json', 'application/json')
+        os.remove(levels_json_path)
+    else:
+        print("\nNo levels were generated. Skipping levels.json upload.")
+    print("\nLevel generation process complete.")
 
 if __name__ == "__main__":
     main()
