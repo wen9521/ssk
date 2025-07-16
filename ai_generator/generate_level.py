@@ -6,7 +6,6 @@ import boto3
 from PIL import Image, ImageDraw
 
 def get_secret(key, fallback_key=None):
-    """Gets a secret from environment variables, trying a fallback key if the first one fails."""
     value = os.environ.get(key)
     if value:
         return value
