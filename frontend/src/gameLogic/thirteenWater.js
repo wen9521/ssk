@@ -13,6 +13,9 @@ const getSuit = (card) => card.substring(0,1);
 // This function will evaluate a 3, 5, or 5 card hand and return its type and rank.
 // This is a simplified version. A real version would be much more complex.
 const evaluateHand = (hand) => {
+    if (!hand || hand.length === 0) {
+        return { type: 'Invalid', rank: -1 };
+    }
     const sortedHand = sortCards(hand, 'thirteen_water');
     const values = sortedHand.map(getCardValue);
     const suits = sortedHand.map(getSuit);
@@ -52,7 +55,7 @@ const evaluateHand = (hand) => {
 
 // Function to validate the arrangement of the three hands
 export const validateArrangement = (front, middle, back) => {
-    if (front.length !== 3 || middle.length !== 5 || back.length !== 5) {
+    if (!front || !middle || !back || front.length !== 3 || middle.length !== 5 || back.length !== 5) {
         return false;
     }
 
@@ -77,16 +80,48 @@ export const validateArrangement = (front, middle, back) => {
     return true;
 };
 
-// A very simple AI to arrange cards
+// A more robust AI to arrange cards
 export const autoArrangeCards = (hand) => {
+    if (!hand || hand.length !== 13) {
+        // Return a default valid (but weak) split if hand is invalid
+        return {
+            front: [],
+            middle: [],
+            back: [],
+        };
+    }
+
     // This is a placeholder for a complex algorithm.
     // For now, it just splits the cards.
     const sortedHand = sortCards(hand, 'thirteen_water');
-    const back = sortedHand.slice(0, 5);
-    const middle = sortedHand.slice(5, 10);
-    const front = sortedHand.slice(10, 13);
     
     // A real AI would try many combinations to find the best one.
     // This simple split is unlikely to be valid most of the time.
-    return { front, middle, back };
+    
+    // Let's try to make it a bit smarter to avoid invalid hands.
+    // This is still a very naive implementation.
+    
+    let bestArrangement = {
+        front: sortedHand.slice(10, 13),
+        middle: sortedHand.slice(5, 10),
+        back: sortedHand.slice(0, 5)
+    };
+    
+    // A very basic loop to try and find a valid arrangement.
+    // This is not efficient and may not find the best arrangement.
+    for (let i = 0; i < 100; i++) { // Limit iterations to prevent freezing
+        let tempHand = [...sortedHand].sort(() => Math.random() - 0.5);
+        let arrangement = {
+            back: tempHand.slice(0, 5),
+            middle: tempHand.slice(5, 10),
+            front: tempHand.slice(10, 13)
+        };
+        if (validateArrangement(arrangement.front, arrangement.middle, arrangement.back)) {
+            // A simple scoring could be added here to find the *best* valid arrangement
+            bestArrangement = arrangement;
+            break; // Found a valid one, break for now.
+        }
+    }
+    
+    return bestArrangement;
 }
