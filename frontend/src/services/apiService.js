@@ -1,61 +1,33 @@
 // frontend/src/services/apiService.js
 // 描述: 统一处理对后端PHP API的HTTP请求。
-// 修复：更改为命名导出，并组合matchmaking函数以解决编译错误。
+// 修复：所有函数都被修改为返回一个Promise.reject，因为后端目前未部署。
+// 这可以防止应用在调用这些函数时崩溃，并清楚地表明功能不可用。
 
-const API_BASE_URL = 'https://9525.ip-ddns.com/api';
+const featureUnavailableError = () => {
+    const errorMsg = "在线游戏功能当前不可用，因为后端服务未部署。";
+    console.warn(errorMsg); // 在控制台警告，方便调试
+    return Promise.reject(new Error(errorMsg));
+};
 
-async function request(endpoint, method = 'POST', body = null) {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const options = {
-        method,
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-        },
-    };
 
-    if (body) {
-        options.body = JSON.stringify(body);
-    }
-
-    try {
-        const response = await fetch(url, options);
-        const data = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-            const errorMsg = data.message || `API请求失败，状态码: ${response.status}`;
-            throw new Error(errorMsg);
-        }
-        
-        if (!data.success) {
-            throw new Error(data.message || 'API返回操作失败');
-        }
-
-        return data.data;
-    } catch (error) {
-        console.error("API请求错误:", error);
-        throw error;
-    }
-}
-
-// --- 导出所有API函数 ---
+// --- 导出所有API函数 (全部禁用) ---
 
 // 游戏房间相关
-export const createRoom = () => Promise.reject(new Error("功能未实现：create-room.php 不存在。"));
-export const joinRoom = () => Promise.reject(new Error("功能未实现：join-room.php 不存在。"));
-export const getRoomStatus = (roomId) => request('/get-status.php', 'POST', { roomId });
+export const createRoom = () => featureUnavailableError();
+export const joinRoom = () => featureUnavailableError();
+export const getRoomStatus = (roomId) => featureUnavailableError();
 
 // 游戏操作相关
-export const quickPlay = (userId, gameType) => request('/quick-play.php', 'POST', { userId, gameType });
-export const playCard = (roomId, userId, cards) => request('/play-card.php', 'POST', { roomId, userId, cards });
-export const setDun = (roomId, userId, hands) => request('/set-dun.php', 'POST', { roomId, userId, hands });
+export const quickPlay = (userId, gameType) => featureUnavailableError();
+export const playCard = (roomId, userId, cards) => featureUnavailableError();
+export const setDun = (roomId, userId, hands) => featureUnavailableError();
 
 // 斗地主专用
-export const bid = (roomId, userId, bidValue) => request('/bid.php', 'POST', { roomId, userId, bid_value: bidValue });
+export const bid = (roomId, userId, bidValue) => featureUnavailableError();
 
 // 匹配相关 - 组合成一个对象导出
 export const matchmaking = {
-    join: (userId, gameType) => request('/matchmaking.php', 'POST', { action: 'join', userId, gameType }),
-    leave: (userId) => request('/matchmaking.php', 'POST', { action: 'leave', userId }),
-    status: (userId) => request('/matchmaking.php', 'POST', { action: 'status', userId }),
+    join: (userId, gameType) => featureUnavailableError(),
+    leave: (userId) => featureUnavailableError(),
+    status: (userId) => featureUnavailableError(),
 };
