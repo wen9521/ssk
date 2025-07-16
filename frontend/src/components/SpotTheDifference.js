@@ -6,7 +6,7 @@ import './styles/SpotTheDifference.css';
 
 // The public URL for the R2 bucket where levels are stored.
 // This should be your custom domain or the public R2.dev URL.
-const LEVELS_JSON_URL = `https://render.wenxiuxiu.eu.org/levels.json`;
+const LEVELS_JSON_URL = `https://render.wenxiuxiu.eu.org/render/levels.json`;
 
 const GameStateDisplay = ({ message, isLoading = false, onRetry }) => (
     <div className="game-state-container">
