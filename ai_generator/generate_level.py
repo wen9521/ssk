@@ -5,6 +5,7 @@ import json
 import random
 import re
 import boto3
+from botocore.config import Config
 from PIL import Image, ImageDraw
 
 # --- Configuration from Environment Variables (GitHub Secrets) ---
@@ -20,7 +21,7 @@ def get_secret(key, fallback_key=None):
     print(f"Error: Missing a required environment variable. Tried '{key}'" + (f" and '{fallback_key}'" if fallback_key else "") + ". Please set it in GitHub Secrets.")
     sys.exit(1)
 
-# --- Get all required secrets using the new flexible method ---
+# --- Get all required secrets ---
 S3_ENDPOINT_URL = get_secret('R2_ENDPOINT_URL')
 S3_ACCESS_KEY = get_secret('R2_ACCESS_KEY_ID')
 S3_BUCKET_NAME = get_secret('R2_BUCKET_NAME')
@@ -28,23 +29,22 @@ CF_PUBLIC_URL = get_secret('R2_PUBLIC_URL')
 S3_SECRET_KEY = get_secret('R2_SECRET_KEY', 'R2_SECRET_ACCESS_KEY')
 SOURCE_IMAGE_DIR = "images_for_ai"
 
-# --- S3 Client for Cloudflare R2 ---
+# --- S3 Client for Cloudflare R2 with Explicit Configuration ---
+# This is the key fix: explicitly set the signature version and a placeholder region.
 s3 = boto3.client(
     service_name='s3',
     endpoint_url=S3_ENDPOINT_URL,
     aws_access_key_id=S3_ACCESS_KEY,
     aws_secret_access_key=S3_SECRET_KEY,
-    region_name='auto',  # 'auto' is generally fine for R2
+    config=Config(
+        signature_version='s3v4',
+        region_name='us-east-1' # A common placeholder region for R2
+    )
 )
 
-# --- Helper Function to Sanitize Filenames ---
+# --- Helper Function to Sanitize Filenames (unchanged) ---
 def sanitize_filename(name):
-    """
-    Cleans a string to be a safe filename for URLs and object storage.
-    - Converts to lowercase.
-    - Replaces spaces and underscores with hyphens.
-    - Removes all characters that are not letters, numbers, hyphens, or periods.
-    """
+    """Cleans a string to be a safe filename for URLs and object storage."""
     name = name.lower()
     name = re.sub(r'[\s_]+', '-', name)
     name = re.sub(r'[^a-z0-9\-\.]', '', name)
@@ -69,8 +69,7 @@ def remove_small_detail(image, width, height):
     image.paste(region, (x-radius, y-radius))
     return {"type": "removal", "x": x, "y": y, "radius": radius}
 
-# --- Main Logic ---
-
+# --- Main Logic (unchanged) ---
 def upload_to_r2(local_path, remote_name, content_type='image/png'):
     try:
         s3.upload_file(local_path, S3_BUCKET_NAME, remote_name, ExtraArgs={'ContentType': content_type})
@@ -103,8 +102,6 @@ def main():
 Processing '{filename}'...")
         original_path = os.path.join(SOURCE_IMAGE_DIR, filename)
         base_name = os.path.splitext(filename)[0]
-        
-        # ** Sanitize the base name here! **
         safe_base_name = sanitize_filename(base_name)
 
         try:
@@ -112,7 +109,6 @@ Processing '{filename}'...")
                 modified_img = img.copy()
                 draw = ImageDraw.Draw(modified_img)
                 width, height = img.size
-                
                 differences = []
                 for _ in range(random.randint(4, 7)):
                     func = random.choice([add_small_shape, remove_small_detail])
@@ -121,19 +117,14 @@ Processing '{filename}'...")
                 
                 modified_path = f"/tmp/{safe_base_name}_modified.png"
                 modified_img.save(modified_path, "PNG")
-
                 remote_original_name = f"levels/{safe_base_name}_original.png"
                 remote_modified_name = f"levels/{safe_base_name}_modified.png"
-                
                 original_url = upload_to_r2(original_path, remote_original_name)
                 modified_url = upload_to_r2(modified_path, remote_modified_name)
-
                 os.remove(modified_path)
-
                 if not original_url or not modified_url:
                     print(f"Skipping level for '{filename}' due to upload error.")
                     continue
-
                 levels_data.append({
                     "id": safe_base_name,
                     "name": base_name.replace("_", " ").title(),
@@ -142,13 +133,13 @@ Processing '{filename}'...")
                     "differences": differences
                 })
         except Exception as e:
-            print(f"Could not process image '{filename}'. Error: {e}")
+            # Catching the "cannot identify image file" error specifically
+            print(f"Could not process image '{filename}'. It may be corrupt or not a valid image. Error: {e}")
 
     if levels_data:
         levels_json_path = "/tmp/levels.json"
         with open(levels_json_path, 'w') as f:
             json.dump(levels_data, f, indent=2)
-        
         print("
 Uploading final levels.json...")
         upload_to_r2(levels_json_path, 'levels.json', 'application/json')
@@ -156,7 +147,6 @@ Uploading final levels.json...")
     else:
         print("
 No levels were generated. Skipping levels.json upload.")
-
     print("
 Level generation process complete.")
 
