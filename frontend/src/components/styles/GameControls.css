@@ -10,59 +10,29 @@
     bottom: 120px; /* 根据手牌组件高度调整 */
     left: 50%;
     transform: translateX(-50%);
-    background-color: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
     border-radius: 20px;
+    border: 1px solid var(--card-border);
+    box-shadow: 0 8px 32px 0 var(--card-shadow);
 }
 
 .control-btn {
-    padding: 10px 25px;
-    font-size: 1.1em;
-    font-weight: bold;
-    border-radius: 10px;
-    border: 2px solid;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    color: white;
+    /* 使用在index.css中定义的通用按钮样式 */
 }
 
-.control-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background-color: #6c757d;
-    border-color: #6c757d;
-}
-
-.bid-btn {
-    background-color: #007bff;
-    border-color: #0056b3;
-}
-.bid-btn:hover:not(:disabled) {
-    background-color: #0056b3;
-    transform: translateY(-2px);
-}
-
+/* 为特定按钮添加细微差别 */
 .pass-btn {
-    background-color: #6c757d;
-    border-color: #5a6268;
+    background: linear-gradient(145deg, #888, #666);
+    color: var(--text-color);
 }
 .pass-btn:hover:not(:disabled) {
-    background-color: #5a6268;
+    background: linear-gradient(145deg, #999, #777);
 }
 
 .hint-btn {
-    background-color: #ffc107;
-    border-color: #d39e00;
-    color: #212529;
+    background: linear-gradient(145deg, #17a2b8, #138496); /* Blue-green gradient */
 }
 .hint-btn:hover:not(:disabled) {
-    background-color: #e0a800;
-}
-
-.play-btn {
-    background-color: #28a745;
-    border-color: #1e7e34;
-}
-.play-btn:hover:not(:disabled) {
-    background-color: #218838;
-    transform: scale(1.05);
+    background: linear-gradient(145deg, #1abfcf, #159aa9);
 }
