@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import './styles/SpotTheDifference.css';
 import { localLevels } from '../gameLogic/levels'; 
 
-// --- Components ---
 const GameStateDisplay = ({ message, isLoading = false, onRetry }) => (
     <div className="game-state-container">
         {isLoading && <div className="loader"></div>}
@@ -19,7 +18,7 @@ const DifferenceMarker = ({ diff, scaleFactor }) => {
         top: `${(diff.y / 1024) * 100}%`,
         width: `${diff.radius * 2 * scaleFactor}px`,
         height: `${diff.radius * 2 * scaleFactor}px`,
-        transform: 'translate(-50%, -50%)', // Center the marker on the coordinates
+        transform: 'translate(-50%, -50%)',
     };
     return <div className="difference-marker" style={style} />;
 };
@@ -28,14 +27,12 @@ const GameImage = ({ src, onClick, children }) => {
     const imageUrl = `${process.env.PUBLIC_URL}${src}`;
     return (
         <div className="image-wrapper" onClick={onClick}>
-            <img src={imageUrl} alt={src.includes('original') ? 'Original' : 'Modified'} crossOrigin="anonymous" />
+            <img src={imageUrl} alt={src} crossOrigin="anonymous" />
             {children}
         </div>
     );
 };
 
-
-// --- Main Component ---
 const SpotTheDifference = () => {
     const navigate = useNavigate();
     const [levels, setLevels] = useState([]);
@@ -45,11 +42,8 @@ const SpotTheDifference = () => {
     const [error, setError] = useState(null);
     const [imageScaleFactor, setImageScaleFactor] = useState(1);
 
-    const loadLevels = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
+    const loadLevels = useCallback(() => {
         try {
-            // Always use local levels and shuffle them
             const shuffledLevels = [...localLevels].sort(() => Math.random() - 0.5);
             setLevels(shuffledLevels);
         } catch (err) {
@@ -74,13 +68,12 @@ const SpotTheDifference = () => {
         if (isLevelComplete || !currentLevel) return;
 
         const imgElement = e.currentTarget.querySelector('img');
+        if (!imgElement) return;
         const rect = imgElement.getBoundingClientRect();
         
-        // Calculate the scale of the displayed image relative to its natural size
-        const scale = imgElement.clientWidth / imgElement.naturalWidth;
+        const scale = imgElement.clientWidth / (imgElement.naturalWidth || 1024);
         setImageScaleFactor(scale);
 
-        // Get click coordinates relative to the image's top-left corner
         const x = (e.clientX - rect.left) / scale;
         const y = (e.clientY - rect.top) / scale;
 
@@ -88,7 +81,7 @@ const SpotTheDifference = () => {
             if (foundDifferences.includes(index)) return;
             const distance = Math.sqrt(Math.pow(x - diff.x, 2) + Math.pow(y - diff.y, 2));
             if (distance < diff.radius) {
-                setFoundDifferences(prev => [...new Set([...prev, index])]); // Use Set to avoid duplicates
+                setFoundDifferences(prev => [...new Set([...prev, index])]);
             }
         });
     }, [isLevelComplete, currentLevel, differences, foundDifferences]);
@@ -106,7 +99,7 @@ const SpotTheDifference = () => {
 
     if (isLoading) return <GameStateDisplay message="正在加载关卡..." isLoading={true} />;
     if (error) return <GameStateDisplay message={error} onRetry={loadLevels} />;
-    if (!currentLevel) return <GameStateDisplay message="恭喜！您已完成所有关卡！" />;
+    if (!currentLevel) return <GameStateDisplay message="所有关卡已完成！" onRetry={handleRestartGame} />;
 
     return (
         <div className="spot-the-difference-container">
@@ -114,21 +107,19 @@ const SpotTheDifference = () => {
                 <button className="back-button" onClick={() => navigate('/')}>&lt; 退出</button>
                 <div className="game-info">
                     <h1>第 {currentLevelIndex + 1} / {levels.length} 关</h1>
-                    <p>
-                        找到的差异: {foundDifferences.length} / {differences.length}
-                    </p>
+                    <p>找到的差异: {foundDifferences.length} / {differences.length}</p>
                 </div>
             </header>
 
             <main className="images-container">
                 <GameImage src={currentLevel.original} onClick={handleImageClick}>
                     {foundDifferences.map(index => (
-                        <DifferenceMarker key={index} diff={differences[index]} scaleFactor={imageScaleFactor} />
+                        <DifferenceMarker key={`${index}-original`} diff={differences[index]} scaleFactor={imageScaleFactor} />
                     ))}
                 </GameImage>
                 <GameImage src={currentLevel.modified} onClick={handleImageClick}>
                     {foundDifferences.map(index => (
-                        <DifferenceMarker key={index} diff={differences[index]} scaleFactor={imageScaleFactor} />
+                        <DifferenceMarker key={`${index}-modified`} diff={differences[index]} scaleFactor={imageScaleFactor} />
                     ))}
                 </GameImage>
             </main>
