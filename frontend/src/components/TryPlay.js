@@ -310,7 +310,6 @@ export default function TryPlay() {
             whiteSpace: 'nowrap'
           }}
         >
-          {/* 终极修正: 使用模板字符串确保JSX语法正确 */}
           {`${label}(${arr.length})`}
         </div>
       </div>
@@ -347,7 +346,6 @@ export default function TryPlay() {
                 {foulStates[i] && (
                   <span style={{ color: 'red', fontWeight: 800, marginLeft: 6 }}>(倒水)</span>
                 )}
-                {/* 终极修正: 使用模板字符串确保JSX语法正确 */}
                 {`(${scores[i]}分)`}
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginBottom: 3 }}>
@@ -412,7 +410,7 @@ export default function TryPlay() {
             }}
             onClick={() => navigate('/')}
           >
-            < 退出房间
+            &lt; 退出房间
           </button>
           <div style={{
             flex: 1,
