@@ -57,7 +57,6 @@ jobs:
           ./gradlew assembleDebug
 
       - name: 8. Upload APK as Artifact
-        # Corrected: Updated from deprecated v3 to v4
         uses: actions/upload-artifact@v4
         with:
           name: app-debug.apk
