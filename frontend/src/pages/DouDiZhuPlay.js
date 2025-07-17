@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../Play.css';
+import '../styles/DouDiZhuPlay.css';
 import { sortCards } from '../CardUtils';
 
 const deck = [
@@ -28,6 +28,7 @@ function DouDiZhuPlay() {
     const [landlordCards, setLandlordCards] = useState([]);
     const [bidding, setBidding] = useState(true);
     const [lastPlay, setLastPlay] = useState(null);
+    const [selectedCards, setSelectedCards] = useState([]);
 
     useEffect(() => {
         const shuffled = [...deck].sort(() => Math.random() - 0.5);
@@ -40,6 +41,12 @@ function DouDiZhuPlay() {
         setLandlordCards(shuffled.slice(51));
         setBidding(true);
     }, []);
+    
+    const handleCardClick = (card) => {
+        setSelectedCards(prev => 
+            prev.includes(card) ? prev.filter(c => c !== card) : [...prev, card]
+        );
+    };
 
     const handleBid = (playerIndex) => {
         setLandlord(playerIndex);
@@ -50,53 +57,79 @@ function DouDiZhuPlay() {
         setBidding(false);
     };
 
-    const handlePlay = (cards) => {
+    const handlePlay = () => {
         // Basic play validation
-        if (lastPlay && cards.length !== lastPlay.length) {
+        if (lastPlay && selectedCards.length !== lastPlay.length) {
             alert('Invalid play');
             return;
         }
-        const newHand = hands[turn].filter(card => !cards.includes(card));
+        const newHand = hands[turn].filter(card => !selectedCards.includes(card));
         const newHands = [...hands];
         newHands[turn] = newHand;
         setHands(newHands);
-        setLastPlay(cards);
+        setLastPlay(selectedCards);
+        setSelectedCards([]);
         setTurn((turn + 1) % 3);
     };
+    
+    const renderCard = (card, isSelected) => (
+        <img 
+            key={card}
+            src={`/cards/${card}.svg`}
+            alt={card}
+            className={`card ${isSelected ? 'selected' : ''}`}
+            onClick={() => handleCardClick(card)}
+        />
+    );
 
     return (
-        <div className="play-container">
-            <div className="play-inner-wrapper">
-                <div className="header-controls">
-                    <button className="exit-button" onClick={() => navigate('/doudizhu')}>&lt; 返回入口</button>
-                </div>
-                <div className="game-table-area">
-                    {bidding ? (
-                        <div>
-                            <h3>叫地主</h3>
-                            {hands.map((hand, index) => (
-                                <button key={index} onClick={() => handleBid(index)}>玩家 {index + 1} 叫地主</button>
-                            ))}
+        <div className="doudizhu-game-board">
+            <button className="exit-button" onClick={() => navigate('/doudizhu')}>&lt; 返回入口</button>
+            <div className="game-table">
+                {bidding ? (
+                    <div className="bidding-overlay">
+                        <h2>叫地主阶段</h2>
+                        {hands.map((hand, index) => (
+                             <div key={index} className="bid-option">
+                                <span>玩家 {index + 1}</span>
+                                <button onClick={() => handleBid(index)}>叫地主</button>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <>
+                        <div className="opponent-hand opponent-top">
+                            <p>玩家 {(turn + 1) % 3 + 1} {((turn + 1) % 3) === landlord ? '(地主)' : ''}</p>
+                            <div className="card-row-opponent">
+                                {hands[(turn + 1) % 3].map(() => <div key={Math.random()} className="card-back" />)}
+                            </div>
                         </div>
-                    ) : (
-                        <>
-                            <div>地主牌: {landlordCards.map(card => <img key={card} src={`/cards/${card}.svg`} alt={card} className="card-sm" />)}</div>
-                            {hands.map((hand, index) => (
-                                <div key={index} className={`player-hand ${index === turn ? 'active' : ''}`}>
-                                    <h3>玩家 {index + 1} {index === landlord ? '(地主)' : ''}</h3>
-                                    <div className="hand">
-                                        {hand.map(card => (
-                                            <img key={card} src={`/cards/${card}.svg`} alt={card} className="card" />
-                                        ))}
-                                    </div>
-                                    {index === turn && (
-                                        <button onClick={() => handlePlay([hand[0]])}>出牌</button>
-                                    )}
-                                </div>
-                            ))}
-                        </>
-                    )}
-                </div>
+                        <div className="center-area">
+                             <div className="landlord-cards">
+                                {landlordCards.map(card => <img key={card} src={`/cards/${card}.svg`} alt={card} className="card-sm" />)}
+                            </div>
+                            <div className="last-play">
+                                {lastPlay && lastPlay.map(card => <img key={card} src={`/cards/${card}.svg`} alt={card} className="card-sm" />)}
+                            </div>
+                        </div>
+                        <div className="opponent-hand opponent-bottom">
+                             <p>玩家 {(turn + 2) % 3 + 1} {((turn + 2) % 3) === landlord ? '(地主)' : ''}</p>
+                             <div className="card-row-opponent">
+                                {hands[(turn + 2) % 3].map(() => <div key={Math.random()} className="card-back" />)}
+                            </div>
+                        </div>
+                        <div className="player-area">
+                            <p>你 (玩家 {turn + 1}) {turn === landlord ? '(地主)' : ''}</p>
+                            <div className="card-row-player">
+                                {hands[turn].map(card => renderCard(card, selectedCards.includes(card)))}
+                            </div>
+                            <div className="action-buttons">
+                                <button onClick={() => handlePlay()}>出牌</button>
+                                <button>不出</button>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

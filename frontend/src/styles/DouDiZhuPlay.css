@@ -1,0 +1,160 @@
+.doudizhu-game-board {
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle, #3a5a40 0%, #1a2a1f 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.exit-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  padding: 10px 15px;
+  background-color: rgba(255,255,255,0.2);
+  color: white;
+  border: 1px solid white;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 20;
+}
+
+.game-table {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr; /* Left, Center, Right */
+  grid-template-rows: 1fr auto; /* Top area for opponents, Bottom for player */
+  height: 100%;
+  width: 100%;
+  position: relative;
+  gap: 20px;
+}
+
+/* Bidding Overlay */
+.bidding-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  z-index: 10;
+}
+.bidding-overlay h2 {
+  font-size: 2.5rem;
+}
+.bid-option {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.bid-option span {
+  font-size: 1.5rem;
+}
+.bid-option button {
+  padding: 10px 20px;
+  font-size: 1.2rem;
+  background-color: #ffc107;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Player Areas */
+.opponent-hand {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.opponent-left {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  justify-content: center;
+}
+.opponent-right {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  justify-content: center;
+}
+
+.player-area {
+  grid-column: 1 / span 3;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 20px;
+}
+
+.card-row-opponent .card-back {
+    width: 50px;
+    height: 70px;
+    background-color: #555;
+    border: 2px solid #888;
+    border-radius: 5px;
+    display: inline-block;
+    margin: 5px 2px;
+}
+
+
+.center-area {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+}
+.landlord-cards {
+    text-align: center;
+}
+.last-play {
+    margin-top: 30px;
+    min-height: 80px;
+}
+.card-sm {
+    width: 60px;
+    margin: 0 5px;
+}
+
+.card-row-player {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 5px;
+  padding: 20px;
+}
+.card {
+  width: 80px;
+  cursor: pointer;
+  transition: transform 0.2s, margin-bottom 0.2s;
+}
+.card:hover {
+  transform: scale(1.05);
+}
+.card.selected {
+  margin-bottom: 20px; /* Moves selected card up */
+  border: 2px solid yellow;
+  border-radius: 8px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 10px;
+}
+.action-buttons button {
+  padding: 12px 25px;
+  font-size: 1.2rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
