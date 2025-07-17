@@ -1,8 +1,9 @@
 body {
   margin: 0;
   font-family: 'Arial', sans-serif;
-  background-color: #f4f7f6;
-  color: #333;
+  /* 更深色的渐变背景，以突出玻璃卡片 */
+  background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+  color: #e0e0e0; /* 适应深色背景的文字颜色 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -17,68 +18,107 @@ body {
 }
 
 .lobby h1 {
-  font-size: 2.5em;
-  color: #2c3e50;
-  margin-bottom: 40px;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+  font-size: 3em;
+  color: #ffffff; /* 白色标题 */
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  letter-spacing: 2px;
+}
+
+.lobby-intro {
+  font-size: 1.1em;
+  color: #cccccc;
+  margin-bottom: 50px;
 }
 
 .game-list {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 25px;
+  gap: 35px;
   width: 100%;
   max-width: 1200px;
 }
 
 .game-card {
-  background: linear-gradient(135deg, #6dd5ed 0%, #2193b0 100%);
-  border-radius: 15px;
-  padding: 30px 20px;
+  /* 玻璃拟态效果的核心 */
+  background: rgba(255, 255, 255, 0.15); /* 半透明背景 */
+  backdrop-filter: blur(10px); /* 磨砂效果 */
+  -webkit-backdrop-filter: blur(10px); /* Safari兼容性 */
+  border-radius: 20px; /* 更圆润的边角 */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* 细微边框 */
+  border-right-color: rgba(255, 255, 255, 0.1);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* 柔和光影 */
+
+  padding: 30px 25px;
   text-decoration: none;
-  color: #fff;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  color: #f0f0f0; /* 适应半透明背景的文字颜色 */
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, background 0.3s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 180px;
+  min-height: 200px;
   text-align: center;
-  width: calc(33% - 25px); /* Three cards per row on larger screens */
+  width: calc(33% - 35px); /* 三列布局 */
   box-sizing: border-box;
+  position: relative;
+  overflow: hidden; /* 防止内容超出圆角 */
+}
+
+/* 模拟光影效果的伪元素 */
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.game-card:hover::before {
+  opacity: 1;
 }
 
 .game-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+  transform: translateY(-10px) scale(1.03);
+  box-shadow: 0 15px 45px 0 rgba(0, 0, 0, 0.45); /* 悬停时更明显的光影 */
+  background: rgba(255, 255, 255, 0.25); /* 悬停时稍微更亮 */
 }
 
 .game-card h2 {
   margin-top: 10px;
-  font-size: 1.8em;
-  margin-bottom: 10px;
+  font-size: 2em;
+  margin-bottom: 15px;
   font-weight: bold;
+  color: #fff; /* 确保标题白色 */
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
 }
 
 .game-card p {
-  font-size: 0.95em;
+  font-size: 1em;
   opacity: 0.9;
-  line-height: 1.5;
+  line-height: 1.6;
+  color: #e0e0e0;
 }
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
   .lobby h1 {
-    font-size: 2em;
-    margin-bottom: 30px;
+    font-size: 2.2em;
   }
 
   .game-card {
-    width: calc(50% - 25px); /* Two cards per row on tablets */
-    padding: 25px 15px;
-    min-height: 160px;
+    width: calc(50% - 35px); /* 两列布局 */
+    min-height: 180px;
+  }
+
+  .game-card h2 {
+    font-size: 1.8em;
   }
 }
 
@@ -89,18 +129,23 @@ body {
 
   .lobby h1 {
     font-size: 1.8em;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
+  }
+
+  .lobby-intro {
+    font-size: 1em;
+    margin-bottom: 40px;
   }
 
   .game-list {
-    gap: 20px;
+    gap: 25px;
   }
 
   .game-card {
-    width: 90%; /* One card per row on mobile phones */
-    max-width: 300px; /* Limit max width for very wide phones */
-    padding: 20px;
-    min-height: 150px;
+    width: 90%; /* 单列布局 */
+    max-width: 320px;
+    min-height: 160px;
+    padding: 25px 20px;
   }
 
   .game-card h2 {
@@ -115,15 +160,16 @@ body {
 .game-page {
   padding: 40px 20px;
   text-align: center;
+  color: #e0e0e0; /* 适应深色背景 */
 }
 
 .game-page h1 {
-  color: #2c3e50;
+  color: #ffffff;
   font-size: 2.5em;
   margin-bottom: 20px;
 }
 
 .game-page p {
   font-size: 1.1em;
-  color: #555;
+  color: #cccccc;
 }
