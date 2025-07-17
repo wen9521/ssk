@@ -5,6 +5,7 @@ import { calcSSSAllScores } from '../sssScore';
 import { getShuffledDeck, dealHands } from '../DealCards';
 import '../Play.css';
 import { isFoul } from '../sssScore';
+import { getCardImageName } from '../CardUtils'; // 导入新的工具函数
 
 const AI_NAMES = ['小明', '小红', '小刚'];
 
@@ -208,7 +209,7 @@ export default function Play() {
           return (
             <img
               key={card}
-              src={`/cards/${card}.svg`}
+              src={`/cards/${getCardImageName(card)}.svg`} // 使用转换函数
               alt={card}
               className={`card-img ${isSelected ? 'selected' : ''}`}
               style={{
