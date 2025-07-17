@@ -1,48 +1,30 @@
-// frontend/src/CardUtils.js
+const cardOrder = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2', 'BJ', 'RJ'];
+const suitOrder = ['D', 'C', 'H', 'S'];
 
-const RANK_MAP = {
-  'A': 'ace',
-  '2': '2',
-  '3': '3',
-  '4': '4',
-  '5': '5',
-  '6': '6',
-  '7': '7',
-  '8': '8',
-  '9': '9',
-  '10': '10',
-  'J': 'jack',
-  'Q': 'queen',
-  'K': 'king',
-};
+function getCardValue(card) {
+    const parts = card.split('_of_');
+    let rank = parts[0];
+    if (rank === 'black' || rank === 'red') {
+        rank = rank === 'black' ? 'BJ' : 'RJ';
+    } else {
+        rank = rank.toUpperCase().replace('ACE', 'A').replace('JACK', 'J').replace('QUEEN', 'Q').replace('KING', 'K');
+    }
+    return {
+        rank,
+        suit: parts.length > 1 ? parts[1].charAt(0).toUpperCase() : ''
+    };
+}
 
-const SUIT_MAP = {
-  'S': 'spades',
-  'H': 'hearts',
-  'D': 'diamonds',
-  'C': 'clubs',
-};
+export function sortCards(cards) {
+    return cards.sort((a, b) => {
+        const aVal = getCardValue(a);
+        const bVal = getCardValue(b);
+        const aRankIndex = cardOrder.indexOf(aVal.rank);
+        const bRankIndex = cardOrder.indexOf(bVal.rank);
 
-/**
- * 将扑克牌代码转换为图片文件名（不含扩展名）。
- * @param {string} cardCode - 扑克牌的代码，例如 'AS', '10C', 'KH'。
- * @returns {string} - 图片文件名，例如 'ace_of_spades', '10_of_clubs', 'king_of_hearts'。
- */
-export const getCardImageName = (cardCode) => {
-  if (!cardCode || cardCode.length < 2) {
-    return 'placeholder'; // 返回一个占位符，防止代码崩溃
-  }
-
-  const rank = cardCode.slice(0, -1);
-  const suit = cardCode.slice(-1);
-
-  const rankName = RANK_MAP[rank];
-  const suitName = SUIT_MAP[suit];
-
-  if (!rankName || !suitName) {
-    console.warn(`无法识别的扑克牌代码: ${cardCode}`);
-    return 'placeholder';
-  }
-
-  return `${rankName}_of_${suitName}`;
-};
+        if (aRankIndex !== bRankIndex) {
+            return aRankIndex - bRankIndex;
+        }
+        return suitOrder.indexOf(aVal.suit) - suitOrder.indexOf(bVal.suit);
+    });
+}
