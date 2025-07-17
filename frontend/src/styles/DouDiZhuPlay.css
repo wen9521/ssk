@@ -1,41 +1,39 @@
 :root {
-  --player-avatar-size: 80px;
-  --landlord-icon-size: 24px;
+  --player-avatar-size: 70px;
+  --landlord-icon-size: 20px;
 }
 
 .doudizhu-game-board {
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%);
+  background-color: #1a1a1a;
   color: white;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 15px;
+  padding: 10px;
   box-sizing: border-box;
   overflow: hidden;
-  position: relative;
   font-family: 'Arial', sans-serif;
 }
 
 .exit-button {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  padding: 12px 24px;
-  background: linear-gradient(45deg, #f44336, #ef5350);
+  top: 15px;
+  left: 15px;
+  padding: 10px 20px;
+  background-color: #f44336;
   color: white;
   border: none;
-  border-radius: 50px;
+  border-radius: 5px;
   cursor: pointer;
   z-index: 100;
   font-weight: bold;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-  transition: all 0.3s ease;
+  transition: background-color 0.3s;
 }
+
 .exit-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  background-color: #da190b;
 }
 
 .game-table {
@@ -49,7 +47,7 @@
     "opponent-left landlord-cards opponent-right"
     "last-play last-play last-play"
     "player-area player-area player-area";
-  gap: 20px;
+  gap: 15px;
 }
 
 /* Player Info & Avatar Styles */
@@ -57,43 +55,38 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  position: relative;
+  gap: 6px;
 }
 .player-info.active .player-avatar {
   border-color: #ffc107;
-  box-shadow: 0 0 20px #ffc107;
 }
 .player-avatar {
   width: var(--player-avatar-size);
   height: var(--player-avatar-size);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 3px solid rgba(255, 255, 255, 0.2);
+  background: #2c2c2c;
+  border: 2px solid #444;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 1.2rem;
+  font-size: 1.1em;
   font-weight: bold;
-  position: relative;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 .landlord-icon {
   position: absolute;
-  top: -5px;
-  right: -5px;
+  top: -4px;
+  right: -4px;
   width: var(--landlord-icon-size);
   height: var(--landlord-icon-size);
-  background-image: url('../../public/cards/red_joker.svg'); /* Using a card as an icon */
+  background-image: url('../../public/cards/red_joker.svg');
   background-size: cover;
   border-radius: 50%;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.4);
 }
 .card-count {
-  background: rgba(0,0,0,0.4);
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 1rem;
+  background: #333;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.9em;
 }
 
 /* Layout Areas */
@@ -105,35 +98,30 @@
 
 /* Landlord Cards */
 .landlord-cards-container h3 {
-  margin: 0 0 10px 0;
-  font-size: 1.1rem;
-  opacity: 0.8;
+  margin: 0 0 8px 0;
+  font-size: 1em;
+  opacity: 0.7;
 }
 .landlord-cards {
   display: flex;
-  gap: 5px;
+  gap: 4px;
 }
 
 /* Last Play Area */
 .last-play {
-  min-height: 100px;
+  min-height: 90px;
   display: flex;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  gap: 5px;
-  padding: 10px;
-  background: rgba(0,0,0,0.2);
-  border-radius: 15px;
-  backdrop-filter: blur(5px);
+  gap: 4px;
+  padding: 8px;
+  background: #252525;
+  border-radius: 10px;
 }
 .last-play-label {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 1.5rem;
-  opacity: 0.5;
+  font-size: 1.2em;
+  opacity: 0.4;
 }
 
 /* Player Hand & Actions */
@@ -141,83 +129,93 @@
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  min-height: 120px;
-  margin-bottom: 20px;
+  min-height: 100px;
+  margin-bottom: 15px;
 }
 .card {
-  width: 80px;
+  width: 70px;
   height: auto;
   cursor: pointer;
-  transition: all 0.2s ease;
-  margin: 0 -15px;
+  transition: transform 0.2s ease, margin 0.2s ease;
+  margin: 0 -12px;
 }
-.card:hover { transform: translateY(-15px) scale(1.05); z-index: 10; }
-.card.selected { transform: translateY(-25px); }
+.card:hover {
+  transform: translateY(-12px);
+  z-index: 10;
+}
+.card.selected {
+  transform: translateY(-20px);
+}
 
 .action-buttons {
   display: flex;
   justify-content: center;
-  gap: 20px;
-  margin-top: 10px;
+  gap: 15px;
+  margin-top: 8px;
 }
 .action-buttons button {
-  padding: 15px 35px;
-  font-size: 1.3rem;
-  border-radius: 50px;
+  padding: 12px 30px;
+  font-size: 1.1em;
+  border-radius: 5px;
   border: none;
   cursor: pointer;
   font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.25);
-  transition: all 0.3s ease;
+  transition: background-color 0.3s;
 }
-.action-buttons button:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.35); }
-.action-buttons button:disabled { background: #9E9E9E !important; cursor: not-allowed; transform: translateY(0); box-shadow: 0 5px 20px rgba(0,0,0,0.25); }
+.action-buttons button:disabled {
+  background: #666 !important;
+  cursor: not-allowed;
+}
 
 /* Bidding & Game Over Overlays */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.85);
-  backdrop-filter: blur(10px);
+  background: rgba(0,0,0,0.9);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 99;
 }
 .modal {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 40px;
-  border-radius: 20px;
+  background: #2c2c2c;
+  border: 1px solid #444;
+  padding: 30px;
+  border-radius: 15px;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
-.modal h2 { font-size: 2.5rem; margin-bottom: 25px; }
-.modal p { font-size: 1.5rem; margin-bottom: 30px; }
+.modal h2 { font-size: 2em; margin-bottom: 20px; }
+.modal p { font-size: 1.2em; margin-bottom: 25px; }
 .modal button, .bid-option button {
-  padding: 15px 30px;
-  font-size: 1.2rem;
-  margin: 0 10px;
-  border-radius: 50px;
+  padding: 12px 25px;
+  font-size: 1em;
+  margin: 0 8px;
+  border-radius: 5px;
   cursor: pointer;
   border: none;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s;
 }
 .bid-option {
   display: flex;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 15px;
+  margin-bottom: 15px;
 }
-.bid-option span { font-size: 1.5rem; }
+.bid-option span { font-size: 1.2em; }
 
 /* Card sizes */
-.card-sm { width: 60px; height: auto; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+.card-sm {
+  width: 55px;
+  height: auto;
+  border-radius: 4px;
+}
 
 /* Specific button colors */
-.play-btn { background: linear-gradient(45deg, #4caf50, #81c784); color: white; }
-.pass-btn { background: linear-gradient(45deg, #f44336, #ef5350); color: white; }
-.bid-btn { background: linear-gradient(45deg, #ffc107, #ffd54f); color: #333; }
-.restart-btn { background: linear-gradient(45deg, #2196F3, #64B5F6); color: white; }
+.play-btn { background-color: #4caf50; color: white; }
+.play-btn:hover { background-color: #45a049; }
+.pass-btn { background-color: #f44336; color: white; }
+.pass-btn:hover { background-color: #da190b; }
+.bid-btn { background-color: #ffc107; color: #1a1a1a; }
+.bid-btn:hover { background-color: #e0ab06; }
+.restart-btn { background-color: #2196F3; color: white; }
+.restart-btn:hover { background-color: #1e87db; }
