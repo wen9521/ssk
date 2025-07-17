@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { aiSmartSplit, getPlayerSmartSplits } from './SmartSplit';
-import { calcSSSAllScores } from './sssScore';
-import { getShuffledDeck, dealHands } from './DealCards';
-import './Play.css';
-import { isFoul } from './sssScore';
+import { aiSmartSplit, getPlayerSmartSplits } from '../SmartSplit';
+import { calcSSSAllScores } from '../sssScore';
+import { getShuffledDeck, dealHands } from '../DealCards';
+import '../Play.css';
+import { isFoul } from '../sssScore';
 
 const AI_NAMES = ['小明', '小红', '小刚'];
 
@@ -13,7 +13,7 @@ const PAI_DUN_HEIGHT = 133;
 const CARD_HEIGHT = Math.round(PAI_DUN_HEIGHT * 0.94);
 const CARD_WIDTH = Math.round(CARD_HEIGHT * 46 / 66);
 
-export default function TryPlay() {
+export default function Play() {
   const navigate = useNavigate();
   const [head, setHead] = useState([]);
   const [middle, setMiddle] = useState([]);
@@ -344,4 +344,4 @@ export default function TryPlay() {
 }
 
 // 导出isFoul供外部引用（如有TreeShaking可忽略）
-export { isFoul } from './sssScore';
+export { isFoul } from '../sssScore';
