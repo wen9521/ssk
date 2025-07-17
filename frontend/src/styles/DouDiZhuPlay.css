@@ -24,9 +24,8 @@
 }
 
 .game-table {
-  display: grid;
-  grid-template-columns: 1fr 2fr 1fr; /* Left, Center, Right */
-  grid-template-rows: 1fr auto; /* Top area for opponents, Bottom for player */
+  display: flex;
+  flex-direction: column;
   height: 100%;
   width: 100%;
   position: relative;
@@ -69,27 +68,16 @@
 .opponent-hand {
   padding: 10px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-}
-.opponent-left {
-  grid-column: 1;
-  grid-row: 1 / span 2;
-  justify-content: center;
-}
-.opponent-right {
-  grid-column: 3;
-  grid-row: 1 / span 2;
   justify-content: center;
 }
 
 .player-area {
-  grid-column: 1 / span 3;
-  grid-row: 2;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   padding-bottom: 20px;
+  flex-grow: 1;
 }
 
 .card-row-opponent .card-back {
@@ -99,13 +87,11 @@
     border: 2px solid #888;
     border-radius: 5px;
     display: inline-block;
-    margin: 5px 2px;
+    margin: 0 2px;
 }
 
 
 .center-area {
-  grid-column: 2;
-  grid-row: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -116,12 +102,12 @@
     text-align: center;
 }
 .last-play {
-    margin-top: 30px;
+    margin-top: 10px;
     min-height: 80px;
 }
 .card-sm {
     width: 60px;
-    margin: 0 5px;
+    margin: 0 2px;
 }
 
 .card-row-player {
@@ -129,7 +115,7 @@
   justify-content: center;
   align-items: flex-end;
   gap: 5px;
-  padding: 20px;
+  padding: 10px;
 }
 .card {
   width: 80px;
@@ -157,4 +143,57 @@
   border-radius: 8px;
   border: none;
   cursor: pointer;
+}
+
+
+@media (orientation: landscape) {
+  .game-table {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .opponent-hand.opponent-top {
+    order: 2;
+    flex-direction: column;
+  }
+
+  .opponent-hand.opponent-bottom {
+      display: none;
+  }
+
+
+  .center-area {
+    order: 2;
+    flex-grow: 1;
+    justify-content: center;
+  }
+  
+  .player-area {
+    order: 1;
+    justify-content: center;
+    padding: 0;
+  }
+  
+  .card-row-player {
+    flex-direction: column;
+    height: 100%;
+    justify-content: center;
+  }
+  
+  .card {
+    width: 70px;
+  }
+
+  .card.selected {
+    margin-bottom: 0;
+    margin-right: -20px;
+  }
+
+  .action-buttons {
+      flex-direction: column;
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+  }
 }

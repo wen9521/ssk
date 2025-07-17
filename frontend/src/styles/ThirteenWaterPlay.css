@@ -1,146 +1,102 @@
-.game-board {
+.thirteen-water-play-container {
+  background-image: url('/public/assets/images/poker-table.jpg');
+  background-size: cover;
+  background-position: center;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  justify-content: space-between;
   padding: 20px;
-  background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d); /* Gradient background */
-  color: white;
-  width: 100%;
-  min-height: 100vh;
   box-sizing: border-box;
-  font-family: 'Arial', sans-serif;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  color: white;
+  font-family: sans-serif;
 }
 
-.game-board h1 {
-  font-size: 3rem;
-  text-shadow: 3px 3px 7px #000;
-  margin-bottom: 10px;
-  color: #f0e68c; /* Khaki color */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.game-board p {
-  font-size: 1.2rem;
-  margin-bottom: 30px;
-  color: #e0e0e0;
+.exit-button {
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.score-display {
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 10px 20px;
+  border-radius: 20px;
+}
+
+.player-status-container {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+}
+
+.player-box {
+  background-color: #2e7d32;
+  text-align: center;
+  padding: 10px;
+  border-radius: 10px;
+  width: 60px;
+  height: 60px;
+}
+
+.player-box.self {
+  background-color: #1b5e20;
 }
 
 .duns-container {
-  width: 90%;
-  max-width: 1000px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  margin-bottom: 30px;
+  gap: 15px;
 }
 
 .dun-area {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 15px;
-  padding: 20px;
-  cursor: pointer;
-  transition: all 0.4s ease-in-out;
-  border: 2px dashed rgba(255, 255, 255, 0.5);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
-}
-
-.dun-area:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-  border-color: #f0e68c;
-  transform: translateY(-3px);
-  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.5);
-}
-
-.dun-area h2 {
-  margin: 0 0 15px 0;
-  font-size: 1.8rem;
-  text-align: left;
-  color: #ffc107;
-  text-shadow: 1px 1px 3px #000;
-}
-
-.hand-container {
-  width: 90%;
-  max-width: 1000px;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 15px;
-  padding: 20px;
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
-  margin-bottom: 30px;
-}
-
-.hand-container h2 {
-  margin: 0 0 15px 0;
-  font-size: 1.8rem;
-  color: #ffdb58; /* Mustard color */
-  text-shadow: 1px 1px 3px #000;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 10px;
 }
 
 .card-row {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 15px;
 }
 
 .card {
-  width: 90px; /* Fixed width for consistency */
+  width: 70px;
   height: auto;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, border 0.3s ease-out;
-  box-shadow: 0 5px 12px rgba(0,0,0,0.5);
-  border: 3px solid transparent; /* Subtle border for selected state */
+  margin-right: -20px;
 }
 
-.card:hover {
-  transform: translateY(-8px) scale(1.05);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.7);
+.dun-label {
+  margin-left: auto;
+  padding-right: 15px;
+  font-size: 1.2em;
 }
 
-.card.selected {
-  transform: translateY(-15px) scale(1.1);
-  box-shadow: 0 0 25px 10px #76ff03; /* More prominent glowing effect */
-  border: 3px solid #76ff03; /* Bright green border */
-}
-
-.game-actions {
-  margin-top: 30px;
+.action-buttons {
   display: flex;
-  gap: 30px;
+  justify-content: space-around;
 }
 
-.confirm-btn, .reset-btn {
-  padding: 15px 35px;
-  font-size: 1.3rem;
-  border-radius: 30px; /* Pill-shaped buttons */
+.action-buttons button {
+  padding: 15px 30px;
+  border-radius: 20px;
   border: none;
   cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s ease-in-out;
-  box-shadow: 0 5px 10px rgba(0,0,0,0.3);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.confirm-btn {
-  background-color: #4CAF50; /* Green */
+  background-color: #4a90e2;
   color: white;
 }
 
-.confirm-btn:hover {
-  background-color: #66bb6a; /* Lighter green */
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0,0,0,0.4);
-}
-
-.reset-btn {
-  background-color: #f44336; /* Red */
-  color: white;
-}
-
-.reset-btn:hover {
-  background-color: #ef5350; /* Lighter red */
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0,0,0,0.4);
+.action-buttons .start-compare {
+  background-color: #f5a623;
 }

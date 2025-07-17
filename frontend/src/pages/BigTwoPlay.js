@@ -1,60 +1,61 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../Play.css'; // 引入Play.css以共用样式
+import '../Play.css'; // Shared styles
+import '../styles/BigTwoPlay.css'; // Specific styles for Big Two
 
-const AI_NAMES = ['AI玩家一', 'AI玩家二', 'AI玩家三']; // 锄大地通常是3个AI
+const AI_NAMES = ['AI玩家一', 'AI玩家二', 'AI玩家三'];
 
 function BigTwoPlay() {
   const navigate = useNavigate();
   const [msg, setMsg] = useState('等待玩家加入...');
   const [isReady, setIsReady] = useState(false);
   
-  // 简化模拟玩家状态，用于UI展示
   const [players, setPlayers] = useState([
-    { name: '你', isMe: true, isReady: false },
-    { name: AI_NAMES[0], isMe: false, isReady: false },
-    { name: AI_NAMES[1], isMe: false, isReady: false },
-    { name: AI_NAMES[2], isMe: false, isReady: false },
+    { name: '你', isMe: true, isReady: false, cardCount: 13 },
+    { name: AI_NAMES[0], isMe: false, isReady: false, cardCount: 13 },
+    { name: AI_NAMES[1], isMe: false, isReady: false, cardCount: 13 },
+    { name: AI_NAMES[2], isMe: false, isReady: false, cardCount: 13 },
   ]);
 
   const handleReadyToggle = () => {
-    setIsReady(prev => !prev);
-    setMsg(isReady ? '' : '已准备，等待其他玩家...');
-    setPlayers(prev => prev.map(p => p.isMe ? { ...p, isReady: !prev.isReady } : p));
-    // 模拟AI玩家自动准备
-    setTimeout(() => {
-      setPlayers(prev => prev.map(p => !p.isMe ? { ...p, isReady: true } : p));
-      if (!isReady) setMsg('所有玩家已准备，可以开始游戏！');
-    }, 1500);
+    const newReadyState = !isReady;
+    setIsReady(newReadyState);
+    setMsg(newReadyState ? '已准备，等待其他玩家...' : '');
+    setPlayers(prev => prev.map(p => p.isMe ? { ...p, isReady: newReadyState } : p));
+    
+    if (newReadyState) {
+        setTimeout(() => {
+          setPlayers(prev => prev.map(p => !p.isMe ? { ...p, isReady: true } : p));
+          setMsg('所有玩家已准备，可以开始游戏！');
+        }, 1500);
+    }
   };
 
   const handlePlayCards = () => {
     setMsg('你出牌了！');
   };
 
-  function renderPlayerSeat(player) {
+  const renderPlayerSeat = (player, positionClass) => {
     return (
-      <div
-        key={player.name}
-        className={`play-seat ${player.isMe ? 'me' : ''} ${player.isReady ? 'ai-done' : ''}`}
-      >
-        <div>{player.name}</div>
-        <div className="play-seat-status">
-          {player.isMe ? (player.isReady ? '已准备' : '未准备') : (player.isReady ? '已准备' : '等待中...')}
+      <div className={`player-seat-wrapper ${positionClass}`}>
+        <div className={`play-seat ${player.isMe ? 'me' : ''} ${player.isReady ? 'ai-done' : ''}`}>
+          <div>{player.name}</div>
+          <div className="play-seat-status">
+             {player.isMe ? (player.isReady ? '已准备' : '未准备') : `剩余: ${player.cardCount}`}
+          </div>
         </div>
       </div>
     );
-  }
-
+  };
+  
+  const me = players.find(p => p.isMe);
+  const otherPlayers = players.filter(p => !p.isMe);
+  
   return (
-    <div className="play-container">
+    <div className="play-container big-two-play-container">
       <div className="play-inner-wrapper">
-        {/* 头部：返回按钮+积分 */} 
         <div className="header-controls">
-          <button
-            className="exit-button"
-            onClick={() => navigate('/big-two')}
-          >
+          <button className="exit-button" onClick={() => navigate('/big-two')}>
             &lt; 返回入口
           </button>
           <div className="score-display">
@@ -63,48 +64,51 @@ function BigTwoPlay() {
           </div>
         </div>
 
-        {/* 玩家区 */} 
-        <div className="player-seats-container">
-          {players.map(renderPlayerSeat)}
-        </div>
-
-        {/* 游戏牌桌区域 (占位) */} 
-        <div className="game-table-area" style={{
-          flex: 1,
-          background: 'rgba(0,0,0,0.1)',
-          borderRadius: '15px',
-          margin: '20px 0',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '1.5em',
-          color: 'rgba(255,255,255,0.6)',
-          textShadow: '0 0 8px rgba(255,255,255,0.2)'
-        }}>
-          锄大地牌桌区域
-        </div>
-
-        {/* 底部按钮区 */} 
-        <div className="buttons-container">
-          <button
-            className={`action-button ready-button ${isReady ? 'cancel' : ''}`}
-            onClick={handleReadyToggle}
-          >
-            {isReady ? '取消准备' : '准备'}
-          </button>
-          <button
-            className="action-button start-compare-button"
-            onClick={handlePlayCards}
-            disabled={!isReady} // 简化：只有准备后才能出牌
-          >
-            出牌
-          </button>
+        <div className="game-area">
+          {otherPlayers[1] && renderPlayerSeat(otherPlayers[1], 'player-top')}
+          {otherPlayers[0] && renderPlayerSeat(otherPlayers[0], 'player-left')}
+          
+          <div className="game-table-area">
+            {/* Played cards will go here */}
+            <p>锄大地牌桌</p>
+          </div>
+          
+          {otherPlayers[2] && renderPlayerSeat(otherPlayers[2], 'player-right')}
+          
+          <div className="player-bottom">
+            <div className="my-hand-area">
+                {/* Player's cards will be rendered here */}
+                 <div className="card-placeholder">你的手牌区域</div>
+            </div>
+            <div className="my-info-area">
+               {me && (
+                  <div className={`play-seat me ${me.isReady ? 'ai-done' : ''}`}>
+                     <div>{me.name}</div>
+                      <div className="play-seat-status">{me.isReady ? '已准备' : '请准备'}</div>
+                  </div>
+               )}
+               <div className="buttons-container">
+                  <button
+                    className={`action-button ready-button ${isReady ? 'cancel' : ''}`}
+                    onClick={handleReadyToggle}
+                  >
+                    {isReady ? '取消准备' : '准备'}
+                  </button>
+                  <button
+                    className="action-button start-compare-button"
+                    onClick={handlePlayCards}
+                    disabled={!isReady}
+                  >
+                    出牌
+                  </button>
+               </div>
+            </div>
+          </div>
         </div>
 
         <div className="message-display">
           {msg}
         </div>
-
       </div>
     </div>
   );

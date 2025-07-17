@@ -1,0 +1,68 @@
+.big-two-play-container .play-inner-wrapper {
+    max-width: 100%;
+    height: 100vh;
+    border-radius: 0;
+}
+
+.game-area {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: 150px 1fr 150px;
+    grid-template-rows: 100px 1fr 200px;
+    gap: 15px;
+    height: 100%;
+}
+
+.player-top { grid-area: 1 / 2 / 2 / 3; justify-content: center; }
+.player-left { grid-area: 2 / 1 / 3 / 2; align-items: center; }
+.player-right { grid-area: 2 / 3 / 3 / 4; align-items: center; }
+.player-bottom { grid-area: 3 / 1 / 4 / 4; }
+
+.player-seat-wrapper {
+    display: flex;
+}
+
+.game-table-area {
+    grid-area: 2 / 2 / 3 / 3;
+    background: rgba(0,0,0,0.2);
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: rgba(255,255,255,0.5);
+    font-size: 1.5rem;
+}
+
+.player-bottom {
+    display: flex;
+    flex-direction: column;
+}
+
+.my-hand-area {
+    flex-grow: 1;
+    background: rgba(0,0,0,0.1);
+    border-radius: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.card-placeholder {
+    color: rgba(255,255,255,0.4);
+}
+
+.my-info-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.my-info-area .play-seat {
+    flex-grow: 0;
+}
+
+.my-info-area .buttons-container {
+    padding-top: 0;
+    gap: 15px;
+}
