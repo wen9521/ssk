@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom'; // Removed unused import
 import '../Play.css'; // Shared styles, now with Big Two layout
 
 const AI_NAMES = ['Player 2', 'Player 3', 'Player 4'];
@@ -10,16 +10,17 @@ const SAMPLE_HAND = [
 ];
 
 function BigTwoPlay() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Removed unused import
   const [msg, setMsg] = useState('Welcome to Big Two!');
   const [selectedCards, setSelectedCards] = useState([]);
   
-  const [players, setPlayers] = useState([
+  // Converted to const as setPlayers was not used
+  const players = [
     { name: 'You', isMe: true, isReady: true, cardCount: 13 },
     { name: AI_NAMES[0], isMe: false, isReady: true, cardCount: 13 },
     { name: AI_NAMES[1], isMe: false, isReady: true, cardCount: 13 },
     { name: AI_NAMES[2], isMe: false, isReady: true, cardCount: 13 },
-  ]);
+  ];
 
   const handlePlayCards = () => {
     if (selectedCards.length === 0) {

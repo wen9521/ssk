@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { sortCards } from '../CardUtils';
+import React, { useEffect } from 'react';
+// import { sortCards } from '../CardUtils'; // This was unused
 import '../styles/ThirteenWaterPlay.css';
 
 const ThirteenWaterPlay = () => {
-  // Correctly assign duns. Front is 3 cards, Middle is 5, Back is 5.
-  const [frontDun, setFrontDun] = useState(['5_of_clubs', 'queen_of_spades', 'ace_of_diamonds']);
-  const [middleDun, setMiddleDun] = useState([]);
-  const [backDun, setBackDun] = useState([]);
+  // These were not being updated, so they don't need to be state variables.
+  const frontDun = ['5_of_clubs', 'queen_of_spades', 'ace_of_diamonds'];
+  const middleDun = [];
+  const backDun = [];
 
   useEffect(() => {
     // Initial card distribution can be set here if needed

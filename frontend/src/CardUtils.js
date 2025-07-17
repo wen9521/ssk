@@ -1,9 +1,8 @@
 export const sortCards = (cards) => {
     const cardOrder = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2', 'black_joker', 'red_joker'];
-    const suitOrder = ['diamonds', 'clubs', 'hearts', 'spades']; // Typically suits don't matter for sorting in Doudizhu, but kept for consistency if needed
 
     const getCardValue = (card) => {
-        const [rank, suit] = card.split('_');
+        const [rank] = card.split('_');
         let value = cardOrder.indexOf(rank);
         if (rank === 'black_joker') value = cardOrder.indexOf('black_joker');
         if (rank === 'red_joker') value = cardOrder.indexOf('red_joker');
@@ -18,6 +17,7 @@ export const sortCards = (cards) => {
             // If values are the same, sort by suit (optional, usually not needed for Doudizhu)
             const suitA = a.split('_')[1];
             const suitB = b.split('_')[1];
+            const suitOrder = ['diamonds', 'clubs', 'hearts', 'spades']; // Move suitOrder inside if needed
             return suitOrder.indexOf(suitA) - suitOrder.indexOf(suitB);
         }
         return valA - valB;
@@ -155,14 +155,18 @@ export const getHandType = (cards) => {
     const triples = uniqueRanks.filter(rank => rankCounts[rank] === 3);
     if (triples.length === 1) {
         const tripleRank = triples[0];
-        const remainingCards = cards.filter(card => getCardRank(card) !== tripleRank);
+        // const remainingCards = cards.filter(card => getCardRank(card) !== tripleRank); // This variable was unused
 
-        if (remainingCards.length === 1) {
-            return { type: 'triple_with_single', rank: tripleRank, count: 4 };
+        if (cards.length === 4) { // Assuming 'three with one' has 4 cards total
+            const nonTripleCards = cards.filter(card => getCardRank(card) !== tripleRank);
+            if (nonTripleCards.length === 1) {
+                return { type: 'triple_with_single', rank: tripleRank, count: 4 };
+            }
         }
-        if (remainingCards.length === 2) {
-            const remainingRanks = remainingCards.map(getCardRank);
-            if (remainingRanks[0] === remainingRanks[1]) {
+        if (cards.length === 5) { // Assuming 'three with pair' has 5 cards total
+            const nonTripleCards = cards.filter(card => getCardRank(card) !== tripleRank);
+            const remainingRanks = nonTripleCards.map(getCardRank);
+            if (remainingRanks.length === 2 && remainingRanks[0] === remainingRanks[1]) {
                 return { type: 'triple_with_pair', rank: tripleRank, count: 5 };
             }
         }
@@ -173,37 +177,29 @@ export const getHandType = (cards) => {
     if (mainTriples) {
         const numTriples = mainTriples.length;
         const cardsInTriples = numTriples * 3;
-        const remainingCards = cards.filter(card => !mainTriples.includes(getCardRank(card)) || rankCounts[getCardRank(card)] > 3);
-
-        // Special handling for the remaining cards from triples (if a card appears 4 times, 3 of them are part of the triple)
-        const actualRemainingCards = [];
-        const tempRankCounts = { ...rankCounts };
+        
+        // Calculate actual remaining cards carefully, considering cases where a 4-of-a-kind was part of a triple set
+        const tempCards = [...cards];
         for (const tripleRank of mainTriples) {
-            tempRankCounts[tripleRank] -= 3;
-        }
-        for (const rank of uniqueRanks) {
-            for (let i = 0; i < tempRankCounts[rank]; i++) {
-                // Find one card with this rank from the original cards (this is a simplified approach)
-                // A more robust approach would be to reconstruct the remaining cards carefully.
-                // For now, assuming direct filtering is sufficient given getCardRank logic.
-                const cardToPush = cards.find(c => getCardRank(c) === rank && !actualRemainingCards.includes(c));
-                if (cardToPush) {
-                    actualRemainingCards.push(cardToPush);
+            let count = 0;
+            for (let i = 0; i < tempCards.length; i++) {
+                if (getCardRank(tempCards[i]) === tripleRank && count < 3) {
+                    tempCards.splice(i, 1);
+                    count++;
+                    i--; 
                 }
             }
         }
 
-        // This is a simplified filtering for remaining cards, a more robust way would involve managing actual card instances.
-        const wings = cards.filter(card => !mainTriples.some(tr => getCardRank(card) === tr && rankCounts[getCardRank(card)] >= 3));
-        const wingRanks = wings.map(getCardRank).sort((a,b)=>a-b);
-        const wingRankCounts = {};
-        wingRanks.forEach(rank => {wingRankCounts[rank] = (wingRankCounts[rank] || 0) + 1;});
-        const wingUniqueRanks = [...new Set(wingRanks)];
+        const actualRemainingCards = tempCards;
 
         // Airplane with single wings
-        if (cards.length === cardsInTriples + numTriples && wingUniqueRanks.length === numTriples) {
+        if (cards.length === cardsInTriples + numTriples && actualRemainingCards.length === numTriples) {
+            const wingRanks = actualRemainingCards.map(getCardRank);
+            const wingRankCounts = {};
+            wingRanks.forEach(rank => {wingRankCounts[rank] = (wingRankCounts[rank] || 0) + 1;});
             let isValidWings = true;
-            for (const rank of wingUniqueRanks) {
+            for (const rank of [...new Set(wingRanks)]) {
                 if (wingRankCounts[rank] !== 1) {isValidWings = false; break;}
             }
             if (isValidWings) {
@@ -212,9 +208,12 @@ export const getHandType = (cards) => {
         }
 
         // Airplane with pair wings
-        if (cards.length === cardsInTriples + (numTriples * 2) && wingUniqueRanks.length === numTriples) {
+        if (cards.length === cardsInTriples + (numTriples * 2) && actualRemainingCards.length === numTriples * 2) {
+            const wingRanks = actualRemainingCards.map(getCardRank);
+            const wingRankCounts = {};
+            wingRanks.forEach(rank => {wingRankCounts[rank] = (wingRankCounts[rank] || 0) + 1;});
             let isValidWings = true;
-            for (const rank of wingUniqueRanks) {
+            for (const rank of [...new Set(wingRanks)]) {
                 if (wingRankCounts[rank] !== 2) {isValidWings = false; break;}
             }
             if (isValidWings) {
@@ -232,18 +231,18 @@ export const getHandType = (cards) => {
     const fourOfAKind = uniqueRanks.filter(rank => rankCounts[rank] === 4);
     if (fourOfAKind.length === 1) {
         const fourRank = fourOfAKind[0];
-        const remainingCards = cards.filter(card => getCardRank(card) !== fourRank);
-        const remainingRanks = remainingCards.map(getCardRank);
+        const remainingCardsFromOriginal = cards.filter(card => getCardRank(card) !== fourRank);
+        const remainingRanks = remainingCardsFromOriginal.map(getCardRank);
         const remainingRankCounts = {};
         remainingRanks.forEach(rank => {remainingRankCounts[rank] = (remainingRankCounts[rank] || 0) + 1;});
         const remainingUniqueRanks = [...new Set(remainingRanks)];
 
         // Four with two singles
-        if (remainingCards.length === 2 && remainingUniqueRanks.length === 2) {
+        if (remainingCardsFromOriginal.length === 2 && remainingUniqueRanks.length === 2) {
             return { type: 'four_with_two_singles', rank: fourRank, count: 6 };
         }
         // Four with two pairs
-        if (remainingCards.length === 4 && remainingUniqueRanks.length === 2) {
+        if (remainingCardsFromOriginal.length === 4 && remainingUniqueRanks.length === 2) {
             if (remainingRankCounts[remainingUniqueRanks[0]] === 2 && remainingRankCounts[remainingUniqueRanks[1]] === 2) {
                 return { type: 'four_with_two_pairs', rank: fourRank, count: 8 };
             }
@@ -287,4 +286,3 @@ export const compareHands = (newHand, prevHand) => {
 
     return false; // Cannot beat previous hand
 };
-

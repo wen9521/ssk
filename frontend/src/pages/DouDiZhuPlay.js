@@ -30,64 +30,8 @@ function DouDiZhuPlay() {
 
     const playerIndex = 0; // Human player is always at index 0
 
-    // Initialize or reset the game
-    const initializeGame = useCallback(() => {
-        const shuffled = [...deck].sort(() => Math.random() - 0.5);
-        const playerHands = [
-            sortCards(shuffled.slice(0, 17)),
-            sortCards(shuffled.slice(17, 34)),
-            sortCards(shuffled.slice(34, 51))
-        ];
-        setHands(playerHands);
-        setLandlordCards(shuffled.slice(51));
-        setIsBidding(true);
-        setLandlord(null);
-        setTurn(0); // Start bidding from player 0
-        setLastPlay({ cards: null, playedBy: null });
-        setSelectedCards([]);
-        setWinner(null);
-        setPassCount(0);
-    }, []);
-
-    useEffect(() => {
-        initializeGame();
-    }, [initializeGame]);
-
-    // AI Logic
-    useEffect(() => {
-        if (!isBidding && turn !== playerIndex && !winner) {
-            const aiTurn = setTimeout(() => handleAIPlay(), 1200);
-            return () => clearTimeout(aiTurn);
-        }
-    }, [turn, isBidding, winner]);
-
-    const handleAIPlay = () => {
-        // AI logic will be implemented in a future step
-        // For now, it just passes the turn
-        handlePlay(true);
-    };
-
-    // Card selection handler
-    const handleCardClick = (card) => {
-        if (winner) return;
-        setSelectedCards(prev =>
-            prev.includes(card) ? prev.filter(c => c !== card) : [...prev, card]
-        );
-    };
-
-    // Bidding handler
-    const handleBid = () => {
-        if (winner) return;
-        setLandlord(playerIndex);
-        const newHands = [...hands];
-        newHands[playerIndex] = sortCards([...hands[playerIndex], ...landlordCards]);
-        setHands(newHands);
-        setTurn(playerIndex);
-        setIsBidding(false);
-    };
-
     // Play or Pass handler
-    const handlePlay = (isPass = false) => {
+    const handlePlay = useCallback((isPass = false) => {
         if (winner) return;
 
         if (isPass) {
@@ -129,6 +73,62 @@ function DouDiZhuPlay() {
         } else {
             setTurn(prev => (prev + 1) % 3);
         }
+    }, [winner, lastPlay, turn, selectedCards, hands, landlord, passCount]);
+
+    // Initialize or reset the game
+    const initializeGame = useCallback(() => {
+        const shuffled = [...deck].sort(() => Math.random() - 0.5);
+        const playerHands = [
+            sortCards(shuffled.slice(0, 17)),
+            sortCards(shuffled.slice(17, 34)),
+            sortCards(shuffled.slice(34, 51))
+        ];
+        setHands(playerHands);
+        setLandlordCards(shuffled.slice(51));
+        setIsBidding(true);
+        setLandlord(null);
+        setTurn(0); // Start bidding from player 0
+        setLastPlay({ cards: null, playedBy: null });
+        setSelectedCards([]);
+        setWinner(null);
+        setPassCount(0);
+    }, []);
+
+    useEffect(() => {
+        initializeGame();
+    }, [initializeGame]);
+
+    const handleAIPlay = useCallback(() => {
+        // AI logic will be implemented in a future step
+        // For now, it just passes the turn
+        handlePlay(true);
+    }, [handlePlay]);
+
+    // AI Logic
+    useEffect(() => {
+        if (!isBidding && turn !== playerIndex && !winner) {
+            const aiTurn = setTimeout(() => handleAIPlay(), 1200);
+            return () => clearTimeout(aiTurn);
+        }
+    }, [turn, isBidding, winner, handleAIPlay]);
+
+    // Card selection handler
+    const handleCardClick = (card) => {
+        if (winner) return;
+        setSelectedCards(prev =>
+            prev.includes(card) ? prev.filter(c => c !== card) : [...prev, card]
+        );
+    };
+
+    // Bidding handler
+    const handleBid = () => {
+        if (winner) return;
+        setLandlord(playerIndex);
+        const newHands = [...hands];
+        newHands[playerIndex] = sortCards([...hands[playerIndex], ...landlordCards]);
+        setHands(newHands);
+        setTurn(playerIndex);
+        setIsBidding(false);
     };
 
     // Render a single card
