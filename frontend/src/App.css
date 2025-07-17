@@ -1,9 +1,8 @@
 body {
   margin: 0;
   font-family: 'Arial', sans-serif;
-  /* 更深色的渐变背景，以突出玻璃卡片 */
   background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
-  color: #e0e0e0; /* 适应深色背景的文字颜色 */
+  color: #e0e0e0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -19,7 +18,7 @@ body {
 
 .lobby h1 {
   font-size: 3em;
-  color: #ffffff; /* 白色标题 */
+  color: #ffffff;
   margin-bottom: 20px;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
   letter-spacing: 2px;
@@ -41,19 +40,17 @@ body {
 }
 
 .game-card {
-  /* 玻璃拟态效果的核心 */
-  background: rgba(255, 255, 255, 0.15); /* 半透明背景 */
-  backdrop-filter: blur(10px); /* 磨砂效果 */
-  -webkit-backdrop-filter: blur(10px); /* Safari兼容性 */
-  border-radius: 20px; /* 更圆润的边角 */
-  border: 1px solid rgba(255, 255, 255, 0.2); /* 细微边框 */
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-right-color: rgba(255, 255, 255, 0.1);
   border-bottom-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* 柔和光影 */
-
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   padding: 30px 25px;
   text-decoration: none;
-  color: #f0f0f0; /* 适应半透明背景的文字颜色 */
+  color: #f0f0f0;
   transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, background 0.3s ease;
   display: flex;
   flex-direction: column;
@@ -61,13 +58,12 @@ body {
   justify-content: center;
   min-height: 200px;
   text-align: center;
-  width: calc(33% - 35px); /* 三列布局 */
+  width: calc(33% - 35px);
   box-sizing: border-box;
   position: relative;
-  overflow: hidden; /* 防止内容超出圆角 */
+  overflow: hidden;
 }
 
-/* 模拟光影效果的伪元素 */
 .game-card::before {
   content: '';
   position: absolute;
@@ -86,8 +82,8 @@ body {
 
 .game-card:hover {
   transform: translateY(-10px) scale(1.03);
-  box-shadow: 0 15px 45px 0 rgba(0, 0, 0, 0.45); /* 悬停时更明显的光影 */
-  background: rgba(255, 255, 255, 0.25); /* 悬停时稍微更亮 */
+  box-shadow: 0 15px 45px 0 rgba(0, 0, 0, 0.45);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .game-card h2 {
@@ -95,7 +91,7 @@ body {
   font-size: 2em;
   margin-bottom: 15px;
   font-weight: bold;
-  color: #fff; /* 确保标题白色 */
+  color: #fff;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
 }
 
@@ -106,14 +102,13 @@ body {
   color: #e0e0e0;
 }
 
-/* Mobile responsiveness */
 @media (max-width: 768px) {
   .lobby h1 {
     font-size: 2.2em;
   }
 
   .game-card {
-    width: calc(50% - 35px); /* 两列布局 */
+    width: calc(50% - 35px);
     min-height: 180px;
   }
 
@@ -142,7 +137,7 @@ body {
   }
 
   .game-card {
-    width: 90%; /* 单列布局 */
+    width: 90%;
     max-width: 320px;
     min-height: 160px;
     padding: 25px 20px;
@@ -160,7 +155,7 @@ body {
 .game-page {
   padding: 40px 20px;
   text-align: center;
-  color: #e0e0e0; /* 适应深色背景 */
+  color: #e0e0e0;
 }
 
 .game-page h1 {

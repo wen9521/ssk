@@ -1,5 +1,3 @@
-/* Play.css */
-
 :root {
   --pai-dun-height: 133px;
   --card-height: calc(var(--pai-dun-height) * 0.94);
@@ -10,7 +8,7 @@
 body {
   margin: 0;
   font-family: 'Arial', sans-serif;
-  background: linear-gradient(135deg, #182848 0%, #4b6cb7 100%); /* 深色渐变背景 */
+  background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
   color: #e0e0e0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -21,19 +19,19 @@ body {
   font-family: inherit;
   display: flex;
   justify-content: center;
-  align-items: center; /* 垂直居中整个游戏区域 */
+  align-items: center;
 }
 
 .play-inner-wrapper {
   max-width: var(--outer-max-width);
   width: 100%;
-  margin: 30px auto; /* 保持顶部和底部边距 */
-  background: rgba(255, 255, 255, 0.1); /* 半透明背景 */
-  backdrop-filter: blur(15px); /* 磨砂效果 */
-  -webkit-backdrop-filter: blur(15px); /* Safari兼容性 */
-  border-radius: 25px; /* 更圆润的边角 */
-  border: 1px solid rgba(255, 255, 255, 0.18); /* 细微边框 */
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* 柔和光影 */
+  margin: 30px auto;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   padding: 20px;
   position: relative;
   display: flex;
@@ -49,7 +47,7 @@ body {
 }
 
 .exit-button {
-  background: rgba(255, 255, 255, 0.2); /* 半透明按钮 */
+  background: rgba(255, 255, 255, 0.2);
   color: #fff;
   font-weight: bold;
   border: none;
@@ -70,7 +68,7 @@ body {
 .score-display {
   flex: 1;
   text-align: right;
-  color: #aaffaa; /* 亮绿色，更显眼 */
+  color: #aaffaa;
   font-weight: 900;
   font-size: 24px;
   letter-spacing: 2px;
@@ -91,10 +89,10 @@ body {
 
 .play-seat {
   border-radius: 15px;
-  width: 25%; /* 平均分配 */
+  width: 25%;
   min-width: 80px;
   color: #fff;
-  background: rgba(255, 255, 255, 0.1); /* 半透明背景 */
+  background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -108,13 +106,13 @@ body {
 }
 
 .play-seat.me {
-  background: rgba(0, 255, 0, 0.2); /* 玩家自己的座位更亮 */
+  background: rgba(0, 255, 0, 0.2);
   border: 1px solid rgba(0, 255, 0, 0.3);
   color: #aaffaa;
 }
 
 .play-seat.ai-done {
-  background: rgba(0, 255, 0, 0.1); /* AI完成理牌后颜色 */
+  background: rgba(0, 255, 0, 0.1);
   border: 1px solid rgba(0, 255, 0, 0.2);
   color: #aaffaa;
 }
@@ -129,7 +127,7 @@ body {
 .pai-dun-container {
   width: 100%;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.08); /* 牌墩背景 */
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -143,7 +141,7 @@ body {
   box-sizing: border-box;
   padding-left: 20px;
   padding-right: 80px;
-  overflow: hidden; /* 防止牌溢出圆角 */
+  overflow: hidden;
 }
 
 .pai-dun-content {
@@ -174,7 +172,7 @@ body {
   height: 100%;
   display: flex;
   align-items: center;
-  color: #aaffaa; /* 亮绿色标签 */
+  color: #aaffaa;
   font-size: 20px;
   font-weight: 600;
   pointer-events: none;
@@ -189,34 +187,34 @@ body {
   z-index: 0;
   width: var(--card-width);
   height: var(--card-height);
-  border-radius: 8px; /* 更圆润的牌角 */
-  border: 2px solid transparent; /* 默认透明边框 */
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3); /* 牌的柔和阴影 */
+  border-radius: 8px;
+  border: 2px solid transparent;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
   cursor: pointer;
   background: #fff;
   transition: border .15s ease, box-shadow .15s ease, transform .1s ease;
 }
 
 .card-img.selected {
-  border: 2.5px solid #ffaa00; /* 选中时亮橙色边框 */
-  box-shadow: 0 0 20px 4px rgba(255,170,0,0.6); /* 选中时光晕效果 */
-  transform: translateY(-5px); /* 选中时微抬 */
+  border: 2.5px solid #ffaa00;
+  box-shadow: 0 0 20px 4px rgba(255,170,0,0.6);
+  transform: translateY(-5px);
 }
 
 .card-img:hover {
-  transform: translateY(-3px); /* 悬停微抬 */
+  transform: translateY(-3px);
 }
 
 .buttons-container {
   display: flex;
   gap: 15px;
-  margin-top: auto; /* 推到底部 */
-  padding-top: 20px; /* 留出空间 */
+  margin-top: auto;
+  padding-top: 20px;
 }
 
 .action-button {
   flex: 1;
-  background: rgba(255, 255, 255, 0.15); /* 半透明按钮背景 */
+  background: rgba(255, 255, 255, 0.15);
   color: #fff;
   font-weight: 700;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -235,7 +233,7 @@ body {
 }
 
 .action-button:disabled {
-  background: rgba(255, 255, 255, 0.05); /* 禁用按钮更暗 */
+  background: rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.4);
   cursor: not-allowed;
   box-shadow: none;
@@ -278,7 +276,7 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0,0,0,0.5); /* 更深的背景 */
+  background: rgba(0,0,0,0.5);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -286,12 +284,12 @@ body {
 }
 
 .result-modal-content {
-  background: rgba(255, 255, 255, 0.1); /* 模态框背景 */
+  background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 25px;
   padding: 30px;
-  min-width: 450px; /* 调整宽度 */
+  min-width: 450px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.4);
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -313,18 +311,18 @@ body {
 
 .result-player-name {
   font-weight: 700;
-  color: #ccddff; /* AI名称颜色 */
+  color: #ccddff;
   margin-bottom: 10px;
   font-size: 1.2em;
   text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
 }
 
 .result-player-name.me {
-  color: #aaffaa; /* 玩家名称颜色 */
+  color: #aaffaa;
 }
 
 .foul-text {
-  color: #ff6666; /* 红色 */
+  color: #ff6666;
   font-weight: 800;
   margin-left: 8px;
   text-shadow: 1px 1px 3px rgba(255, 102, 102, 0.3);
@@ -361,13 +359,11 @@ body {
   transform: rotate(90deg);
 }
 
-/* --- Styles for ThirteenWaterEntry.js --- */
-
 .thirteen-water-entry .entry-title {
   color: #fff;
   font-size: 3.5em;
   text-align: center;
-  margin-top: 80px; /* 调整距离 */
+  margin-top: 80px;
   margin-bottom: 20px;
   text-shadow: 3px 3px 15px rgba(0,0,0,0.4);
 }
@@ -376,7 +372,7 @@ body {
   color: rgba(255, 255, 255, 0.8);
   font-size: 1.2em;
   text-align: center;
-  margin-bottom: 60px; /* 调整距离 */
+  margin-bottom: 60px;
 }
 
 .thirteen-water-entry .entry-buttons-container {
@@ -400,8 +396,6 @@ body {
   width: 100%;
 }
 
-
-/* Mobile responsiveness */
 @media (max-width: 768px) {
   .play-inner-wrapper {
     margin: 20px auto;
@@ -539,8 +533,8 @@ body {
   }
 
   .play-seat {
-    width: 24%; /* 保持四列，稍微缩小 */
-    min-width: unset; /* 不再限制最小宽度 */
+    width: 24%;
+    min-width: unset;
     padding: 10px 0;
     font-size: 14px;
     border-radius: 10px;
@@ -570,9 +564,9 @@ body {
 
   .card-img {
     border-radius: 5px;
-    width: calc(var(--card-width) * 0.9); /* 缩小牌的显示尺寸 */
+    width: calc(var(--card-width) * 0.9);
     height: calc(var(--card-height) * 0.9);
-    top: calc((100px - var(--card-height) * 0.9) / 2); /* 调整牌的垂直位置 */
+    top: calc((100px - var(--card-height) * 0.9) / 2);
   }
   
   .card-img.selected {
@@ -600,7 +594,7 @@ body {
     padding: 20px;
     gap: 15px;
     border-radius: 18px;
-    grid-template-columns: 1fr; /* 手机上单列显示结果 */
+    grid-template-columns: 1fr;
   }
   .result-player-section:nth-child(2n) {
     border-left: none;
@@ -629,10 +623,9 @@ body {
   }
 }
 
-/* 进一步缩小牌在模态框中的显示，以适应小屏幕 */
 @media (max-width: 480px) {
   .result-modal-content .card-img {
-    width: calc(var(--card-width) * 0.6); /* 模态框内的牌更小 */
+    width: calc(var(--card-width) * 0.6);
     height: calc(var(--card-height) * 0.6);
     top: calc((var(--pai-dun-height) * 0.7 - var(--card-height) * 0.6) / 2);
   }
