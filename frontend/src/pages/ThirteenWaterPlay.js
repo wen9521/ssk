@@ -3,8 +3,9 @@ import { sortCards } from '../CardUtils';
 import '../styles/ThirteenWaterPlay.css';
 
 const ThirteenWaterPlay = () => {
-  const [frontDun, setFrontDun] = useState([]);
-  const [middleDun, setMiddleDun] = useState(['5_of_clubs', 'queen_of_spades', 'ace_of_diamonds']);
+  // Correctly assign duns. Front is 3 cards, Middle is 5, Back is 5.
+  const [frontDun, setFrontDun] = useState(['5_of_clubs', 'queen_of_spades', 'ace_of_diamonds']);
+  const [middleDun, setMiddleDun] = useState([]);
   const [backDun, setBackDun] = useState([]);
 
   useEffect(() => {
@@ -12,6 +13,9 @@ const ThirteenWaterPlay = () => {
   }, []);
 
   const renderCards = (cards) => {
+    if (!cards || cards.length === 0) {
+      return <div className="empty-dun-placeholder">请放置牌</div>;
+    }
     return cards.map(card => (
       <img key={card} src={`/cards/${card}.svg`} alt={card} className="card" />
     ));
@@ -27,24 +31,37 @@ const ThirteenWaterPlay = () => {
       </div>
 
       <div className="player-status-container">
-        <div className="player-box self">你<br/>你</div>
-        <div className="player-box">小明<br/>已理牌</div>
-        <div className="player-box">小红<br/>已理牌</div>
-        <div className="player-box">小刚<br/>已理牌</div>
+        <div className="player-box self">
+          <strong>你</strong>
+          <span>准备中...</span>
+        </div>
+        <div className="player-box">
+          <strong>小明</strong>
+          <span>已理牌</span>
+        </div>
+        <div className="player-box">
+          <strong>小红</strong>
+          <span>已理牌</span>
+        </div>
+        <div className="player-box">
+          <strong>小刚</strong>
+          <span>已理牌</span>
+        </div>
       </div>
 
+      {/* Reordered duns for logical display (Back > Middle > Front) */}
       <div className="duns-container">
         <div className="dun-area">
+          <div className="card-row">{renderCards(backDun)}</div>
+          <div className="dun-label">后道 (5张)</div>
+        </div>
+        <div className="dun-area">
           <div className="card-row">{renderCards(middleDun)}</div>
-          <div className="dun-label">头道 (3)</div>
+          <div className="dun-label">中道 (5张)</div>
         </div>
         <div className="dun-area">
           <div className="card-row">{renderCards(frontDun)}</div>
-          <div className="dun-label">中道 (5)</div>
-        </div>
-        <div className="dun-area">
-          <div className="card-row">{renderCards(backDun)}</div>
-          <div className="dun-label">后道 (5)</div>
+          <div className="dun-label">头道 (3张)</div>
         </div>
       </div>
 

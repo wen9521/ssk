@@ -3,7 +3,7 @@
   flex-direction: column;
   align-items: center;
   padding: 40px;
-  background: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
   border-radius: 20px;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   backdrop-filter: blur(10px);
@@ -16,100 +16,137 @@
 
 .thirteen-water-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
 }
 
 .thirteen-water-header h1 {
-  font-size: 2.8em;
+  font-size: 3em;
   color: #ffffff;
   margin-bottom: 10px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  text-shadow: 3px 3px 6px rgba(0,0,0,0.4);
+  position: relative;
+  display: inline-block;
+}
+
+.thirteen-water-header h1::before,
+.thirteen-water-header h1::after {
+  content: '♠';
+  font-size: 0.8em;
+  color: #ffc107;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.8;
+}
+
+.thirteen-water-header h1::before {
+  left: -40px;
+}
+
+.thirteen-water-header h1::after {
+  right: -40px;
+  content: '♥';
 }
 
 .thirteen-water-header p {
-  font-size: 1.2em;
+  font-size: 1.3em;
   color: #cccccc;
 }
 
 .thirteen-water-rules, .thirteen-water-how-to-play {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.25);
   border-radius: 15px;
-  padding: 25px;
-  margin-bottom: 25px;
+  padding: 30px;
+  margin-bottom: 30px;
   width: 100%;
+  box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
 }
 
 .thirteen-water-rules h2, .thirteen-water-how-to-play h2 {
-  font-size: 2em;
+  font-size: 2.2em;
   color: #ffffff;
-  margin-bottom: 20px;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-  padding-bottom: 10px;
+  margin-bottom: 25px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+  padding-bottom: 15px;
 }
 
 .thirteen-water-rules ul, .thirteen-water-how-to-play ol {
   list-style: none;
   padding-left: 0;
+  counter-reset: list-item;
 }
 
 .thirteen-water-rules li, .thirteen-water-how-to-play li {
-  font-size: 1.1em;
-  line-height: 1.8;
-  margin-bottom: 15px;
-  padding-left: 25px;
+  font-size: 1.15em;
+  line-height: 1.9;
+  margin-bottom: 18px;
+  padding-left: 35px;
   position: relative;
 }
 
-.thirteen-water-rules li::before, .thirteen-water-how-to-play li::before {
-  content: '✓';
+.thirteen-water-rules li::before {
+  content: '♣';
   position: absolute;
   left: 0;
   color: #4caf50;
   font-weight: bold;
+  font-size: 1.2em;
 }
 
 .thirteen-water-how-to-play li::before {
-  content: counter(list-item) '.';
+  content: counter(list-item);
   counter-increment: list-item;
-  color: #ffc107;
+  position: absolute;
+  left: 0;
+  background-color: #ffc107;
+  color: #333;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: inline-block;
+  text-align: center;
+  line-height: 25px;
+  font-weight: bold;
 }
 
 .thirteen-water-actions {
   display: flex;
   justify-content: center;
-  gap: 20px;
-  margin-top: 20px;
+  gap: 30px;
+  margin-top: 30px;
 }
 
 .start-game-btn, .back-to-lobby-btn {
-  padding: 15px 30px;
-  font-size: 1.2em;
+  padding: 18px 35px;
+  font-size: 1.3em;
   border: none;
-  border-radius: 10px;
+  border-radius: 50px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: bold;
-  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 20px 0 rgba(0, 0, 0, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .start-game-btn {
-  background-color: #4CAF50;
+  background: linear-gradient(45deg, #4caf50, #81c784);
   color: white;
 }
 
 .start-game-btn:hover {
-  background-color: #66bb6a;
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.3);
+  background: linear-gradient(45deg, #66bb6a, #a5d6a7);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px 0 rgba(0, 0, 0, 0.35);
 }
 
 .back-to-lobby-btn {
-  background-color: #f44336;
+  background: linear-gradient(45deg, #f44336, #ef5350);
   color: white;
 }
 
 .back-to-lobby-btn:hover {
-  background-color: #ef5350;
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.3);
+  background: linear-gradient(45deg, #ef5350, #e57373);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px 0 rgba(0, 0, 0, 0.35);
 }
