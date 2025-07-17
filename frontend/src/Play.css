@@ -2,7 +2,7 @@
   --pai-dun-height: 133px;
   --card-height: calc(var(--pai-dun-height) * 0.94);
   --card-width: calc(var(--card-height) * 46 / 66);
-  --outer-max-width: 420px;
+  --outer-max-width: 90%;
 }
 
 body {
