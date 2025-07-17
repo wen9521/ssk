@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: 'Arial', sans-serif;
-  background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); /* New gradient */
   color: #e0e0e0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -20,7 +20,7 @@ body {
   font-size: 3em;
   color: #ffffff;
   margin-bottom: 20px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  text-shadow: 3px 3px 6px rgba(0,0,0,0.4);
   letter-spacing: 2px;
 }
 
@@ -40,13 +40,11 @@ body {
 }
 
 .game-card {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-right-color: rgba(255, 255, 255, 0.1);
-  border-bottom-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   padding: 30px 25px;
   text-decoration: none;
@@ -71,7 +69,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+  background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -82,8 +80,8 @@ body {
 
 .game-card:hover {
   transform: translateY(-10px) scale(1.03);
-  box-shadow: 0 15px 45px 0 rgba(0, 0, 0, 0.45);
-  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 20px 50px 0 rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2));
 }
 
 .game-card h2 {
@@ -92,7 +90,7 @@ body {
   margin-bottom: 15px;
   font-weight: bold;
   color: #fff;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
 .game-card p {
