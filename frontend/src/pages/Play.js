@@ -29,7 +29,6 @@ export default function Play() {
   const [showResult, setShowResult] = useState(false);
   const [scores, setScores] = useState([0,0,0,0]);
   const [isReady, setIsReady] = useState(false);
-  const [hasCompared, setHasCompared] = useState(false);
   const [foulStates, setFoulStates] = useState([false, false, false, false]);
 
   // 我的智能分法缓存
@@ -48,7 +47,6 @@ export default function Play() {
       setMiddle(myHand.slice(3, 8));
       setTail(myHand.slice(8, 13));
       setIsReady(true);
-      setHasCompared(false);
       setMsg('');
       setShowResult(false);
       setScores([0,0,0,0]);
@@ -93,7 +91,6 @@ export default function Play() {
         { name: AI_NAMES[2], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
       ]);
       setIsReady(false);
-      setHasCompared(false);
       setMsg('');
       setShowResult(false);
       setScores([0,0,0,0]);
@@ -168,7 +165,6 @@ export default function Play() {
     setScores(resScores);
     setFoulStates(fouls);
     setShowResult(true);
-    setHasCompared(true);
     setMsg('');
     setIsReady(false);
   }
