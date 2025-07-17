@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { sortCards, getCardValue, getCardSuit } from '../CardUtils';
+import { sortCards } from '../CardUtils';
 import '../styles/ThirteenWaterPlay.css'; // New CSS file for the play area
 
 const ThirteenWaterPlay = () => {
