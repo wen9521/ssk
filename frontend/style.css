@@ -28,6 +28,44 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:
     align-items: center;
 }
 
+/* --- 横屏强制样式 --- */
+@media (max-width: 900px), (orientation: portrait) {
+    body, #app {
+        width: 100vw;
+        height: 100vh;
+        min-height: 100vh;
+        min-width: 100vw;
+        overflow: hidden;
+    }
+    .game-board {
+        /* 横屏方向，强制宽大于高 */
+        transform: rotate(90deg);
+        transform-origin: center center;
+        width: 100vh;
+        height: 100vw;
+        max-width: none;
+        max-height: none;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        /* 使牌桌居中 */
+        translate: -50% -50%;
+        background: transparent;
+        padding: 0;
+        z-index: 9;
+    }
+    .lobby-container {
+        /* 大厅不旋转 */
+        transform: none !important;
+        position: relative;
+        z-index: 10;
+    }
+    /* 让所有弹窗和按钮等也跟随旋转 */
+    .action-buttons-container, .bidding-status-indicator {
+        transform: rotate(-90deg) !important;
+    }
+}
+
 /* --- 大厅样式 --- */
 .lobby-container {
     width: 100%;
@@ -244,18 +282,52 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    padding-bottom: 80px;
+    padding-bottom: 80px; /* Space for buttons */
     width: 100%;
     height: 100%;
-    gap: 12px;  /* 新增gap实现横向平铺 */
 }
 
-/* 修改这里，让手牌横向平铺，不叠加 */
-.player-hand .card:not(:first-child) { 
-    margin-left: 0; 
+.action-buttons-container {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    z-index: 200;
 }
+.action-btn {
+    width: 120px;
+    height: 50px;
+    border-radius: 25px;
+    border: none;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 15px var(--shadow-dark);
+    transition: all 0.2s ease;
+}
+.action-btn.play { background: var(--btn-play-bg); }
+.action-btn.pass { background: var(--btn-pass-bg); }
+.action-btn:hover:not(:disabled) { transform: translateY(-3px) scale(1.05); box-shadow: 0 6px 20px var(--shadow-dark); }
+.action-btn:disabled { filter: grayscale(70%); opacity: 0.5; cursor: not-allowed; }
 
+.hand { display: flex; align-items: center; perspective: 1200px; }
+.card {
+    width: clamp(80px, 12vw, 120px);
+    aspect-ratio: 2.5 / 3.5;
+    border-radius: 10px;
+    background-color: var(--card-bg);
+    box-shadow: 0 5px 10px var(--shadow-dark);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--shadow-light);
+}
+.card img { width: 100%; height: 100%; display: block; user-select: none; }
 .player-hand .card { cursor: pointer; }
+.player-hand .card:not(:first-child) { margin-left: -50%; }
 .player-hand .card:hover { transform: translateY(-15px) rotateZ(-2deg); z-index: 10; }
 .player-hand .card.selected { transform: translateY(-30px); }
 
@@ -280,6 +352,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:
 }
 
 @media (orientation: portrait) and (max-width: 767px) {
+    /* 这部分已被上方横屏旋转覆盖, 可保留以防特殊设备适配 */
     .game-board {
         grid-template-rows: auto auto 1fr auto;
         grid-template-columns: 1fr 1fr;
@@ -293,8 +366,10 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:
     .player-hand { padding-bottom: 70px; }
     .action-buttons-container { bottom: 10px; }
     .card { width: clamp(60px, 15vw, 80px); }
-    .player-hand .card:not(:first-child) { margin-left: 0; }
+    .player-hand .card:not(:first-child) { margin-left: -45%; }
     .game-menu {
         grid-template-columns: 1fr;
     }
 }
+
+</contents>
