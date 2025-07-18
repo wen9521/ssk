@@ -7,11 +7,11 @@ import { renderPlayerHand, updateCardCount, renderPlayedCards } from './src/comp
 import { DouDizhuGame } from './src/game-logic/doudizhu-rules.js';
 import { renderBiddingControls } from './src/components/bidding-ui.js';
 
-// 锄大地 (待实现)
+// 锄大地
 import { renderBigTwoBoard } from './src/components/big-two-ui.js';
 import { BigTwoGame } from './src/game-logic/big-two-rules.js';
 
-// 十三水 (待实现)
+// 十三水
 import { renderThirteenWaterBoard } from './src/components/thirteen-water-ui.js';
 import { ThirteenWaterGame } from './src/game-logic/thirteen-water-rules.js';
 
@@ -40,7 +40,7 @@ function showLobby() {
 
 function startGame(gameId, mode) {
     if (mode === 'online') {
-        alert('在线匹配模式正在火速开发中，敬请期待！');
+        alert('在线匹配模式正在开发中，敬请期待！');
         return;
     }
 
@@ -76,25 +76,33 @@ function startDoudizhuOffline() {
 }
 
 function startBigTwoOffline() {
-    currentGame = new BigTwoGame();
+    currentGame = new BigTwoGame(['您', '下家AI', '对家AI', '上家AI']);
     currentGame.startGame();
-    app.innerHTML = renderBigTwoBoard();
-    setTimeout(() => {
-        alert("“锄大地”的核心玩法正在紧张开发中，即将呈现，敬请期待！");
-        showLobby();
-    }, 1000);
+
+    app.innerHTML = renderBigTwoBoard(currentGame.players);
+    currentGame.players.forEach(p => {
+        renderPlayerHand(`hand-${p.id}`, p.hand, p.id !== 'player-0');
+        updateCardCount(p.id, p.hand.length);
+    });
+
+    bigTwoGameLoop();
 }
 
 function startThirteenWaterOffline() {
-    currentGame = new ThirteenWaterGame();
+    currentGame = new ThirteenWaterGame(['您', '下家AI', '对家AI', '上家AI']);
     currentGame.startGame();
-    app.innerHTML = renderThirteenWaterBoard();
-    setTimeout(() => {
-        alert("“十三水”的核心玩法正在紧张开发中，即将呈现，敬请期待！");
-        showLobby();
-    }, 1000);
-}
 
+    app.innerHTML = renderThirteenWaterBoard(currentGame.players);
+    renderPlayerHand(`hand-player-0`, currentGame.players[0].hand, false);
+
+    // AI自动分墩
+    for (let i = 1; i < 4; i++) {
+        currentGame.autoGroup(`player-${i}`);
+    }
+
+    document.getElementById('group-btn').onclick = handleThirteenWaterGroup;
+    document.getElementById('compare-btn').onclick = handleThirteenWaterCompare;
+}
 
 // --- 斗地主：叫地主循环 ---
 function biddingLoop() {
@@ -225,6 +233,93 @@ function doudizhuAiTurn() {
     doudizhuGameLoop();
 }
 
+// --- 锄大地主流程 ---
+function bigTwoGameLoop() {
+    if (currentGame.gameState === 'ended') {
+        setTimeout(() => {
+            alert(`锄大地结束！出完牌顺序：${currentGame.winners.map(w => w.name).join(', ')}`);
+            showLobby();
+        }, 800);
+        return;
+    }
+
+    const currentPlayer = currentGame.players[currentGame.playTurn];
+    updateUITurn(currentPlayer, 'playing');
+
+    if (currentPlayer.id === 'player-0') {
+        document.getElementById('play-btn').disabled = false;
+        document.getElementById('pass-btn').disabled = currentGame.lastValidPlay.cardType ? false : true;
+        document.getElementById('play-btn').onclick = handleBigTwoPlay;
+        document.getElementById('pass-btn').onclick = handleBigTwoPass;
+    } else {
+        setTimeout(() => {
+            const result = currentGame.aiSimplePlay(currentPlayer.id);
+            if (result && result.playedCards) {
+                renderPlayedCards('played-cards-area', result.playedCards);
+                updatePlayerStatus(currentPlayer.id, '');
+            } else {
+                updatePlayerStatus(currentPlayer.id, '不要');
+            }
+            updateCardCount(currentPlayer.id, currentPlayer.hand.length);
+            renderPlayerHand(`hand-${currentPlayer.id}`, currentPlayer.hand, true);
+            bigTwoGameLoop();
+        }, 1200);
+    }
+}
+
+function handleBigTwoPlay() {
+    const selected = document.querySelectorAll(`#hand-player-0 .card.selected`);
+    if (selected.length === 0) return;
+    const cardIds = Array.from(selected).map(el => el.dataset.cardId);
+    const result = currentGame.playCards('player-0', cardIds);
+
+    if (result) {
+        renderPlayedCards('played-cards-area', result.playedCards);
+        renderPlayerHand('player-0', currentGame.players[0].hand, false);
+        updateCardCount('player-0', currentGame.players[0].hand.length);
+        bigTwoGameLoop();
+    } else {
+        alert("出牌不符合规则！");
+    }
+}
+
+function handleBigTwoPass() {
+    if (currentGame.passTurn('player-0')) {
+        updatePlayerStatus('player-0', '不要', true);
+        bigTwoGameLoop();
+    } else {
+        alert("你不能首轮不要！");
+    }
+}
+
+// --- 十三水主流程 ---
+function handleThirteenWaterGroup() {
+    currentGame.autoGroup('player-0');
+    document.getElementById('group-btn').disabled = true;
+    document.getElementById('compare-btn').disabled = false;
+    showThirteenWaterGroup();
+}
+
+function showThirteenWaterGroup() {
+    const groups = currentGame.players[0].groups;
+    const container = document.getElementById('grouped-area');
+    container.innerHTML = `
+        <div style="margin-top:10px;">
+            <b>头墩：</b> ${groups[0].map(c => c.fullName).join(' ')} <br/>
+            <b>中墩：</b> ${groups[1].map(c => c.fullName).join(' ')} <br/>
+            <b>尾墩：</b> ${groups[2].map(c => c.fullName).join(' ')} <br/>
+        </div>
+    `;
+}
+
+function handleThirteenWaterCompare() {
+    const scores = currentGame.compareAll();
+    setTimeout(() => {
+        alert(`十三水比牌结果:\n${scores.map(s => `${s.name}: ${s.score}分`).join('\n')}`);
+        showLobby();
+    }, 1000);
+}
+
 // --- 通用结束和UI更新 ---
 function endGame(winner) {
     setTimeout(() => {
@@ -268,9 +363,11 @@ function updateUITurn(player, phase) {
 
     if (phase === 'playing') {
         const isMyTurn = player.id === 'player-0';
-        const canPass = currentGame.lastValidPlay.playerId !== null && currentGame.passPlayCount < 2;
-        document.getElementById('play-btn').disabled = !isMyTurn;
-        document.getElementById('pass-btn').disabled = !isMyTurn || !canPass;
+        const canPass = currentGame.lastValidPlay && currentGame.lastValidPlay.playerId !== null && currentGame.passPlayCount < 2;
+        const playBtn = document.getElementById('play-btn');
+        const passBtn = document.getElementById('pass-btn');
+        if (playBtn) playBtn.disabled = !isMyTurn;
+        if (passBtn) passBtn.disabled = !isMyTurn || !canPass;
     }
 }
 
