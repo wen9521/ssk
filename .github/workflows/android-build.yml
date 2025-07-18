@@ -28,7 +28,7 @@ jobs:
     - name: Build with Gradle using the official action
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: assembleRelease --stacktrace
+        arguments: :app:assembleRelease --stacktrace
         build-root-directory: android
       env:
         SIGNING_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
