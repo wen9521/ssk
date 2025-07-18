@@ -326,8 +326,8 @@ function showThirteenWaterGroup() {
 function handleThirteenWaterCompare() {
     const scores = currentGame.compareAll();
     setTimeout(() => {
-        let alertMessage = '十三水比牌结果:
-';
+        let alertMessage = `十三水比牌结果:
+`;
         scores.forEach(s => {
             alertMessage += `${s.name}: ${s.score}分
 `;
