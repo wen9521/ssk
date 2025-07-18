@@ -1,0 +1,14 @@
+{
+    "name": "your-username/card-game-server",
+    "description": "WebSocket server for the card game lobby",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "cboden/ratchet": "^0.4.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "MyApp\\": "src/"
+        }
+    }
+}
