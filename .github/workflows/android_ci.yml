@@ -1,48 +1,43 @@
-name: Android CI
+name: Build Android APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '17'
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: 'gradle'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with: {} # Empty with block for v3
+    - name: Set up Gradle
+      uses: gradle/gradle-build-action@v2
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
-        working-directory: android
+    - name: Decode Keystore
+      # This step creates the release-key.jks file from the base64 secret.
+      run: echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 --decode > android/release-key.jks
 
-      - name: Build with Gradle
-        run: ./gradlew assembleRelease
-        working-directory: ./android
+    - name: Build and Sign Release APK
+      working-directory: ./android
+      env:
+        SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+        SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+      run: ./gradlew assembleRelease
 
-      - name: Add Android Build Tools to PATH
-        run: echo "$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)" >> $GITHUB_PATH
-
-      - name: Sign APK
-        run: |
-          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 --decode > release-key.jks
-          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore release-key.jks -storepass ${{ secrets.SIGNING_KEYSTORE_PASSWORD }} ./android/app/build/outputs/apk/release/app-release-unsigned.apk ${{ secrets.SIGNING_KEY_ALIAS }}
-          zipalign -v 4 ./android/app/build/outputs/apk/release/app-release-unsigned.apk ./android/app/build/outputs/apk/release/app-release-signed.apk
-        shell: bash
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-apk
-          path: ./android/app/build/outputs/apk/release/app-release-signed.apk
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: signed-apk
+        path: android/app/build/outputs/apk/release/app-release.apk
