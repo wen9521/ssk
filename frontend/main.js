@@ -328,8 +328,10 @@ function handleThirteenWaterCompare() {
     setTimeout(() => {
         let alertMessage = '十三水比牌结果:
 ';
-        alertMessage += scores.map(s => `${s.name}: ${s.score}分`).join('
-');
+        scores.forEach(s => {
+            alertMessage += `${s.name}: ${s.score}分
+`;
+        });
         alert(alertMessage);
         showLobby();
     }, 1000);

@@ -9,7 +9,7 @@ export function renderLobby() {
                     <p class="game-description">经典的欢乐斗地主，三人对战，体验抢地主和加倍的刺激。</p>
                     <div class="action-buttons">
                         <button class="lobby-btn trial">离线试玩</button>
-                        <button class="lobby-btn match">在线匹配</button>
+                        <button class="lobby-btn match" disabled>在线匹配</button>
                     </div>
                 </div>
 
