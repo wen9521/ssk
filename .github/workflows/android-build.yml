@@ -21,25 +21,15 @@ jobs:
 
     - name: Decode Keystore
       run: echo "${{ secrets.SIGN_KEY }}" | base64 --decode > android/release-key.jks
+      
+    - name: Make gradlew executable
+      run: chmod +x android/gradlew
 
-    - name: DEBUG - Verify Gradle Wrapper
-      working-directory: ./android
-      run: |
-        echo "--- Verifying gradlew script ---"
-        ls -l gradlew
-        cat gradlew | head -n 5
-        echo "--- Verifying wrapper jar existence and content ---"
-        ls -l gradle/wrapper/gradle-wrapper.jar
-        jar -tvf gradle/wrapper/gradle-wrapper.jar | grep GradleWrapperMain || echo "GradleWrapperMain.class not found in jar!"
-        echo "--- End of verification ---"
-
-    - name: Build with Gradle (Bypassing gradlew script)
-      working-directory: ./android
-      run: |
-        java \
-          -Dorg.gradle.appname=gradlew \
-          -cp gradle/wrapper/gradle-wrapper.jar \
-          org.gradle.wrapper.GradleWrapperMain :app:assembleRelease --stacktrace
+    - name: Build with Gradle
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: :app:assembleRelease --stacktrace
+        build-root-directory: android
       env:
         SIGNING_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
