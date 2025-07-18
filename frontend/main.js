@@ -167,7 +167,7 @@ function finalizeDoudizhuBoard() {
     }
 
     document.querySelectorAll('.player-pod').forEach(el => el.style.boxShadow = 'none');
-    const landlordNameEl = document.querySelector(`#${landlord.id} .player-name`);
+    const landlordNameEl = document.querySelector(`#${landlord.id} .player-name');
     landlordNameEl.innerHTML += ' <span style="color: var(--accent-color)">(地主)</span>';
     
     renderPlayedCards('landlord-cards-area', currentGame.landlordCards);
@@ -390,3 +390,5 @@ function updateUITurn(player, phase) {
 
 // --- 应用初始化 ---
 document.addEventListener('DOMContentLoaded', showLobby);
+
+// Added a comment to force a commit and push.
