@@ -28,13 +28,13 @@ jobs:
       # This step creates the release-key.jks file from the base64 secret.
       run: echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 --decode > android/release-key.jks
 
-    - name: Build and Sign Release APK
+    - name: Build and Sign Release APK with Full Stacktrace
       working-directory: ./android
       env:
         SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
         SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
-      run: ./gradlew assembleRelease
+      run: ./gradlew assembleRelease --stacktrace
 
     - name: Upload Artifact
       # This step uploads the signed APK as an artifact, so you can download it.
