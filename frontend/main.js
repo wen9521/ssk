@@ -2,6 +2,7 @@
  * main.js (升级版)
  * 
  * 使用增强的游戏规则引擎驱动一个完整的离线游戏循环。
+ * 新增了对屏幕方向的检测以提升移动端体验。
  */
 
 // -------------------- 模块导入 --------------------
@@ -41,15 +42,13 @@ function startOfflineGame() {
         }
     });
     
-    // 绑定操作按钮
     document.getElementById('play-btn').addEventListener('click', handlePlayCard_Offline);
     document.getElementById('pass-btn').addEventListener('click', handlePass_Offline);
     
-    // 游戏循环开始
     gameLoop();
 }
 
-function startOnlineGame() { /* ... 在线逻辑保持不变 ... */ }
+function startOnlineGame() { /* ... 在线逻辑 ... */ }
 
 // -------------------- 离线游戏循环和事件处理 --------------------
 
@@ -62,13 +61,13 @@ function gameLoop() {
     updateTurnIndicator();
 
     const currentPlayer = currentGame.getCurrentPlayer();
-    if (currentPlayer.id !== 'player-0') { // AI的回合
+    if (currentPlayer.id !== 'player-0') {
         document.getElementById('play-btn').disabled = true;
         document.getElementById('pass-btn').disabled = true;
-        setTimeout(aiTurn, 1200); // 延迟让玩家看清
-    } else { // 玩家的回合
+        setTimeout(aiTurn, 1200);
+    } else {
         document.getElementById('play-btn').disabled = false;
-        document.getElementById('pass-btn').disabled = !currentGame.lastValidPlay.playerId; // 如果是首出，不能"不要"
+        document.getElementById('pass-btn').disabled = !currentGame.lastValidPlay.playerId;
     }
 }
 
@@ -83,14 +82,12 @@ function handlePlayCard_Offline() {
     const result = currentGame.playCards('player-0', cardIds);
 
     if (result) {
-        // 出牌成功
         renderPlayedCards(result.playedCards, '你');
         renderPlayerHand('player-0', currentGame.getPlayerById('player-0').hand, true);
         updateCardCount('player-0', currentGame.getPlayerById('player-0').hand.length);
         currentGame.nextTurn();
         gameLoop();
     } else {
-        // 出牌失败
         alert("出牌不符合规则，请重新选择！");
     }
 }
@@ -110,9 +107,9 @@ function aiTurn() {
     const aiPlayer = currentGame.getCurrentPlayer();
     const result = currentGame.aiSimplePlay(aiPlayer.id);
 
-    if (result) { // AI出牌了
+    if (result) {
         renderPlayedCards(result.playedCards, aiPlayer.name);
-    } else { // AI“不要”
+    } else {
         renderPlayedCards([], `${aiPlayer.name} 不要`);
     }
 
@@ -138,21 +135,47 @@ function updateTurnIndicator() {
     const currentPlayer = currentGame.getCurrentPlayer();
     if (!currentPlayer) return;
 
-    const indicator = document.querySelector(`#hand-${currentPlayer.id}`).parentElement.querySelector('.player-info');
+    const indicator = document.querySelector(`#hand-${currentPlayer.id}`)?.parentElement.querySelector('.player-info');
     if(indicator) {
         indicator.style.boxShadow = `0 0 15px var(--accent-color), 0 0 20px var(--accent-color) inset`;
     }
 }
 
-// 修改 renderPlayedCards 函数调用方式，传递出牌者信息
-// 在 /frontend/src/components/card.js 中修改
-// export function renderPlayedCards(cards, playerName = '') { ... }
-
-
 // -------------------- 应用初始化 --------------------
 
+/**
+ * 应用的入口函数，负责初始化所有内容。
+ */
 function initialize() {
-    if ('serviceWorker' in navigator) { /* ... */ }
+    // 注册 Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => console.log('Service Worker registered:', registration.scope))
+                .catch(error => console.error('Service Worker registration failed:', error));
+        });
+    }
+
+    // --- JavaScript屏幕方向检测增强 ---
+    const checkOrientation = () => {
+        const maskElement = document.getElementById('orientation-mask');
+        const appElement = document.getElementById('app');
+        
+        // CSS媒体查询已经处理了移动端竖屏，JS主要作为桌面缩放和特殊情况的补充
+        if (window.matchMedia("(orientation: portrait)").matches && window.innerWidth < 850) {
+            maskElement.style.display = 'flex';
+            appElement.style.display = 'none';
+        } else {
+            maskElement.style.display = 'none';
+            appElement.style.display = 'flex';
+        }
+    };
+
+    // 页面加载和窗口大小改变时检查
+    window.addEventListener('resize', checkOrientation);
+    checkOrientation(); // 初始加载时检查一次
+
+    // 默认显示游戏大厅界面
     showLobby();
 }
 
