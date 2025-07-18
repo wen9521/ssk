@@ -1,0 +1,12 @@
+{
+    "name": "your-name/card-game-server",
+    "description": "WebSocket server for a card game lobby.",
+    "require": {
+        "cboden/ratchet": "^0.4.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "MyApp\\": "src"
+        }
+    }
+}
