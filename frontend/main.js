@@ -9,7 +9,7 @@ import { renderBiddingControls } from './src/components/bidding-ui.js';
 
 // 锄大地
 import { renderBigTwoBoard } from './src/components/big-two-ui.js';
-import { BigTwoGame } = './src/game-logic/big-two-rules.js';
+import { BigTwoGame } from './src/game-logic/big-two-rules.js';
 
 // 十三水
 import { renderThirteenWaterBoard } from './src/components/thirteen-water-ui.js';
