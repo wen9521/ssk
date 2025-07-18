@@ -17,19 +17,46 @@
 #
 
 ##############################################################################
-#
-#   Gradle start up script for UN*X
-#
+##
+##  Gradle start up script for UN*X
+##
 ##############################################################################
 
+# Attempt to set APP_HOME
+# Resolve links: $0 may be a link
+PRG="$0"
+# Need this for relative symlinks.
+while [ -h "$PRG" ] ; do
+    ls=`ls -ld "$PRG"`
+    link=`expr "$ls" : '.*-> \(.*\)$'`
+    if expr "$link" : '/.*' > /dev/null; then
+        PRG="$link"
+    else
+        PRG=`dirname "$PRG"`"/$link"
+    fi
+done
+
+APP_HOME=`dirname "$PRG"`
+
 # Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass any JVM options to this script.
-DEFAULT_JVM_OPTS=""
+DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
 
 APP_NAME="Gradle"
 APP_BASE_NAME=`basename "$0"`
 
 # Use the maximum available, or set MAX_FD != -1 to use that value.
 MAX_FD="maximum"
+
+warn () {
+    echo "$*"
+}
+
+die () {
+    echo
+    echo "$*"
+    echo
+    exit 1
+}
 
 # OS specific support (must be 'true' or 'false').
 cygwin=false
@@ -51,101 +78,61 @@ case "`uname`" in
     ;;
 esac
 
-# For Cygwin, ensure paths are in UNIX format before anything is touched
-if $cygwin ; then
+# For Cygwin, ensure paths are in UNIX format before anything is touched.
+if ${cygwin} ; then
     [ -n "$JAVA_HOME" ] && JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
 fi
 
 # Attempt to find java
 if [ -z "$JAVA_HOME" ] ; then
-    if $darwin ; then
-        if [ -x '/usr/libexec/java_home' ] ; then
-            JAVA_HOME=`/usr/libexec/java_home`
-        elif [ -d "/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Home" ]; then
-            JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Home"
-        fi
-    else
-        JAVA_PATH=`which java 2>/dev/null`
-        if [ -n "$JAVA_PATH" ] ; then
-            JAVA_PATH=`readlink -f "$JAVA_PATH" 2>/dev/null`
-            if [ -n "$JAVA_PATH" ] ; then
-                JAVA_HOME=`dirname "$JAVA_PATH" 2>/dev/null`
-                JAVA_HOME=`dirname "$JAVA_HOME" 2>/dev/null`
-            fi
-        fi
-    fi
-    if [ -z "$JAVA_HOME" ] ; then
-        # If all else fails, look for a JRE
-        if [ -d "$APP_HOME/jre" ] ; then
-            JAVA_HOME="$APP_HOME/jre"
-        fi
-    fi
-fi
-if [ -z "$JAVA_HOME" ] ; then
-    echo "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH." >&2
-    echo >&2
-    echo "Please set the JAVA_HOME variable in your environment to match the" >&2
-    echo "location of your Java installation." >&2
-    exit 1
-fi
+    JAVA_EXE=`which java 2>/dev/null`
+    if [ -z "$JAVA_EXE" ] ; then
+        die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
 
-# Set a few of the JRE locations
-if [ -d "$JAVA_HOME/lib/tools.jar" -a -f "$JAVA_HOME/lib/tools.jar" ] ; then
-    # Found JDK
-    JAVACMD="$JAVA_HOME/bin/java"
-elif [ -d "$JAVA_HOME/jre/lib/rt.jar" -a -f "$JAVA_HOME/jre/lib/rt.jar" ] ; then
-    # Found JRE
-    JAVACMD="$JAVA_HOME/jre/bin/java"
+Please set the JAVA_HOME variable in your environment to match the
+location of your Java installation."
+    fi
 else
-    # Could not find java in a recognizable location. Let's just try to use what we've got.
-    JAVACMD="$JAVA_HOME/bin/java"
+    JAVA_EXE="$JAVA_HOME/bin/java"
+fi
+if [ ! -x "$JAVA_EXE" ] ; then
+  die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME
+
+Please set the JAVA_HOME variable in your environment to match the
+location of your Java installation."
 fi
 
-if [ ! -x "$JAVACMD" ] ; then
-    echo "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME" >&2
-    echo >&2
-    echo "Please set the JAVA_HOME variable in your environment to match the" >&2
-    echo "location of your Java installation." >&2
-    exit 1
+# Read all serviceability options
+if [ -r "$APP_HOME/serviceability.sh" ] ; then
+    . "$APP_HOME/serviceability.sh"
 fi
 
-# Resolve links: $0 may be a link
-PRG="$0"
-# Need this for relative symlinks.
-while [ -h "$PRG" ] ; do
-    ls=`ls -ld "$PRG"`
-    link=`expr "$ls" : '.*-> \(.*\)$'`
-    if expr "$link" : '/.*' > /dev/null; then
-        PRG="$link"
-    else
-        PRG=`dirname "$PRG"`"/$link"
-    fi
-done
-SAVED="`pwd`"
-cd "`dirname "$PRG"`/" >/dev/null
-APP_HOME="`pwd -P`"
-cd "$SAVED" >/dev/null
+# Determine the Java version
+"$JAVA_EXE" -cp "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" org.gradle.wrapper.SystemPropertiesHandler "$@"
 
-CLASSPATH="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
-
-# Split up the JVM options string.
-JVM_OPTS=
-for opt in $DEFAULT_JVM_OPTS; do
-    JVM_OPTS="$JVM_OPTS $opt"
-done
-
-# Add the command line options to the list of options
-#
-JVM_OPTS="$JVM_OPTS $JAVA_OPTS $GRADLE_OPTS"
-
-# Set the application arguments
-#
-if [ -n "$APP_ARGS" ] ; then
-    APP_ARGS="$APP_ARGS $@"
-else
-    APP_ARGS="$@"
+# For Cygwin, switch paths to Windows format before running java
+if ${cygwin} ; then
+    APP_HOME=`cygpath --path --windows "$APP_HOME"`
+    JAVA_HOME=`cygpath --path --windows "$JAVA_HOME"`
 fi
 
-# Execute the application
-#
-exec "$JAVACMD" $JVM_OPTS -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$APP_ARGS"
+# Split up the JVM options only if the JAVA_OPTS variable is not defined.
+if [ -z "$JAVA_OPTS" ]; then
+    JAVA_OPTS=($DEFAULT_JVM_OPTS)
+fi
+
+# Escape application args
+save () {
+    for i do
+        printf %s
+ "$i" | sed "s/'/'''/g;1s/^/'/;\$s/\$/'/"
+    done
+    echo
+}
+APP_ARGS_ESCAPED=`save "$@"`
+
+# Collect all arguments for the java command, following the shell quoting and substitution rules
+eval set -- "$JAVA_OPTS" '"-Dorg.gradle.appname=$APP_BASE_NAME"' -cp '"$APP_HOME/gradle/wrapper/gradle-wrapper.jar"' org.gradle.wrapper.GradleWrapperMain "$APP_ARGS_ESCAPED"
+
+# Use "exec" to create a new process which runs the Java application, and replace this script with it.
+exec "$JAVA_EXE" "$@"
