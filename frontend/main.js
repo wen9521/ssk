@@ -167,7 +167,7 @@ function finalizeDoudizhuBoard() {
     }
 
     document.querySelectorAll('.player-pod').forEach(el => el.style.boxShadow = 'none');
-    const landlordNameEl = document.querySelector(`#${landlord.id} .player-name');
+    const landlordNameEl = document.querySelector(`#${landlord.id} .player-name`);
     landlordNameEl.innerHTML += ' <span style="color: var(--accent-color)">(地主)</span>';
     
     renderPlayedCards('landlord-cards-area', currentGame.landlordCards);
