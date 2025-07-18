@@ -21,9 +21,15 @@ jobs:
 
     - name: Decode Keystore
       run: echo "${{ secrets.SIGN_KEY }}" | base64 --decode > android/release-key.jks
+      
+    - name: Make gradlew executable
+      run: chmod +x android/gradlew
 
-    - name: Build with Gradle
-      run: cd android && ./gradlew assembleRelease --stacktrace
+    - name: Build with Gradle using the official action
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: assembleRelease --stacktrace
+        build-root-directory: android
       env:
         SIGNING_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
