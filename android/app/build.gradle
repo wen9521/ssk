@@ -1,7 +1,7 @@
 plugins {
     id 'com.android.application'
-    // Apply the Performance Monitoring plugin
-    id 'com.google.firebase.perf'
+    // Apply the Performance Monitoring plugin with the correct ID
+    id 'com.google.firebase.firebase-perf'
 }
 
 android {
