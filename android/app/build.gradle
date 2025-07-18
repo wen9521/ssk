@@ -12,6 +12,9 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
+        
+        // Enable multidex
+        multiDexEnabled true
     }
 
     signingConfigs {
@@ -35,4 +38,7 @@ android {
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+    // Add multidex dependency
+    implementation 'androidx.multidex:multidex:2.0.1'
 }
