@@ -13,9 +13,9 @@ android {
 
     signingConfigs {
         release {
-            // Updated to use environment variables from android_ci.yml
+            // Using the exact environment variable names you have configured
             storeFile file('release-key.jks')
-            storePassword System.getenv("SIGNING_STORE_PASSWORD")
+            storePassword System.getenv("SIGNING_KEYSTORE_PASSWORD")
             keyAlias System.getenv("SIGNING_KEY_ALIAS")
             keyPassword System.getenv("SIGNING_KEY_PASSWORD")
         }
