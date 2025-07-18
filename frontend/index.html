@@ -2,20 +2,30 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>棋牌大厅</title>
-    <!-- 链接到根目录的样式文件 -->
     <link rel="stylesheet" href="/style.css">
-    <!-- PWA 清单文件 -->
     <link rel="manifest" href="/manifest.json">
-    <!-- 移动端浏览器主题颜色 -->
     <meta name="theme-color" content="#1a1a1a">
+    <!-- 添加移动端Web App相关meta -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
     <!-- 主应用容器 -->
     <div id="app"></div>
 
-    <!-- 主JavaScript入口，使用type="module"启用ES6模块功能 -->
+    <!-- 横屏提示遮罩层 (默认隐藏) -->
+    <div id="orientation-mask">
+        <div class="orientation-tip">
+            <svg class="phone-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>
+            </svg>
+            <p>为了更好的游戏体验，请将手机横屏</p>
+        </div>
+    </div>
+
+    <!-- 主JavaScript入口 -->
     <script type="module" src="/main.js"></script>
 </body>
 </html>
