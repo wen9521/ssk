@@ -36,7 +36,6 @@ android {
         }
     }
 
-    // Add compileOptions to enable Java 8 support
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -46,7 +45,7 @@ android {
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-
-    // Add multidex dependency
     implementation 'androidx.multidex:multidex:2.0.1'
+    // 增加 Guava 依赖解决 NoSuchMethodError
+    implementation 'com.google.guava:guava:27.0.1-android'
 }
