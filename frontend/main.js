@@ -103,11 +103,14 @@ function startThirteenWaterOffline() {
     showThirteenWaterGroup();
 
     // 直接启用比牌按钮并禁用整理按钮
-    document.getElementById('group-btn').disabled = true;
-    document.getElementById('compare-btn').disabled = false;
+    const groupBtn = document.getElementById('group-btn');
+    const compareBtn = document.getElementById('compare-btn');
+    if (groupBtn) groupBtn.disabled = true;
+    if (compareBtn) compareBtn.disabled = false;
+
 
     // 移除group-btn的事件监听，保留compare-btn的事件监听
-    document.getElementById('compare-btn').onclick = handleThirteenWaterCompare;
+    if (compareBtn) compareBtn.onclick = handleThirteenWaterCompare;
 }
 
 // --- 斗地主：叫地主循环 ---
@@ -309,21 +312,24 @@ function handleThirteenWaterGroup() {
 function showThirteenWaterGroup() {
     const groups = currentGame.players[0].groups;
     const container = document.getElementById('grouped-area');
-    container.innerHTML = `
-        <div style="margin-top:10px;">
-            <b>头墩：</b> ${groups[0].map(c => c.fullName).join(' ')} <br/>
-            <b>中墩：</b> ${groups[1].map(c => c.fullName).join(' ')} <br/>
-            <b>尾墩：</b> ${groups[2].map(c => c.fullName).join(' ')} <br/>
-        </div>
-    `;
+    if(container) {
+        container.innerHTML = `
+            <div style="margin-top:10px;">
+                <b>头墩：</b> ${groups[0].map(c => c.fullName).join(' ')} <br/>
+                <b>中墩：</b> ${groups[1].map(c => c.fullName).join(' ')} <br/>
+                <b>尾墩：</b> ${groups[2].map(c => c.fullName).join(' ')} <br/>
+            </div>
+        `;
+    }
 }
 
 function handleThirteenWaterCompare() {
     const scores = currentGame.compareAll();
     setTimeout(() => {
+        const scoreText = scores.map(s => `${s.name}: ${s.score}分`).join('
+');
         alert(`十三水比牌结果:
-${scores.map(s => `${s.name}: ${s.score}分`).join('
-')}`);
+${scoreText}`);
         showLobby();
     }, 1000);
 }
