@@ -7,9 +7,10 @@
  * - 所有元素使用绝对/相对定位，以适应不同屏幕尺寸。
  */
 export function renderGameBoard(players) {
+    // 假设 players[0] 是你, players[1] 是你的下家(右侧AI), players[2] 是你的上家(左侧AI)
     const you = players[0];
-    const rightAI = players[1]; // 你的下家在右边
-    const leftAI = players[2];  // 你的上家在左边
+    const rightAI = players[1];
+    const leftAI = players[2];
 
     return `
         <div class="game-board classic-view">
@@ -17,13 +18,13 @@ export function renderGameBoard(players) {
             <div class="top-info">
                 <span>底牌</span>
                 <div id="landlord-cards-area" class="hand">
-                    <!-- 地主底牌会在这里显示 -->
+                    <!-- 地主底牌会在这里动态生成 -->
                 </div>
                 <span>倍数: <b id="game-multiplier">1</b></span>
             </div>
 
             <!-- 左侧AI玩家 -->
-            <div class="player-area-side left-ai">
+            <div class="player-area-side left-ai" id="${leftAI.id}">
                 <div class="player-avatar">AI</div>
                 <div class="player-info">
                     <div class="player-name">${leftAI.name}</div>
@@ -33,7 +34,7 @@ export function renderGameBoard(players) {
             </div>
 
             <!-- 右侧AI玩家 -->
-            <div class="player-area-side right-ai">
+            <div class="player-area-side right-ai" id="${rightAI.id}">
                 <div class="player-avatar">AI</div>
                 <div class="player-info">
                     <div class="player-name">${rightAI.name}</div>
@@ -48,13 +49,14 @@ export function renderGameBoard(players) {
             </div>
 
             <!-- 底部玩家 (你) -->
-            <div class="player-area-bottom">
+            <div class="player-area-bottom" id="${you.id}">
                 <div class="action-buttons">
-                    <button id="play-btn" class="action-btn play">出牌</button>
-                    <button id="pass-btn" class="action-btn pass">不要</button>
-                    <!-- 其他按钮如“提示”、“抢地主”等可以加在这里 -->
+                    <button id="play-btn" class="action-btn play" disabled>出牌</button>
+                    <button id="pass-btn" class="action-btn pass" disabled>不要</button>
                 </div>
-                <div id="hand-${you.id}" class="hand player-hand"></div>
+                <div id="hand-${you.id}" class="hand player-hand">
+                    <!-- 你的手牌会在这里动态生成 -->
+                </div>
             </div>
         </div>
     `;
