@@ -1,32 +1,46 @@
 export function renderGameBoard(players) {
     return `
         <div class="game-board">
-            <!-- Top Player Area -->
+            <!-- 上方玩家 -->
             <div class="player-area top-player">
-                <p>${players[2].name} (剩余: <span id="card-count-${players[2].id}">17</span>)</p>
                 <div id="hand-${players[2].id}" class="hand"></div>
+                <div class="player-info">
+                    <span>${players[2].name}</span> | 
+                    <span>剩余: <b id="card-count-${players[2].id}">17</b></span>
+                </div>
             </div>
 
-            <!-- Middle Area -->
+            <!-- 中间区域 -->
             <div class="middle-area">
+                <!-- 左侧玩家 -->
                 <div class="player-area left-player">
-                    <p>${players[1].name} (剩余: <span id="card-count-${players[1].id}">17</span>)</p>
                     <div id="hand-${players[1].id}" class="hand"></div>
+                    <div class="player-info">
+                        <span>${players[1].name}</span> | 
+                        <span><b id="card-count-${players[1].id}">17</b></span>
+                    </div>
                 </div>
+
+                <!-- 出牌区 -->
                 <div class="play-area">
-                    <p>出牌区</p>
+                    <p id="played-cards-info" class="played-cards-info"></p>
                     <div id="played-cards-area" class="hand"></div>
                 </div>
-                <!-- Placeholder for right player in a 4-player game -->
+                
+                <!-- 右侧玩家 (为4人游戏预留) -->
+                <div class="player-area right-player"></div>
             </div>
 
-            <!-- Bottom (Human) Player Area -->
+            <!-- 底部玩家 (你) -->
             <div class="player-area bottom-player">
-                <p>${players[0].name} (剩余: <span id="card-count-${players[0].id}">17</span>)</p>
-                <div id="hand-${players[0].id}" class="hand player-hand"></div>
                 <div class="action-buttons">
-                    <button id="play-btn">出 牌</button>
-                    <button id="pass-btn">不 要</button>
+                    <button id="pass-btn" class="menu-btn">不要</button>
+                    <button id="play-btn" class="menu-btn">出牌</button>
+                </div>
+                <div id="hand-${players[0].id}" class="hand player-hand"></div>
+                <div class="player-info">
+                    <span>${players[0].name}</span> | 
+                    <span>剩余: <b id="card-count-${players[0].id}">17</b></span>
                 </div>
             </div>
         </div>
