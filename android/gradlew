@@ -1,138 +1,21 @@
 #!/usr/bin/env bash
 
-#
-# Copyright 2015 the original author or authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+# A bulletproof, minimal Gradle start-up script for CI environments.
 
-##############################################################################
-##
-##  Gradle start up script for UN*X
-##
-##############################################################################
+# Exit immediately if a command exits with a non-zero status.
+set -e
 
-# Attempt to set APP_HOME
-# Resolve links: $0 may be a link
-PRG="$0"
-# Need this for relative symlinks.
-while [ -h "$PRG" ] ; do
-    ls=`ls -ld "$PRG"`
-    link=`expr "$ls" : '.*-> \(.*\)$'`
-    if expr "$link" : '/.*' > /dev/null; then
-        PRG="$link"
-    else
-        PRG=`dirname "$PRG"`"/$link"
-    fi
-done
+# Find the script's own directory.
+APP_HOME=$(dirname "$0")
 
-APP_HOME=`dirname "$PRG"`
+# The setup-java action guarantees JAVA_HOME is set.
+JAVA_EXE="$JAVA_HOME/bin/java"
 
-# Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass any JVM options to this script.
-DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
-
-APP_NAME="Gradle"
-APP_BASE_NAME=`basename "$0"`
-
-# Use the maximum available, or set MAX_FD != -1 to use that value.
-MAX_FD="maximum"
-
-warn () {
-    echo "$*"
-}
-
-die () {
-    echo
-    echo "$*"
-    echo
-    exit 1
-}
-
-# OS specific support (must be 'true' or 'false').
-cygwin=false
-msys=false
-darwin=false
-nonstop=false
-case "`uname`" in
-  CYGWIN* )
-    cygwin=true
-    ;;
-  Darwin* )
-    darwin=true
-    ;;
-  MINGW* )
-    msys=true
-    ;;
-  NONSTOP* )
-    nonstop=true
-    ;;
-esac
-
-# For Cygwin, ensure paths are in UNIX format before anything is touched.
-if ${cygwin} ; then
-    [ -n "$JAVA_HOME" ] && JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
-fi
-
-# Attempt to find java
-if [ -z "$JAVA_HOME" ] ; then
-    JAVA_EXE=`which java 2>/dev/null`
-    if [ -z "$JAVA_EXE" ] ; then
-        die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
-
-Please set the JAVA_HOME variable in your environment to match the
-location of your Java installation."
-    fi
-else
-    JAVA_EXE="$JAVA_HOME/bin/java"
-fi
-if [ ! -x "$JAVA_EXE" ] ; then
-  die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME
-
-Please set the JAVA_HOME variable in your environment to match the
-location of your Java installation."
-fi
-
-# Read all serviceability options
-if [ -r "$APP_HOME/serviceability.sh" ] ; then
-    . "$APP_HOME/serviceability.sh"
-fi
-
-# Determine the Java version
-"$JAVA_EXE" -cp "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" org.gradle.wrapper.SystemPropertiesHandler "$@"
-
-# For Cygwin, switch paths to Windows format before running java
-if ${cygwin} ; then
-    APP_HOME=`cygpath --path --windows "$APP_HOME"`
-    JAVA_HOME=`cygpath --path --windows "$JAVA_HOME"`
-fi
-
-# Split up the JVM options only if the JAVA_OPTS variable is not defined.
-if [ -z "$JAVA_OPTS" ]; then
-    JAVA_OPTS=($DEFAULT_JVM_OPTS)
-fi
-
-# Escape application args
-save () {
-    for i do
-        printf %s
- "$i" | sed "s/'/'''/g;1s/^/'/;\$s/\$/'/"
-    done
-    echo
-}
-APP_ARGS_ESCAPED=`save "$@"`
-
-# Collect all arguments for the java command, following the shell quoting and substitution rules
-eval set -- "$JAVA_OPTS" '"-Dorg.gradle.appname=$APP_BASE_NAME"' -cp '"$APP_HOME/gradle/wrapper/gradle-wrapper.jar"' org.gradle.wrapper.GradleWrapperMain "$APP_ARGS_ESCAPED"
-
-# Use "exec" to create a new process which runs the Java application, and replace this script with it.
-exec "$JAVA_EXE" "$@"
+# Execute Gradle's main class directly, passing all script arguments ("$@")
+# to it. This avoids all complex shell quoting and eval logic.
+exec "$JAVA_EXE" \
+  -Xmx1024m \
+  -Xms256m \
+  -Dorg.gradle.appname=gradlew \
+  -cp "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" \
+  org.gradle.wrapper.GradleWrapperMain "$@"
