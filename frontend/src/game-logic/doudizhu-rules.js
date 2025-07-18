@@ -89,21 +89,44 @@ export class DouDizhuGame {
     }
 
     /**
-     * 简单的AI叫地主逻辑
+     * AI叫地主逻辑
      * @param {string} aiPlayerId 
      */
     aiSimpleBid(aiPlayerId) {
         const player = this.getPlayerById(aiPlayerId);
-        // AI根据手牌里大牌的数量来决定叫多少分
-        const power = player.hand.filter(c => c.rank >= 14).length; // 2和王越多，越可能叫
+        const handStrength = this.evaluateHand(player.hand);
         
         let bid = 0;
-        if (power >= 4 && this.highestBid < 3) bid = 3;
-        else if (power >= 3 && this.highestBid < 2) bid = 2;
-        else if (power >= 2 && this.highestBid < 1) bid = 1;
+        if (handStrength > 20 && this.highestBid < 3) bid = 3;
+        else if (handStrength > 15 && this.highestBid < 2) bid = 2;
+        else if (handStrength > 10 && this.highestBid < 1) bid = 1;
 
         this.playerBid(aiPlayerId, bid);
     }
+
+    /**
+     * 评估手牌强度
+     * @param {Array<object>} hand
+     * @returns {number}
+     */
+    evaluateHand(hand) {
+        let score = 0;
+        const plays = this.findAllPlays(hand);
+        
+        plays.forEach(p => {
+            if (p.type === 'rocket') score += 10;
+            if (p.type === 'bomb') score += 5;
+            if (p.type === 'straight' && p.cards.length > 6) score += p.cards.length - 5;
+            if (p.type === 'airplane') score += p.cards.length / 3;
+        });
+        
+        hand.forEach(c => {
+            if (c.rank >= 14) score += c.rank - 13; // 2 and jokers add to score
+        });
+
+        return score;
+    }
+
 
     /**
      * 设置地主，并转换到出牌阶段
@@ -172,43 +195,127 @@ export class DouDizhuGame {
     aiSimplePlay(aiPlayerId) {
         const player = this.getPlayerById(aiPlayerId);
         const isFreePlay = this.passPlayCount >= 2 || !this.lastValidPlay.cardType;
+        const landlord = this.players.find(p => p.isLandlord);
+        const isMyTeammateLastPlayer = this.lastValidPlay.playerId &&
+            this.getPlayerById(this.lastValidPlay.playerId).isLandlord === player.isLandlord;
+
+        if (isMyTeammateLastPlayer && landlord.hand.length > 1) {
+            this.passTurn(aiPlayerId);
+            return null;
+        }
+
+        const allPossiblePlays = this.findAllPlays(player.hand);
 
         if (isFreePlay) {
+            if (allPossiblePlays.length > 0) {
+                // 优先出顺子和飞机，然后是三带，最后是单张或对子
+                const playPriorities = ['airplane_singles', 'airplane_pairs', 'airplane', 'straight', 'consecutive_pairs', 'trio_single', 'trio_pair', 'pair', 'single'];
+                for(const type of playPriorities) {
+                    const play = allPossiblePlays.find(p => p.type === type);
+                    if (play) {
+                        return this.playCards(aiPlayerId, play.cards.map(c => c.id));
+                    }
+                }
+            }
+            // 如果啥也出不了，就出最小的单张
             const cardToPlay = player.hand[player.hand.length - 1];
             return this.playCards(aiPlayerId, [cardToPlay.id]);
         }
 
-        for (let i = 1; i <= player.hand.length; i++) {
-            const combinations = this.findCardCombinations(player.hand, i);
-            for (const combo of combinations) {
-                const potentialPlay = parseCardType(combo);
-                if (potentialPlay && canPlayOver(potentialPlay, this.lastValidPlay.cardType)) {
-                    return this.playCards(aiPlayerId, combo.map(c => c.id));
-                }
+        const validPlays = allPossiblePlays.filter(play => canPlayOver(play, this.lastValidPlay.cardType));
+        if (validPlays.length > 0) {
+            validPlays.sort((a, b) => a.rank - b.rank);
+            if (!player.isLandlord && landlord.hand.length === 1 && validPlays.length > 0) {
+                const biggestPlay = validPlays[validPlays.length - 1];
+                return this.playCards(aiPlayerId, biggestPlay.cards.map(c => c.id));
             }
+            return this.playCards(aiPlayerId, validPlays[0].cards.map(c => c.id));
         }
         
         this.passTurn(aiPlayerId);
         return null;
     }
-    
-    findCardCombinations(hand, size) {
-        const result = [];
-        function combine(start, currentCombo) {
-            if (currentCombo.length === size) {
-                result.push(currentCombo);
-                return;
+
+    findAllPlays(hand) {
+        let plays = [];
+        const rankCounts = new Map();
+        hand.forEach(c => rankCounts.set(c.rank, (rankCounts.get(c.rank) || 0) + 1));
+        
+        // 1. 找出所有单张、对子、三条、炸弹
+        rankCounts.forEach((count, rank) => {
+            const cards = hand.filter(c => c.rank === rank);
+            if (count >= 1) plays.push(parseCardType(cards.slice(0, 1))); // 单张
+            if (count >= 2) plays.push(parseCardType(cards.slice(0, 2))); // 对子
+            if (count >= 3) plays.push(parseCardType(cards.slice(0, 3))); // 三条
+            if (count === 4) plays.push(parseCardType(cards)); // 炸弹
+        });
+
+        // 2. 找出所有顺子
+        const singleRanks = [...rankCounts.keys()].filter(r => r < 14).sort((a, b) => a - b);
+        for (let i = 0; i <= singleRanks.length - 5; i++) {
+            for (let j = 5; i + j <= singleRanks.length; j++) {
+                const sub = singleRanks.slice(i, i + j);
+                if (sub[sub.length - 1] - sub[0] === sub.length - 1) {
+                    const straightCards = sub.map(rank => hand.find(c => c.rank === rank));
+                    plays.push(parseCardType(straightCards));
+                }
             }
-            if (start === hand.length) return;
-            // 优化：剪枝，如果剩余的牌都不够凑齐size，就不用继续了
-            if (hand.length - start < size - currentCombo.length) {
-                return;
-            }
-            combine(start + 1, [...currentCombo, hand[start]]); // 包含 hand[start]
-            combine(start + 1, currentCombo); // 不包含 hand[start]
         }
-        combine(0, []);
-        return result;
+        
+        // 3. 找出所有连对
+        const pairRanks = [...rankCounts.keys()].filter(r => rankCounts.get(r) >= 2 && r < 14).sort((a, b) => a - b);
+        for (let i = 0; i <= pairRanks.length - 3; i++) {
+            for (let j = 3; i + j <= pairRanks.length; j++) {
+                const sub = pairRanks.slice(i, i + j);
+                if (sub[sub.length - 1] - sub[0] === sub.length - 1) {
+                    const consecutivePairCards = sub.flatMap(rank => hand.filter(c => c.rank === rank).slice(0, 2));
+                    plays.push(parseCardType(consecutivePairCards));
+                }
+            }
+        }
+        
+        // 4. 找出所有飞机 (带翼和不带翼)
+        const trioRanks = [...rankCounts.keys()].filter(r => rankCounts.get(r) >= 3 && r < 14).sort((a, b) => a - b);
+        for (let i = 0; i <= trioRanks.length - 2; i++) {
+            for (let j = 2; i + j <= trioRanks.length; j++) {
+                const sub = trioRanks.slice(i, i + j);
+                if (sub[sub.length - 1] - sub[0] === sub.length - 1) {
+                    const airplaneCards = sub.flatMap(rank => hand.filter(c => c.rank === rank).slice(0, 3));
+                    plays.push(parseCardType(airplaneCards)); // 不带翼
+
+                    // 带单翼
+                    const kickerCandidates = hand.filter(c => !airplaneCards.includes(c));
+                    if (kickerCandidates.length >= j) {
+                        const singleKickers = kickerCandidates.slice(0, j);
+                        plays.push(parseCardType([...airplaneCards, ...singleKickers]));
+                    }
+
+                    // 带对翼
+                    const pairKickerCandidates = kickerCandidates.filter(c => kickerCandidates.filter(c2 => c2.rank === c.rank).length >= 2);
+                    if (pairKickerCandidates.length >= j * 2) {
+                        const pairKickers = pairKickerCandidates.slice(0, j * 2);
+                        plays.push(parseCardType([...airplaneCards, ...pairKickers]));
+                    }
+                }
+            }
+        }
+
+        // 5. 找出所有三带一、三带二
+        const trios = [...rankCounts.entries()].filter(([, count]) => count === 3);
+        const singles = [...rankCounts.entries()].filter(([, count]) => count === 1);
+        const pairs = [...rankCounts.entries()].filter(([, count]) => count === 2);
+
+        for (const [rank] of trios) {
+            const trioCards = hand.filter(c => c.rank === rank);
+            if (singles.length > 0) {
+                plays.push(parseCardType([...trioCards, hand.find(c => c.rank === singles[0][0])]));
+            }
+            if (pairs.length > 0) {
+                 plays.push(parseCardType([...trioCards, ...hand.filter(c => c.rank === pairs[0][0])]));
+            }
+        }
+
+        return plays.filter(p => p); // 过滤掉无效的plays
     }
     
     // ----------- 辅助 getter 方法 -----------

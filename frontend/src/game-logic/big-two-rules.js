@@ -101,25 +101,60 @@ export class BigTwoGame {
         if (!player || player.isWinner) return null;
         const isFreePlay = !this.lastValidPlay.cardType;
 
-        if (isFreePlay) {
-            // 首轮，包含方块3的单张
-            const card = player.hand.find(c => c.type === 'normal' && c.value.key === '3' && c.suit.key === 'diamonds');
-            if (card) return this.playCards(aiPlayerId, [card.id]);
-        }
+        const allPossiblePlays = this.findAllPlays(player.hand);
 
-        // AI：单张>对子>三张>炸弹，优先能大过上一家
-        for (let size of [1, 2, 3, 4]) {
-            let combos = this.findCardCombinations(player.hand, size);
-            for (const combo of combos) {
-                const potentialPlay = parseCardType(combo);
-                if (potentialPlay && canPlayOver(potentialPlay, this.lastValidPlay.cardType)) {
-                    return this.playCards(aiPlayerId, combo.map(c => c.id));
-                }
+        if (isFreePlay) {
+            // 首轮，必须出包含方块3的组合
+            const firstTurnPlays = allPossiblePlays.filter(p => p.cards.some(c => c.type === 'normal' && c.value.key === '3' && c.suit.key === 'diamonds'));
+            if (firstTurnPlays.length > 0) {
+                 // 优先出顺子或同花
+                 const preferredPlay = firstTurnPlays.find(p => p.type === 'straight' || p.type === 'flush') || firstTurnPlays[0];
+                 return this.playCards(aiPlayerId, preferredPlay.cards.map(c => c.id));
             }
         }
+
+        const validPlays = allPossiblePlays.filter(play => canPlayOver(play, this.lastValidPlay.cardType));
+        if (validPlays.length > 0) {
+            // 优先出最小的能压过的牌
+            validPlays.sort((a, b) => a.rank - b.rank);
+            return this.playCards(aiPlayerId, validPlays[0].cards.map(c => c.id));
+        }
+        
         this.passTurn(aiPlayerId);
         return null;
     }
+
+    findAllPlays(hand) {
+        let plays = [];
+        const rankCounts = new Map();
+        const suitCounts = new Map();
+        hand.forEach(c => {
+            rankCounts.set(c.rank, (rankCounts.get(c.rank) || 0) + 1);
+            if (c.type === 'normal') {
+                suitCounts.set(c.suit.key, (suitCounts.get(c.suit.key) || 0) + 1);
+            }
+        });
+
+        // 找出所有单张、对子、三条
+        rankCounts.forEach((count, rank) => {
+            const cards = hand.filter(c => c.rank === rank);
+            if (count >= 1) plays.push(parseCardType([cards[0]]));
+            if (count >= 2) plays.push(parseCardType(cards.slice(0, 2)));
+            if (count >= 3) plays.push(parseCardType(cards.slice(0, 3)));
+        });
+
+        // 找出所有5张牌的组合
+        const fiveCardCombos = this.findCardCombinations(hand, 5);
+        fiveCardCombos.forEach(combo => {
+            const play = parseCardType(combo);
+            if (play && ['straight', 'flush', 'full_house', 'four_of_a_kind', 'straight_flush'].includes(play.type)) {
+                plays.push(play);
+            }
+        });
+
+        return plays.filter(p => p);
+    }
+
 
     findCardCombinations(hand, size) {
         const result = [];
