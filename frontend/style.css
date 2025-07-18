@@ -18,12 +18,13 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
 }
 
 html, body {
     width: 100%;
     height: 100%;
-    overflow: hidden; /* 防止滚动 */
+    overflow: hidden; /* 防止页面滚动 */
 }
 
 body {
@@ -40,7 +41,7 @@ body {
     height: 100%;
     max-width: 1400px; /* 桌面最大宽度 */
     background: transparent;
-    display: flex;
+    display: flex; /* 默认flex，由JS控制 */
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -57,9 +58,8 @@ body {
     padding: 20px;
     animation: fadeIn 0.8s ease-out;
 }
-
 .lobby-container h1 {
-    font-size: clamp(2.5rem, 8vw, 4.5rem); /* 响应式字体 */
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
     font-weight: 300;
     letter-spacing: 2px;
     background: linear-gradient(45deg, var(--accent-color), var(--text-color));
@@ -68,7 +68,6 @@ body {
     margin-bottom: 40px;
     text-shadow: 2px 2px 10px var(--shadow-dark);
 }
-
 .menu-btn {
     width: 280px;
     padding: 18px;
@@ -94,19 +93,17 @@ body {
     cursor: not-allowed;
 }
 
-
 /* --- 游戏面板响应式布局 --- */
 .game-board {
     width: 100%;
     height: 100%;
     display: grid;
-    grid-template-rows: 1fr 2fr 1.5fr; /* 上、中、下区域高度比例 */
+    grid-template-rows: 1fr 2fr 1.5fr;
     grid-template-columns: 1fr;
     padding: 10px;
     gap: 10px;
     animation: fadeIn 0.5s ease-in;
 }
-
 .player-area {
     display: flex;
     flex-direction: column;
@@ -122,11 +119,11 @@ body {
     font-size: 0.9rem;
     position: absolute;
     box-shadow: 0 2px 5px var(--shadow-dark);
+    transition: box-shadow 0.3s ease;
 }
-
 .middle-area {
     display: grid;
-    grid-template-columns: 1fr 2fr 1fr; /* 左、中、右区域宽度比例 */
+    grid-template-columns: 1fr 2fr 1fr;
     gap: 10px;
     width: 100%;
 }
@@ -136,6 +133,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
 }
 .play-area .hand { min-height: 0; }
 .played-cards-info {
@@ -144,23 +142,20 @@ body {
     font-size: 0.8rem;
     opacity: 0.7;
 }
-
-/* 玩家位置和信息 */
 .top-player .player-info { bottom: 0; }
 .left-player .player-info { top: 0; }
 .right-player .player-info { top: 0; }
 .bottom-player .player-info { top: 0; }
-
 .bottom-player {
-    justify-content: flex-end; /* 让手牌和按钮在底部 */
+    justify-content: flex-end;
 }
 .action-buttons {
     margin-top: 15px;
     display: flex;
     gap: 20px;
+    z-index: 100; /* 确保按钮在牌之上 */
 }
 .action-buttons .menu-btn { width: 120px; margin: 0; padding: 12px; }
-
 
 /* --- 卡牌样式和动画 --- */
 .hand {
@@ -169,10 +164,9 @@ body {
     align-items: center;
     perspective: 1000px;
 }
-
 .card {
-    width: clamp(50px, 12vw, 80px); /* 响应式卡牌宽度 */
-    aspect-ratio: 2.5 / 3.5; /* 保持卡牌比例 */
+    width: clamp(50px, 12vw, 80px);
+    aspect-ratio: 2.5 / 3.5;
     border-radius: 8px;
     background-color: var(--card-bg);
     box-shadow: 0 4px 8px var(--shadow-dark);
@@ -184,12 +178,13 @@ body {
     width: 100%;
     height: 100%;
     display: block;
+    user-select: none; /* 防止选中图片 */
 }
 .player-hand .card {
     cursor: pointer;
 }
 .player-hand .card:not(:first-child) {
-    margin-left: -35%; /* 根据卡牌宽度百分比重叠 */
+    margin-left: -35%;
 }
 .player-hand .card:hover {
     transform: translateY(-15px) rotate(2deg);
@@ -197,28 +192,24 @@ body {
 }
 .player-hand .card.selected {
     transform: translateY(-25px);
-    box-shadow: 0 8px 20px var(--accent-color);
+    box-shadow: 0 0 20px var(--accent-color);
 }
-
-/* 电脑玩家的手牌样式 */
 .left-player .hand, .right-player .hand, .top-player .hand {
-    flex-wrap: wrap; /* 允许换行 */
+    flex-wrap: wrap;
 }
 .left-player .card, .right-player .card, .top-player .card {
     width: clamp(20px, 5vw, 30px);
-    margin: 0 -15% 5px 0; /* 电脑玩家卡牌重叠 */
+    margin: 0 -15% 5px 0;
 }
 .left-player { align-items: flex-start; }
 .right-player { align-items: flex-start; }
 .top-player { justify-content: center; }
-
 
 /* --- 动画效果 --- */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
-
 .card-enter {
     animation: cardFlyIn 0.5s ease-out;
 }
@@ -227,23 +218,16 @@ body {
     to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-.card-played {
-    animation: cardFlyOut 0.4s ease-in;
-}
-@keyframes cardFlyOut {
-    from { transform: scale(1); opacity: 1; }
-    to { transform: translateY(-50px) scale(1.2); opacity: 0; }
-}
 /* --- 横屏提示遮罩层样式 --- */
 #orientation-mask {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.9);
+    width: 100vw; /* 使用vw/vh确保覆盖整个视口 */
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.95);
     z-index: 9999;
-    display: none; /* 默认不显示，由CSS媒体查询控制 */
+    display: none; /* JS和CSS媒体查询会控制它 */
     justify-content: center;
     align-items: center;
     color: white;
@@ -261,7 +245,7 @@ body {
     width: 80px;
     height: 80px;
     margin-bottom: 20px;
-    animation: rotate-phone 2s infinite ease-in-out;
+    animation: rotate-phone 2.5s infinite ease-in-out;
 }
 
 .orientation-tip p {
@@ -270,40 +254,19 @@ body {
 }
 
 @keyframes rotate-phone {
-    0% {
-        transform: rotate(0deg);
-    }
-    30% {
-        transform: rotate(0deg);
-    }
-    50% {
-        transform: rotate(90deg);
-    }
-    80% {
-        transform: rotate(90deg);
-    }
-    100% {
-        transform: rotate(0deg);
-    }
+    0%, 100% { transform: rotate(0deg); }
+    40% { transform: rotate(0deg); }
+    60% { transform: rotate(90deg); }
+    90% { transform: rotate(90deg); }
 }
 
 
-/* --- 核心媒体查询：控制横屏提示的显示 --- */
-
-/* 
- * 规则解释:
- * 当屏幕方向为竖屏 (portrait) 
- * 并且 (and) 
- * 屏幕最大宽度为 768px (适用于大多数手机和平板竖屏)
- * 则显示遮罩层
- */
-@media screen and (orientation: portrait) and (max-width: 768px) {
+/* --- 核心媒体查询：控制横屏提示的显示 (CSS部分) --- */
+@media screen and (orientation: portrait) and (max-width: 850px) {
     #orientation-mask {
-        display: flex;
+        display: flex !important; /* 使用!important确保覆盖JS的style.display */
+    }
+    #app {
+        display: none !important;
     }
 }
-
-/* 
- * 如果你希望在窄的横屏设备上也提示（比如手机横屏但窗口很小），可以加一个补充规则。
- * 但通常，我们只在竖屏时提示。
- */
