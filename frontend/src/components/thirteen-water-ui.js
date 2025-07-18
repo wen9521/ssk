@@ -20,8 +20,8 @@ export function renderThirteenWaterBoard(players, state = {}) {
         <div class="tw-player-seats">
             ${players.map((p, idx) => `
                 <div class="tw-player-seat${idx === 0 ? ' me' : ''}" style="
-                    color: ${idx === 0 ? '#23e67a' : (p.processed ? '#23e67a' : '#fff')};
-                    background: ${idx === 0 ? '#1c6e41' : '#2a556e'};
+                    color: ${idx === 0 ? '#fdbb2d' : (p.processed ? '#fdbb2d' : '#fff')};
+                    background: var(--pod-bg);
                 ">
                     <div>${p.name}</div>
                     <div style="margin-top:4px;font-size:13px;font-weight:400;">
@@ -34,9 +34,9 @@ export function renderThirteenWaterBoard(players, state = {}) {
     }
 
     // 牌墩
-    function renderPaiDun(cards, label, area, color = '#23e67a') {
+    function renderPaiDun(cards, label, area, color = '#fdbb2d') {
         return `
-        <div class="tw-pai-dun" data-area="${area}">
+        <div class="tw-pai-dun" data-area="${area}" style="background: var(--pod-bg);">
             <div class="tw-pai-dun-cards">${renderPaiDunCards(cards, area)}</div>
             <div class="tw-pai-dun-label" style="color:${color};">${label}（${cards.length}）</div>
         </div>
@@ -90,7 +90,7 @@ export function renderThirteenWaterBoard(players, state = {}) {
             <div class="tw-modal-content">
                 ${players.map((p, i) => `
                     <div class="tw-modal-player">
-                        <div class="tw-modal-player-name" style="color:${i === 0 ? '#23e67a' : '#4f8cff'}">
+                        <div class="tw-modal-player-name" style="color:${i === 0 ? 'var(--accent-color)' : '#4f8cff'}">
                             ${p.name}
                             ${state.foulStates && state.foulStates[i] ? '<span style="color:red;font-weight:800;margin-left:6px;">（倒水）</span>' : ''}
                             （${state.scores ? state.scores[i] : 0}分）
@@ -108,14 +108,14 @@ export function renderThirteenWaterBoard(players, state = {}) {
     
     // 主界面
     return `
-    <div class="tw-board-root" style="background:#164b2e;min-height:100vh;">
+    <div class="tw-board-root" style="background:var(--bg-gradient-main);min-height:100vh;">
         <div class="tw-board-main" style="
             max-width:${OUTER_MAX_WIDTH}px;
             width:100%;
             margin:30px auto;
-            background:#185a30;
+            background:var(--pod-bg);
             border-radius:22px;
-            box-shadow:0 4px 22px #23e67a44,0 1.5px 5px #1a462a6a;
+            box-shadow:0 4px 22px var(--shadow-dark),0 1.5px 5px var(--shadow-dark);
             padding:16px;
             min-height:650px;
         ">
@@ -124,9 +124,9 @@ export function renderThirteenWaterBoard(players, state = {}) {
                     background:linear-gradient(90deg,#fff 60%,#e0fff1 100%);
                     color:#234;font-weight:bold;border:none;border-radius:9px;
                     padding:7px 22px;cursor:pointer;margin-right:18px;font-size:17px;
-                    box-shadow:0 1.5px 6px #23e67a30;
+                    box-shadow:0 1.5px 6px rgba(0,0,0,0.3);
                 ">&lt; 退出房间</button>
-                <div style="flex:1;text-align:right;color:#23e67a;font-weight:900;font-size:21px;letter-spacing:2px;margin-right:8px;text-shadow:0 2px 7px #23e67a44;">
+                <div style="flex:1;text-align:right;color:var(--accent-color);font-weight:900;font-size:21px;letter-spacing:2px;margin-right:8px;text-shadow:0 2px 7px rgba(0,0,0,0.44);">
                     <span style="font-size:18px;margin-right:4px;">🪙</span>积分：100
                 </div>
             </div>
@@ -135,13 +135,10 @@ export function renderThirteenWaterBoard(players, state = {}) {
             ${renderPaiDun(players[0].middle || [], '中道', 'middle')}
             ${renderPaiDun(players[0].tail || [], '尾道', 'tail')}
             <div style="display:flex;gap:12px;margin-bottom:0;margin-top:14px;">
-                <button class="tw-ready-btn" style="flex:1;background:linear-gradient(90deg,#23e67a 80%,#43ffb8 100%);color:#fff;font-weight:700;border:none;border-radius:10px;padding:13px 0;font-size:18px;cursor:pointer;box-shadow:0 2px 9px #23e67a22;">
-                    ${state.isReady ? '取消准备' : '准备'}
-                </button>
-                <button class="tw-smart-btn" style="flex:1;background:#23e67a;color:#fff;font-weight:700;border:none;border-radius:10px;padding:13px 0;font-size:18px;cursor:pointer;box-shadow:0 2px 9px #23e67a44;">
+                <button id="group-btn" class="tw-smart-btn" style="flex:1;background:var(--btn-play-bg);color:#fff;font-weight:700;border:none;border-radius:10px;padding:13px 0;font-size:18px;cursor:pointer;box-shadow:0 2px 9px rgba(0,0,0,0.44);">
                     智能分牌
                 </button>
-                <button class="tw-compare-btn" style="flex:1;background:#ffb14d;color:#222;font-weight:700;border:none;border-radius:10px;padding:13px 0;font-size:18px;cursor:pointer;box-shadow:0 2px 9px #ffb14d55;">
+                <button id="compare-btn" class="tw-compare-btn" style="flex:1;background:var(--btn-match-bg);color:#fff;font-weight:700;border:none;border-radius:10px;padding:13px 0;font-size:18px;cursor:pointer;box-shadow:0 2px 9px rgba(0,0,0,0.55);">
                     开始比牌
                 </button>
             </div>
@@ -152,14 +149,14 @@ export function renderThirteenWaterBoard(players, state = {}) {
         </div>
         <style>
         .tw-player-seats{display:flex;margin-bottom:18px;gap:8px;}
-        .tw-player-seat{border:none;border-radius:10px;margin-right:8px;width:22%;min-width:70px;text-align:center;padding:12px 0;font-weight:700;font-size:17px;box-shadow:0 4px 22px #23e67a44,0 1.5px 5px #1a462a6a;box-sizing:border-box;}
-        .tw-player-seat.me{background:#1c6e41;color:#23e67a;}
-        .tw-pai-dun{width:100%;border-radius:14px;background:#176b3c;min-height:${PAI_DUN_HEIGHT}px;height:${PAI_DUN_HEIGHT}px;margin-bottom:20px;position:relative;box-shadow:0 4px 22px #23e67a44,0 1.5px 5px #1a462a6a;display:flex;align-items:center;box-sizing:border-box;padding-left:16px;padding-right:70px;}
+        .tw-player-seat{border:none;border-radius:10px;margin-right:8px;width:22%;min-width:70px;text-align:center;padding:12px 0;font-weight:700;font-size:17px;box-shadow:0 4px 22px var(--shadow-dark),0 1.5px 5px var(--shadow-dark);box-sizing:border-box;}
+        .tw-player-seat.me{background:var(--pod-bg);color:var(--accent-color);}
+        .tw-pai-dun{width:100%;border-radius:14px;min-height:${PAI_DUN_HEIGHT}px;height:${PAI_DUN_HEIGHT}px;margin-bottom:20px;position:relative;box-shadow:0 4px 22px var(--shadow-dark),0 1.5px 5px var(--shadow-dark);display:flex;align-items:center;box-sizing:border-box;padding-left:16px;padding-right:70px;}
         .tw-pai-dun-cards{flex:1;height:100%;position:relative;display:flex;align-items:center;min-width:0;}
         .tw-pai-dun-label{position:absolute;right:16px;top:0;height:100%;display:flex;align-items:center;font-size:18px;font-weight:600;pointer-events:none;background:transparent;white-space:nowrap;}
         .tw-card-img{user-select:none;}
         .tw-modal-mask{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.37);z-index:1000;display:flex;align-items:center;justify-content:center;}
-        .tw-modal-content{background:#185a30;border-radius:15px;padding:24px;min-width:400px;min-height:270px;box-shadow:0 8px 40px #0002;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:16px;position:relative;}
+        .tw-modal-content{background:var(--pod-bg);border-radius:15px;padding:24px;min-width:400px;min-height:270px;box-shadow:0 8px 40px #0002;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:16px;position:relative;}
         .tw-modal-player{text-align:center;border-bottom:1px solid #eee;}
         .tw-modal-player-name{font-weight:700;margin-bottom:8px;}
         .tw-modal-cards{display:flex;justify-content:center;gap:4px;margin-bottom:3px;}

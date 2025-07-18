@@ -41,7 +41,7 @@ export class BigTwoGame {
     findFirst3() {
         // 首出方块3
         for (let i = 0; i < this.players.length; i++) {
-            if (this.players[i].hand.some(c => c.value.key === '3' && c.suit.key === 'diamonds')) {
+            if (this.players[i].hand.some(c => c.type === 'normal' && c.value.key === '3' && c.suit.key === 'diamonds')) {
                 return i;
             }
         }
@@ -59,7 +59,7 @@ export class BigTwoGame {
 
         // 首轮必须出方块3
         if (!this.lastValidPlay.cardType) {
-            if (!cardsToPlay.some(c => c.value.key === '3' && c.suit.key === 'diamonds')) return null;
+            if (!cardsToPlay.some(c => c.type === 'normal' && c.value.key === '3' && c.suit.key === 'diamonds')) return null;
         } else {
             if (!canPlayOver(myPlayType, this.lastValidPlay.cardType)) return null;
         }
@@ -103,7 +103,7 @@ export class BigTwoGame {
 
         if (isFreePlay) {
             // 首轮，包含方块3的单张
-            const card = player.hand.find(c => c.value.key === '3' && c.suit.key === 'diamonds');
+            const card = player.hand.find(c => c.type === 'normal' && c.value.key === '3' && c.suit.key === 'diamonds');
             if (card) return this.playCards(aiPlayerId, [card.id]);
         }
 

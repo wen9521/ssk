@@ -1,4 +1,4 @@
-// --- 模块导入 --- 
+// --- 模块导入 ---
 import { renderLobby } from './src/components/lobby.js';
 
 // 斗地主
@@ -16,7 +16,7 @@ import { renderThirteenWaterBoard } from './src/components/thirteen-water-ui.js'
 import { ThirteenWaterGame } from './src/game-logic/thirteen-water-rules.js';
 
 
-// --- 全局变量 --- 
+// --- 全局变量 ---
 const app = document.getElementById('app');
 let currentGame = null;
 
@@ -95,12 +95,18 @@ function startThirteenWaterOffline() {
     app.innerHTML = renderThirteenWaterBoard(currentGame.players);
     renderPlayerHand(`hand-player-0`, currentGame.players[0].hand, false);
 
-    // AI自动分墩
-    for (let i = 1; i < 4; i++) {
+    // AI和玩家自动分墩
+    for (let i = 0; i < 4; i++) {
         currentGame.autoGroup(`player-${i}`);
     }
+    // 显示玩家分组结果
+    showThirteenWaterGroup();
 
-    document.getElementById('group-btn').onclick = handleThirteenWaterGroup;
+    // 直接启用比牌按钮并禁用整理按钮
+    document.getElementById('group-btn').disabled = true;
+    document.getElementById('compare-btn').disabled = false;
+
+    // 移除group-btn的事件监听，保留compare-btn的事件监听
     document.getElementById('compare-btn').onclick = handleThirteenWaterCompare;
 }
 
@@ -315,7 +321,9 @@ function showThirteenWaterGroup() {
 function handleThirteenWaterCompare() {
     const scores = currentGame.compareAll();
     setTimeout(() => {
-        alert(`十三水比牌结果:\n${scores.map(s => `${s.name}: ${s.score}分`).join('\n')}`);
+        alert(`十三水比牌结果:
+${scores.map(s => `${s.name}: ${s.score}分`).join('
+')}`);
         showLobby();
     }, 1000);
 }
