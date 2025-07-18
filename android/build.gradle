@@ -4,15 +4,16 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // 移除 Firebase Performance Monitoring 插件
+        // 已移除 Firebase Performance Monitoring 插件
         // classpath 'com.google.firebase:perf-plugin:1.4.3'
     }
 
-    configurations.all {
-        resolutionStrategy {
-            force 'com.google.guava:guava:27.0.1-android'
-        }
-    }
+    // **彻底移除 Guava 强制版本锁定**
+    // configurations.all {
+    //     resolutionStrategy {
+    //         force 'com.google.guava:guava:27.0.1-android'
+    //     }
+    // }
 }
 
 plugins {
