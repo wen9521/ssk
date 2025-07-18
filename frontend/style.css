@@ -1,31 +1,18 @@
 /* --- 全局样式 --- */
 :root {
-    --table-bg-image: linear-gradient(160deg, #1d674f, #113d32);
-    --accent-color: #ffd700; /* 金色 */
+    --table-bg-image: linear-gradient(160deg, #104b3a, #0b2e25);
+    --accent-color: #ffd700;
     --text-color: #ffffff;
     --shadow-dark: rgba(0, 0, 0, 0.6);
-    --pod-bg: rgba(0, 0, 0, 0.3);
-    --btn-play-bg: linear-gradient(135deg, #e52d27, #b31217);
-    --btn-pass-bg: linear-gradient(135deg, #6c7a89, #434f5b);
+    --pod-bg: rgba(0, 0, 0, 0.25);
+    --btn-play-bg: linear-gradient(135deg, #f5af19, #f12711);
+    --btn-pass-bg: linear-gradient(135deg, #868f96, #596164);
     --card-bg: #ffffff;
 }
 
-* {
-    margin: 0; padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-}
-
-html, body {
-    width: 100%; height: 100%;
-    overflow: hidden;
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: #000;
-    color: var(--text-color);
-}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #000; color: var(--text-color); }
 
 #app {
     width: 100%; height: 100%;
@@ -34,143 +21,135 @@ body {
     overflow: hidden;
 }
 
-/* --- 大厅样式 (保持不变) --- */
-.lobby-container { /* ... (此处省略大厅样式，保持原样即可) ... */ }
+/* --- 大厅样式 (为保持一致性，一并提供) --- */
+.lobby-container { /* ... (保持不变) ... */ }
+.menu-btn { /* ... (保持不变) ... */ }
 
-/* --- 全新专业横屏布局样式 --- */
-.game-board.landscape-view {
+/* --- 全新专业横屏布局 --- */
+.game-board.professional-landscape {
     position: absolute; top: 0; left: 0;
     width: 100%; height: 100%;
 }
 
-/* 顶部信息栏 */
-.top-info-bar {
-    position: absolute; top: 10px; left: 50%;
+/* 顶部中央信息区 */
+.top-center-info {
+    position: absolute; top: 15px; left: 50%;
     transform: translateX(-50%);
     z-index: 10;
 }
 #landlord-cards-area .card {
-    width: 45px; box-shadow: 0 2px 4px var(--shadow-dark);
+    width: 50px;
+    box-shadow: 0 2px 4px var(--shadow-dark);
 }
-#landlord-cards-area .card:not(:first-child) { margin-left: -25px; }
+#landlord-cards-area .card:not(:first-child) { margin-left: -28px; }
 
-/* AI 玩家信息舱 */
+/* 对手信息舱 (Pod) */
 .player-pod {
     position: absolute;
-    top: 40px;
     display: flex;
     align-items: center;
-    gap: 12px;
     background: var(--pod-bg);
-    padding: 8px;
-    border-radius: 40px;
-    border: 1px solid rgba(255,255,255,0.2);
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
     transition: all 0.3s ease;
 }
-.left-ai { left: 20px; }
-.right-ai { right: 20px; flex-direction: row-reverse; }
+.top-left { top: 20px; left: 20px; }
+.top-right { top: 20px; right: 20px; flex-direction: row-reverse; }
 
 .player-avatar {
-    width: 60px; height: 60px; border-radius: 50%;
-    background: linear-gradient(135deg, #5f72bd, #9b62a3);
+    width: 55px; height: 55px; border-radius: 50%;
+    background: linear-gradient(135deg, #4e54c8, #8f94fb);
     display: flex; justify-content: center; align-items: center;
-    font-weight: bold; font-size: 1.2rem;
-    border: 2px solid white;
+    font-weight: bold; font-size: 1.1rem; border: 2px solid white;
+    flex-shrink: 0; margin: 0 10px;
 }
-.player-details {
-    display: flex; flex-direction: column;
-}
-.right-ai .player-details { align-items: flex-end; }
-.player-name { font-weight: bold; }
+.player-details .player-name { font-weight: bold; }
 .card-count { font-size: 0.9em; opacity: 0.9; }
+.top-right .player-details { text-align: right; }
 
 .player-status-bubble {
     position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.7);
-    padding: 10px 20px;
-    border-radius: 20px;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--accent-color);
-    z-index: 100;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    top: 50%; left: 110%; /* 放在信息舱旁边 */
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.8);
+    padding: 12px 22px;
+    border-radius: 25px;
+    font-size: 1.4rem; font-weight: bold;
+    color: var(--accent-color); z-index: 100;
+    opacity: 0; visibility: hidden;
+    transition: all 0.3s ease;
 }
-.player-status-bubble.visible { opacity: 1; }
+.top-right .player-status-bubble { left: auto; right: 110%; }
+.player-status-bubble.visible { opacity: 1; visibility: visible; }
 
 /* 中央出牌区 */
 .play-area-center {
     position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    width: 60%; height: 35%;
+    width: 60%; height: 40%;
     display: flex; justify-content: center; align-items: center;
 }
 
-/* 底部操作区 (你) */
-.bottom-area {
+/* 底部玩家区域 */
+.bottom-center {
     position: absolute; bottom: 0; left: 0;
-    width: 100%; height: 35%;
+    width: 100%; height: 45%;
+    background: transparent;
+    border: none;
+    padding: 0;
     display: flex; flex-direction: column;
-    justify-content: flex-end; align-items: center;
+    justify-content: flex-end;
 }
 .player-hand {
     width: 100%;
+    min-height: 120px;
     padding: 0 5%;
-    margin-bottom: 20px;
+    margin-bottom: 70px; /* 为按钮留出空间 */
     justify-content: center;
 }
 
 .action-buttons-container {
     position: absolute;
-    bottom: 25px;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 20px;
+    gap: 25px;
     z-index: 200;
 }
 .action-btn {
-    width: 120px; height: 50px;
-    border-radius: 30px; border: none;
-    font-size: 1.2rem; font-weight: bold; color: white;
+    width: 130px; height: 55px;
+    border-radius: 30px; border: 2px solid rgba(255,255,255,0.5);
+    font-size: 1.3rem; font-weight: bold; color: white;
     cursor: pointer;
-    box-shadow: 0 4px 10px var(--shadow-dark);
+    box-shadow: 0 4px 15px var(--shadow-dark);
     transition: all 0.2s ease;
 }
 .action-btn.play { background: var(--btn-play-bg); }
 .action-btn.pass { background: var(--btn-pass-bg); }
 .action-btn:hover:not(:disabled) { transform: scale(1.05); }
-.action-btn:disabled {
-    filter: grayscale(80%);
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: scale(1);
-}
+.action-btn:disabled { filter: grayscale(80%); opacity: 0.6; cursor: not-allowed; transform: scale(1); }
 
 /* 卡牌样式 */
 .hand { display: flex; align-items: center; perspective: 1000px; }
 .card {
-    width: clamp(70px, 10vw, 100px); aspect-ratio: 2.5 / 3.5;
+    width: clamp(75px, 10vw, 110px); aspect-ratio: 2.5 / 3.5;
     border-radius: 8px; background-color: var(--card-bg);
     box-shadow: 0 4px 8px var(--shadow-dark);
     transition: all 0.3s ease; position: relative; overflow: hidden;
 }
 .card img { width: 100%; height: 100%; display: block; user-select: none; }
 .player-hand .card { cursor: pointer; }
-.player-hand .card:not(:first-child) { margin-left: -50%; }
+.player-hand .card:not(:first-child) { margin-left: -55%; }
 .player-hand .card:hover { transform: translateY(-15px) scale(1.02); z-index: 10; }
 .player-hand .card.selected { transform: translateY(-25px); }
 
 /* 动画和竖屏提示 */
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes cardFlyIn { from { transform: translateY(100px) scale(0.5); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
-
-#orientation-mask {
-    /* ... 此部分与上一版完全相同，此处省略以节省篇幅，请务必保留您文件中的这部分代码 ... */
-}
-@media screen and (orientation: portrait) {
+@keyframes fadeIn { /* ... */ }
+@keyframes cardFlyIn { /* ... */ }
+#orientation-mask { /* ... */ }
+@media (orientation: portrait) {
     #orientation-mask { display: flex !important; }
     #app { display: none !important; }
 }
