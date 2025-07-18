@@ -28,44 +28,6 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:
     align-items: center;
 }
 
-/* --- 横屏强制样式 --- */
-@media (max-width: 900px), (orientation: portrait) {
-    body, #app {
-        width: 100vw;
-        height: 100vh;
-        min-height: 100vh;
-        min-width: 100vw;
-        overflow: hidden;
-    }
-    .game-board {
-        /* 横屏方向，强制宽大于高 */
-        transform: rotate(90deg);
-        transform-origin: center center;
-        width: 100vh;
-        height: 100vw;
-        max-width: none;
-        max-height: none;
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        /* 使牌桌居中 */
-        translate: -50% -50%;
-        background: transparent;
-        padding: 0;
-        z-index: 9;
-    }
-    .lobby-container {
-        /* 大厅不旋转 */
-        transform: none !important;
-        position: relative;
-        z-index: 10;
-    }
-    /* 让所有弹窗和按钮等也跟随旋转 */
-    .action-buttons-container, .bidding-status-indicator {
-        transform: rotate(-90deg) !important;
-    }
-}
-
 /* --- 大厅样式 --- */
 .lobby-container {
     width: 100%;
@@ -195,8 +157,51 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:
     grid-template-columns: 1fr 1fr 1fr;
     gap: 1rem;
     padding: 1rem;
+    /* 默认无旋转 */
+    transform: none;
+    transform-origin: center center;
+    transition: transform 0.35s cubic-bezier(.34,1.56,.64,1);
+    z-index: 1;
 }
 
+/* --- 操作区和叫分提示: 保持不旋转 --- */
+.action-buttons-container,
+.bidding-status-indicator {
+    transform: none !important;
+    z-index: 10;
+    transition: transform 0.35s cubic-bezier(.34,1.56,.64,1);
+}
+
+/* --- 横屏适配：仅旋转 .game-board，不旋转操作区 --- */
+@media (orientation: portrait) and (max-width: 900px) {
+    /* 锄大地、斗地主牌桌都使用 .game-board 类，自动旋转 */
+    .game-board {
+        transform: rotate(90deg);
+        width: 100vh;
+        height: 100vw;
+        max-width: none;
+        max-height: none;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        translate: -50% -50%;
+        background: transparent;
+        padding: 0;
+        z-index: 1;
+    }
+    /* 操作区和叫分提示不旋转，保持底部横向 */
+    .action-buttons-container,
+    .bidding-status-indicator {
+        position: fixed !important;
+        left: 50% !important;
+        bottom: 24px !important;
+        top: auto !important;
+        transform: translateX(-50%) !important;
+        z-index: 20;
+    }
+}
+
+/* --- 玩家区和卡牌相关样式 --- */
 .player-area {
     display: flex;
     align-items: center;
@@ -352,7 +357,6 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:
 }
 
 @media (orientation: portrait) and (max-width: 767px) {
-    /* 这部分已被上方横屏旋转覆盖, 可保留以防特殊设备适配 */
     .game-board {
         grid-template-rows: auto auto 1fr auto;
         grid-template-columns: 1fr 1fr;
@@ -371,5 +375,3 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:
         grid-template-columns: 1fr;
     }
 }
-
-</contents>
