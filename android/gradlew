@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
-
-# A bulletproof, minimal Gradle start-up script for CI environments.
-
-# Exit immediately if a command exits with a non-zero status.
 set -e
 
-# Find the script's own directory.
-APP_HOME=$(dirname "$0")
+# A definitive, minimal Gradle start-up script for CI environments.
+# It uses 'pwd' to ensure the path is always correct within the CI execution context.
+APP_HOME=$(pwd)
 
 # The setup-java action guarantees JAVA_HOME is set.
 JAVA_EXE="$JAVA_HOME/bin/java"
 
-# Execute Gradle's main class directly, passing all script arguments ("$@")
-# to it. This avoids all complex shell quoting and eval logic.
+# Execute Gradle's main class directly, passing all script arguments ("$@").
+# This avoids all complex shell quoting and eval logic.
 exec "$JAVA_EXE" \
   -Xmx1024m \
   -Xms256m \
