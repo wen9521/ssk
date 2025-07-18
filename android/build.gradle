@@ -4,8 +4,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // 升级到最新版的 Performance Monitoring 插件，或者如有兼容性问题可以注释掉
-        classpath 'com.google.firebase:perf-plugin:1.4.3'
+        // 移除 Firebase Performance Monitoring 插件
+        // classpath 'com.google.firebase:perf-plugin:1.4.3'
     }
 
     configurations.all {
