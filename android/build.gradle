@@ -8,7 +8,7 @@ buildscript {
         // classpath 'com.google.firebase:perf-plugin:1.4.3'
     }
 
-    // **彻底移除 Guava 强制版本锁定**
+    // 已移除 Guava 强制锁定，避免资源和依赖冲突
     // configurations.all {
     //     resolutionStrategy {
     //         force 'com.google.guava:guava:27.0.1-android'
