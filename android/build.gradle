@@ -4,12 +4,10 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // Add the dependency for the Performance Monitoring plugin
-        classpath 'com.google.firebase:perf-plugin:1.4.2'
+        // 升级到最新版的 Performance Monitoring 插件，或者如有兼容性问题可以注释掉
+        classpath 'com.google.firebase:perf-plugin:1.4.3'
     }
 
-    // Force a consistent, newer version of Guava across the build script's classpath
-    // to resolve the deadlock issue caused by the Firebase Performance Monitoring plugin.
     configurations.all {
         resolutionStrategy {
             force 'com.google.guava:guava:27.0.1-android'
@@ -17,7 +15,6 @@ buildscript {
     }
 }
 
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
     id 'com.android.application' version '8.2.0' apply false
 }
