@@ -1,3 +1,9 @@
+/**
+ * main.js (升级版)
+ * 
+ * 使用增强的游戏规则引擎驱动一个完整的离线游戏循环。
+ */
+
 // -------------------- 模块导入 --------------------
 import { renderLobby } from './src/components/lobby.js';
 import { renderGameBoard } from './src/components/game-board.js';
@@ -24,12 +30,14 @@ function startOfflineGame() {
     
     currentGame.startGame();
     
-    // 渲染所有玩家的手牌
+    // 渲染UI
     currentGame.players.forEach((player, index) => {
-        renderPlayerHand(player.id, player.hand, index === 0); // 只有真人玩家的牌可以点击
+        const isPlayer = player.id === 'player-0';
+        renderPlayerHand(player.id, player.hand, isPlayer);
         updateCardCount(player.id, player.hand.length);
         if(player.isLandlord) {
-            document.querySelector(`#${player.id} .player-info span:first-child`).textContent += ' (地主)';
+            const infoEl = document.querySelector(`#hand-${player.id} + .player-info span:first-child`);
+            if (infoEl) infoEl.textContent += ' (地主)';
         }
     });
     
@@ -37,21 +45,34 @@ function startOfflineGame() {
     document.getElementById('play-btn').addEventListener('click', handlePlayCard_Offline);
     document.getElementById('pass-btn').addEventListener('click', handlePass_Offline);
     
-    updateTurnIndicator();
+    // 游戏循环开始
+    gameLoop();
 }
 
-function startOnlineGame() {
-    // ... (在线逻辑保持不变)
-}
+function startOnlineGame() { /* ... 在线逻辑保持不变 ... */ }
 
-// -------------------- 事件处理函数 (离线模式) --------------------
+// -------------------- 离线游戏循环和事件处理 --------------------
 
-function handlePlayCard_Offline() {
-    if (currentGame.turn !== 0) {
-        alert("还没轮到你！");
+function gameLoop() {
+    if (currentGame.getWinner()) {
+        endGame(currentGame.getWinner());
         return;
     }
 
+    updateTurnIndicator();
+
+    const currentPlayer = currentGame.getCurrentPlayer();
+    if (currentPlayer.id !== 'player-0') { // AI的回合
+        document.getElementById('play-btn').disabled = true;
+        document.getElementById('pass-btn').disabled = true;
+        setTimeout(aiTurn, 1200); // 延迟让玩家看清
+    } else { // 玩家的回合
+        document.getElementById('play-btn').disabled = false;
+        document.getElementById('pass-btn').disabled = !currentGame.lastValidPlay.playerId; // 如果是首出，不能"不要"
+    }
+}
+
+function handlePlayCard_Offline() {
     const selectedElements = document.querySelectorAll('#hand-player-0 .card.selected');
     if (selectedElements.length === 0) {
         alert("请先选择要出的牌！");
@@ -59,86 +80,79 @@ function handlePlayCard_Offline() {
     }
 
     const cardIds = Array.from(selectedElements).map(el => el.dataset.cardId);
-    
-    // 这是一个简化的验证
-    if (true) { // 实际应调用 currentGame.isValidPlay(cardIds)
-        const playedCards = currentGame.playCards('player-0', cardIds);
-        renderPlayedCards(playedCards);
+    const result = currentGame.playCards('player-0', cardIds);
+
+    if (result) {
+        // 出牌成功
+        renderPlayedCards(result.playedCards, '你');
         renderPlayerHand('player-0', currentGame.getPlayerById('player-0').hand, true);
         updateCardCount('player-0', currentGame.getPlayerById('player-0').hand.length);
-
-        if (checkGameOver()) return;
-        
-        nextTurn();
+        currentGame.nextTurn();
+        gameLoop();
     } else {
-        alert("出牌不符合规则！");
+        // 出牌失败
+        alert("出牌不符合规则，请重新选择！");
     }
 }
 
 function handlePass_Offline() {
-    if (currentGame.turn !== 0) {
-        alert("还没轮到你！");
-        return;
-    }
-    currentGame.passTurn();
-    renderPlayedCards([]); // 清空出牌区
-    nextTurn();
-}
-
-function nextTurn() {
-    currentGame.nextTurn();
-    updateTurnIndicator();
-    if (currentGame.turn !== 0) { // 如果是AI的回合
-        setTimeout(aiTurn, 1000);
+    const success = currentGame.passTurn('player-0');
+    if (success) {
+        renderPlayedCards([], '你选择了 不要');
+        currentGame.nextTurn();
+        gameLoop();
+    } else {
+        alert("现在轮到你出牌，不能选择“不要”！");
     }
 }
 
 function aiTurn() {
-    const aiPlayer = currentGame.players[currentGame.turn];
-    // 简化AI：随机出一张牌或跳过
-    const playedCards = currentGame.aiSimplePlay(aiPlayer.id);
+    const aiPlayer = currentGame.getCurrentPlayer();
+    const result = currentGame.aiSimplePlay(aiPlayer.id);
 
-    if (playedCards.length > 0) {
-        renderPlayedCards(playedCards);
-    } else {
-        console.log(`${aiPlayer.name} 不要`);
+    if (result) { // AI出牌了
+        renderPlayedCards(result.playedCards, aiPlayer.name);
+    } else { // AI“不要”
+        renderPlayedCards([], `${aiPlayer.name} 不要`);
     }
 
     renderPlayerHand(aiPlayer.id, aiPlayer.hand, false);
     updateCardCount(aiPlayer.id, aiPlayer.hand.length);
-
-    if (checkGameOver()) return;
-
-    nextTurn();
+    
+    currentGame.nextTurn();
+    gameLoop();
 }
 
-function checkGameOver() {
-    const winner = currentGame.getWinner();
-    if (winner) {
-        setTimeout(() => {
-            alert(`游戏结束！胜利者是 ${winner.name}!`);
-            showLobby();
-        }, 500);
-        return true;
-    }
-    return false;
+function endGame(winner) {
+    setTimeout(() => {
+        alert(`游戏结束！胜利者是 ${winner.name}!`);
+        showLobby();
+    }, 500);
 }
+
+// -------------------- UI 更新辅助函数 --------------------
 
 function updateTurnIndicator() {
-    // 移除所有高亮
-    document.querySelectorAll('.player-info').forEach(el => el.style.boxShadow = '0 2px 5px var(--shadow-dark)');
-    // 高亮当前玩家
-    const currentPlayer = currentGame.players[currentGame.turn];
-    const indicator = document.querySelector(`#hand-${currentPlayer.id}`).nextElementSibling;
+    document.querySelectorAll('.player-info').forEach(el => el.style.boxShadow = 'none');
+    
+    const currentPlayer = currentGame.getCurrentPlayer();
+    if (!currentPlayer) return;
+
+    const indicator = document.querySelector(`#hand-${currentPlayer.id}`).parentElement.querySelector('.player-info');
     if(indicator) {
-        indicator.style.boxShadow = `0 0 15px var(--accent-color)`;
+        indicator.style.boxShadow = `0 0 15px var(--accent-color), 0 0 20px var(--accent-color) inset`;
     }
 }
+
+// 修改 renderPlayedCards 函数调用方式，传递出牌者信息
+// 在 /frontend/src/components/card.js 中修改
+// export function renderPlayedCards(cards, playerName = '') { ... }
 
 
 // -------------------- 应用初始化 --------------------
+
 function initialize() {
-    // ... (初始化逻辑保持不变)
+    if ('serviceWorker' in navigator) { /* ... */ }
     showLobby();
 }
 
