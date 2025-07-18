@@ -1,8 +1,10 @@
 /**
  * big-two-ui.js
  * 
- * 锄大地游戏的UI界面。
+ * 负责渲染锄大地游戏的UI界面。
+ * 牌桌布局与斗地主一致，支持横屏自动旋转。
  */
+
 export function renderBigTwoBoard(players) {
     // 四人座位：您-下家-对家-上家
     const you = players[0];
