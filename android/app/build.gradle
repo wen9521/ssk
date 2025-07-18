@@ -1,7 +1,7 @@
 plugins {
     id 'com.android.application'
-    // Apply the Performance Monitoring plugin with the correct ID
-    id 'com.google.firebase.firebase-perf'
+    // 已移除 Performance Monitoring 插件声明
+    // id 'com.google.firebase.firebase-perf'
 }
 
 android {
@@ -14,8 +14,6 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
-        
-        // Enable multidex
         multiDexEnabled true
     }
 
@@ -46,6 +44,5 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.multidex:multidex:2.0.1'
-    // 增加 Guava 依赖解决 NoSuchMethodError
     implementation 'com.google.guava:guava:27.0.1-android'
 }
