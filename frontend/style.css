@@ -271,6 +271,9 @@ body {
 .play-area-center .card:not(:first-child) { margin-left: -45px; }
 
 .player-hand {
+    position: relative;
+    min-height: 140px;
+    height: 140px;
     display: flex;
     justify-content: center;
     align-items: flex-end;
@@ -315,19 +318,25 @@ body {
     background-color: var(--card-bg);
     box-shadow: 0 4px 12px var(--shadow-dark), inset 0 0 10px rgba(0,0,0,0.1);
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    position: relative;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
     overflow: hidden;
     border: 1px solid rgba(255,255,255,0.3);
 }
 .card img { width: 100%; height: 100%; display: block; user-select: none; }
 .player-hand .card { cursor: pointer; }
-.player-hand .card:not(:first-child) { margin-left: -45%; }
-.player-hand .card:hover { transform: translateY(-20px) rotateZ(-2deg); z-index: 10; }
 .player-hand .card.selected { 
     transform: translateY(-30px) scale(1.03); 
     box-shadow: 0 10px 30px var(--shadow-dark), var(--shadow-glow);
     border-color: var(--accent-color);
 }
+
+/* 鼠标悬停/选中浮起效果 */
+.player-hand .card:hover { transform: translateY(-20px) rotateZ(-2deg); z-index: 10; }
+
+/* 横向重叠已由JS控制，移除强制margin-left设置 */
+/* .player-hand .card:not(:first-child) { margin-left: -45%; } */
 
 .bidding-status-indicator {
     position: absolute;
@@ -369,7 +378,6 @@ body {
     .bidding-status-indicator { bottom: 80px; padding: 10px 20px; font-size: 1.1rem; }
 
     .player-hand { padding-bottom: 70px; }
-    .player-hand .card:not(:first-child) { margin-left: -55%; }
 }
 
 @media (max-height: 700px) and (orientation: landscape) {
