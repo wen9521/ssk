@@ -5,7 +5,7 @@ export function renderGameBoard(players) {
 
     return `
         <div class="game-board">
-            <div class="player-area top-left">
+            <div class="player-area left-player">
                 <div class="player-pod" id="${leftAI.id}">
                     <div class="player-avatar">AI</div>
                     <div class="player-details">
@@ -16,17 +16,17 @@ export function renderGameBoard(players) {
                 </div>
             </div>
 
-            <div class="player-area game-info">
-                <div id="landlord-cards-area" class="hand"></div>
+            <div class="player-area top-player">
+                 <div id="landlord-cards-area" class="hand"></div>
             </div>
 
-            <div class="player-area top-right">
+            <div class="player-area right-player">
                 <div class="player-pod" id="${rightAI.id}">
-                     <div class="player-details">
+                    <div class="player-avatar">AI</div>
+                    <div class="player-details">
                         <div class="player-name">${rightAI.name}</div>
                         <div class="card-count">牌: <b>${rightAI.hand.length}</b></div>
                     </div>
-                    <div class="player-avatar">AI</div>
                     <div class="player-status-bubble" id="status-${rightAI.id}"></div>
                 </div>
             </div>
@@ -35,7 +35,7 @@ export function renderGameBoard(players) {
                 <div id="played-cards-area" class="hand"></div>
             </div>
 
-            <div class="player-area bottom-center">
+            <div class="player-area bottom-player">
                 <div id="hand-${you.id}" class="hand player-hand"></div>
                 <div class="action-buttons-container">
                     <button id="pass-btn" class="action-btn pass" disabled>不要</button>
