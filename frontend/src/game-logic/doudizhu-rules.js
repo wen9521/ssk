@@ -1,4 +1,5 @@
 import { createDeck, shuffle } from './deck.js';
+import { SUITS } from '../constants.js';
 
 class DouDizhuGame {
     constructor(playerIds) {

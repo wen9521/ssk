@@ -2,12 +2,6 @@
 
 import { createDeck, shuffle } from './deck.js';
 
-// --- 卡牌和牌型定义 ---
-const SUITS = ['spades', 'hearts', 'clubs', 'diamonds'];
-const RANKS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]; // J=11, Q=12, K=13, A=14
-
-// ... (基础卡牌工具函数: getCardValue, getCardName - 保持不变)
-
 // --- 核心牌型判断函数 ---
 export function getHandType(hand) {
     if (!hand || hand.length === 0) return { type: 'invalid', rank: 0, name: '无' };
@@ -82,6 +76,10 @@ export class ThirteenWaterGame {
         this.deck = [];
     }
 
+    getPlayerById(playerId) {
+        return this.players.find(p => p.id === playerId);
+    }
+
     startGame() {
         this.deck = createDeck().filter(c => c.value !== 'joker'); // 十三水不用鬼牌
         this.deck = shuffle(this.deck);
@@ -95,41 +93,22 @@ export class ThirteenWaterGame {
 
     // --- 智能分牌核心逻辑 ---
     getAllSmartSplits(playerId) {
-        const player = this.players.find(p => p.id === playerId);
+        const player = this.getPlayerById(playerId);
         if (!player) return [];
-        // 这里只是一个简单的实现，返回几种预设的分法
-        // 实际开发中会用更复杂的算法
+        
         const sortedHand = [...player.hand].sort((a, b) => b.rank - a.rank);
         
-        // 方案1: 默认分法
-        const split1 = {
-            head: sortedHand.slice(0, 3),
-            middle: sortedHand.slice(3, 8),
-            tail: sortedHand.slice(8, 13)
-        };
-        
-        // 方案2: 尝试凑大尾墩
-        const split2 = {
-             tail: sortedHand.slice(0, 5),
-             middle: sortedHand.slice(5, 10),
-             head: sortedHand.slice(10, 13)
-        };
-        
-        // 方案3: 尝试强头墩
-        const split3 = {
-            head: sortedHand.slice(player.hand.length - 3),
-            middle: sortedHand.slice(0, 5),
-            tail: sortedHand.slice(5, 10)
-        };
+        const split1 = { head: sortedHand.slice(0, 3), middle: sortedHand.slice(3, 8), tail: sortedHand.slice(8, 13) };
+        const split2 = { tail: sortedHand.slice(0, 5), middle: sortedHand.slice(5, 10), head: sortedHand.slice(10, 13) };
+        const split3 = { head: sortedHand.slice(player.hand.length - 3), middle: sortedHand.slice(0, 5), tail: sortedHand.slice(5, 10) };
 
-        // 过滤掉会导致倒水的方案
         return [split1, split2, split3].filter(s => !isFoul(s.head, s.middle, s.tail));
     }
     
     autoGroup(playerId) {
         const splits = this.getAllSmartSplits(playerId);
         if(splits.length > 0) {
-            const player = this.players.find(p => p.id === playerId);
+            const player = this.getPlayerById(playerId);
             player.groups = [splits[0].head, splits[0].middle, splits[0].tail];
         }
     }
@@ -178,7 +157,6 @@ export class ThirteenWaterGame {
         }));
 
         for (let i = 0; i < this.players.length; i++) {
-            let winCount = 0;
             let gunTargets = [];
             for (let j = 0; j < this.players.length; j++) {
                 if (i === j) continue;
