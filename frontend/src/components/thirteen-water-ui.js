@@ -18,7 +18,7 @@ export function renderThirteenWaterBoard(players) {
             </div>
 
             <div id="player-hand-area" class="sss-hand-area">
-                <!-- This will also serve as a card display area -->
+                <!-- Player's 13 cards will be rendered here -->
             </div>
 
             <div class="dun-area-container">
