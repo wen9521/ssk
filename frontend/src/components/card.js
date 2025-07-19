@@ -1,121 +1,127 @@
 /**
- * card.js
- * 
- * 这个模块负责所有与卡牌UI相关的DOM操作。
+ * card.js (Refactored for Drag-and-Drop)
+ *
+ * 这个模块现在包含为十三水游戏创建可拖拽卡牌的逻辑。
  */
 import { playSound } from '../services/audio-service.js';
 
+// --- 全局拖拽状态 ---
+let draggedCard = null;
+
 /**
- * 创建单个卡牌的HTML元素。
+ * 创建单个卡牌的HTML元素，并附加事件监听。
  * @param {object} card - 卡牌对象
- * @param {boolean} isPlayerCard - 是否是真人玩家的牌
+ * @param {boolean} isDraggable - 卡牌是否可拖拽
  * @returns {HTMLElement}
  */
-function createCardElement(card, isPlayerCard = false) {
+function createCardElement(card, isDraggable = false) {
     const cardDiv = document.createElement('div');
     cardDiv.className = 'card';
-    cardDiv.dataset.cardId = card.id;
+    cardDiv.dataset.cardId = card.id; // 自定义数据属性，存储卡牌ID
 
     const cardImg = document.createElement('img');
-    cardImg.src = `/assets/cards/${card.id}`;
+    cardImg.src = `/assets/cards/${card.svg}`; // 假设card对象有svg属性
     cardImg.alt = card.fullName;
-    cardImg.draggable = false;
-    
+    cardImg.draggable = false; // 防止图像的默认拖拽行为
     cardDiv.appendChild(cardImg);
-    
-    if (isPlayerCard) {
+
+    if (isDraggable) {
+        cardDiv.draggable = true;
+        cardDiv.classList.add('draggable');
+        cardDiv.addEventListener('dragstart', handleDragStart);
+        cardDiv.addEventListener('dragend', handleDragEnd);
+    } else {
+        // 为斗地主等游戏保留简单的点击选择功能
         cardDiv.addEventListener('click', () => {
-            playSound('selectCard');
-            cardDiv.classList.toggle('selected');
+            if (document.querySelector('.doudizhu-board')) { // 仅在斗地主盘面生效
+                playSound('selectCard');
+                cardDiv.classList.toggle('selected');
+            }
         });
     }
 
     return cardDiv;
 }
 
-/**
- * 渲染指定玩家的完整手牌。
- * @param {string} playerId - 玩家ID
- * @param {Array<object>} hand - 手牌数组
- * @param {boolean} isPlayer - 是否是真人玩家
- */
-export function renderPlayerHand(playerId, hand, isPlayer = false) {
-    const handContainer = document.getElementById(`hand-${playerId}`);
-    if (!handContainer) return;
+// --- 拖拽事件处理 ---
+function handleDragStart(e) {
+    draggedCard = e.target.closest('.card');
+    e.dataTransfer.setData('text/plain', draggedCard.dataset.cardId);
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => {
+        draggedCard.style.opacity = '0.5';
+    }, 0);
+}
 
-    handContainer.innerHTML = '';
-
-    // 扇形平铺只对玩家自己手牌生效（即 isPlayer === false）
-    if (!isPlayer && hand.length > 0) {
-        // 扇形参数
-        const total = hand.length;
-        const maxAngle = 32;  // 扇形最大角度（总角度）
-        const maxSpread = 50; // 最大左右平移距离(px)
-        const cardWidth = 85; // 牌宽度（可根据实际样式调整）
-
-        handContainer.style.position = 'relative';
-        handContainer.style.height = '140px'; // 给牌腾出空间
-
-        hand.forEach((card, index) => {
-            const cardElement = createCardElement(card, isPlayer);
-
-            // 扇形核心：每张牌角度和横向偏移
-            const middle = (total - 1) / 2;
-            const angle = (index - middle) * (maxAngle / total);
-            const offset = (index - middle) * (maxSpread / middle);
-
-            cardElement.style.position = 'absolute';
-            cardElement.style.left = '50%';
-            cardElement.style.bottom = '0';
-            cardElement.style.transform = `
-                translateX(${offset}px)
-                rotate(${angle}deg)
-            `;
-            cardElement.style.zIndex = index;
-
-            cardElement.style.animation = `cardFlyIn 0.5s ${index * 0.05}s ease-out both`;
-            handContainer.appendChild(cardElement);
-        });
-    } else {
-        // AI手牌/非玩家手牌仍用老方式横向排列
-        hand.forEach((card, index) => {
-            const cardElement = createCardElement(card, isPlayer);
-            cardElement.style.animation = `cardFlyIn 0.5s ${index * 0.05}s ease-out both`;
-            handContainer.appendChild(cardElement);
-        });
+function handleDragEnd() {
+    if (draggedCard) {
+        draggedCard.style.opacity = '1';
+        draggedCard = null;
     }
 }
 
 /**
- * 更新指定玩家的剩余牌数显示。
- * @param {string} playerId - 玩家ID
- * @param {number} count - 剩余牌数
+ * 为一个容器（如一个“墩”）添加拖放事件监听。
+ * @param {HTMLElement} container - 容器元素
+ * @param {function} onDropCallback - 放置成功后的回调函数
  */
+export function makeDroppable(container, onDropCallback) {
+    container.addEventListener('dragover', (e) => {
+        e.preventDefault(); // 必须，否则drop事件不会触发
+        e.dataTransfer.dropEffect = 'move';
+        container.classList.add('drag-over');
+    });
+
+    container.addEventListener('dragleave', () => {
+        container.classList.remove('drag-over');
+    });
+
+    container.addEventListener('drop', (e) => {
+        e.preventDefault();
+        container.classList.remove('drag-over');
+        const cardId = e.dataTransfer.getData('text/plain');
+        if (draggedCard && cardId === draggedCard.dataset.cardId) {
+            if (onDropCallback(draggedCard, container)) {
+                container.appendChild(draggedCard);
+            }
+        }
+    });
+}
+
+
+/**
+ * 渲染玩家的手牌到一个指定的容器中。
+ * @param {string} containerId - 目标容器的ID
+ * @param {Array<object>} hand - 手牌数组
+ * @param {boolean} isDraggable - 是否可拖拽
+ */
+export function renderPlayerHand(containerId, hand, isDraggable = false) {
+    const handContainer = document.getElementById(containerId);
+    if (!handContainer) return;
+
+    handContainer.innerHTML = '';
+    hand.forEach(card => {
+        const cardElement = createCardElement(card, isDraggable);
+        handContainer.appendChild(cardElement);
+    });
+}
+
+// --- 其他UI更新函数 ---
+
 export function updateCardCount(playerId, count) {
-    const countElement = document.getElementById(`card-count-${playerId}`);
+    const countElement = document.querySelector(`#${playerId} .card-count b`);
     if (countElement) {
         countElement.textContent = count;
     }
 }
 
-/**
- * 通用的卡牌渲染函数，可以向任何指定容器渲染卡牌。
- * @param {string} containerId - 目标容器的ID
- * @param {Array<object>} cards - 要渲染的卡牌数组
- */
 export function renderPlayedCards(containerId, cards) {
     const container = document.getElementById(containerId);
-    if (!container) {
-        console.error(`Render container with id "${containerId}" not found.`);
-        return;
-    }
+    if (!container) return;
     
     container.innerHTML = '';
-    if (!cards || cards.length === 0) return;
-
-    cards.forEach((card, index) => {
-        const cardElement = createCardElement(card, false);
-        cardElement.style.animation = `fadeIn 0.3s ${index * 0.05}s ease-out both`;
+    cards.forEach(card => {
+        const cardElement = createCardElement(card, false); // 打出的牌不可拖拽
         container.appendChild(cardElement);
     });
 }
