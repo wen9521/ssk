@@ -162,8 +162,8 @@ ${isWinner ? "恭喜你，你赢了！" : `你输了，胜利者是 ${winner.nam
     if (currentGame.multiplier > 1) {
         if ((winner.isLandlord && currentGame.players.every(p => p.isLandlord || p.playsCount === 0)) ||
             (!winner.isLandlord && currentGame.players.find(p => p.isLandlord).playsCount <= 1)) {
-            message += "
-(春天或反春 x2)";
+            message += `
+(春天或反春 x2)`;
         }
     }
     setTimeout(() => {
