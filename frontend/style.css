@@ -5,180 +5,656 @@
     padding: 0;
 }
 
-html, body {
-    width: 100vw;
-    min-height: 100vh;
+html {
     font-size: 16px;
-    -webkit-tap-highlight-color: transparent;
-    background: linear-gradient(135deg, #222f4e 0%, #2d234f 100%);
-    color: #fff;
+    -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
+}
+
+body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    overflow: hidden;
+    line-height: 1.6;
+    color: #f0f0f0;
+    background-color: var(--background-color);
+    overscroll-behavior-y: contain;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* === CSS VARIABLES & THEME === */
+:root {
+    --background-color: #121828;
+    --primary-color: #1a2238;
+    --secondary-color: #2a3a5e;
+    --accent-color: #ffc947; /* 主界面的橙色 */
+    --text-color: #f0f0f0;
+    --card-bg: #fff;
+    --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    --border-radius: 12px;
+    --sss-background-dark: #1f344d;
+    --sss-background-light: #2b4562;
+    --sss-button-ready: #ffc947; /* 橙色 */
+    --sss-button-ready-hover: #ffd984;
+    --sss-text-color-bright: #ffc947; /* 用橙色做亮色文字 */
+    --sss-text-color-faded: #c0c0c0;
+    --sss-seat-bg-me: #2a3a5e;
+    --sss-seat-bg-ai: #1f344d;
+    --sss-seat-border: #ffc947;
+    --sss-dun-bg: #1f344d;
+    --sss-dun-border: #4a6c92;
+    --sss-card-selected-border: #ffc947;
+    --sss-card-selected-shadow: 0 0 16px 2px rgba(255, 201, 71, 0.6);
+    --sss-message-color: #ffde94;
 }
 
 #app {
-    width: 100vw;
+    width: 100%;
+    max-width: 1400px;
     min-height: 100vh;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
     overflow: hidden;
 }
 
-/* === LOBBY MAIN SCREEN === */
+/* === LOBBY STYLES === */
 .lobby-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 100vh;
+    text-align: center;
     padding: 2rem 1rem;
-    background: none;
+    min-height: 100vh;
 }
 
 .lobby-title {
-    font-size: 3.2rem;
-    font-weight: 900;
-    letter-spacing: 3px;
-    margin-bottom: 2.7rem;
-    color: #ffd84c;
-    text-shadow: 0 3px 12px #0004, 0 0px 80px #ffd84c80;
-    font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-size: 2.5rem;
+    color: var(--accent-color);
+    margin-bottom: 2rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
 
 .game-menu {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2.2rem;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
     width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
+    max-width: 900px;
 }
 
 .game-card {
-    background: linear-gradient(135deg, #3c2b68 70%, #ffda44 100%);
-    padding: 2.2rem 1.5rem 2.7rem 1.5rem;
-    border-radius: 22px;
-    box-shadow: 0 8px 32px #0005, 0 0px 120px #ffd84c22;
-    border: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    transition: transform 0.22s, box-shadow 0.22s;
-    cursor: pointer;
+    background: var(--primary-color);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: 2px solid var(--secondary-color);
 }
 
 .game-card:hover {
-    transform: translateY(-8px) scale(1.03);
-    box-shadow: 0 16px 52px #ffd84c60;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 201, 71, 0.2);
 }
 
 .game-title {
-    font-size: 2.1rem;
-    font-weight: bold;
-    margin-bottom: 0.7rem;
-    color: #ffda44;
-    text-shadow: 0 2px 8px #44220033;
-    letter-spacing: 2px;
+    font-size: 1.8rem;
+    color: var(--accent-color);
+    margin-bottom: 0.5rem;
 }
 
 .game-description {
-    font-size: 1.15rem;
-    color: #fff;
-    margin-bottom: 2.2rem;
-    opacity: 0.93;
-    text-align: center;
-    line-height: 1.6;
+    font-size: 1rem;
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+    opacity: 0.8;
 }
 
-.action-buttons {
-    display: flex;
-    gap: 1.3rem;
-}
-
-.lobby-btn {
-    padding: 0.9rem 2.2rem;
+/* === GENERAL BUTTON STYLES === */
+.lobby-btn, .action-btn {
+    padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: 16px;
-    font-size: 1.18rem;
+    border-radius: 8px;
+    font-size: 1rem;
     font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 3px 15px #ffd84c44;
-    letter-spacing: 1px;
-    transition: background 0.19s, box-shadow 0.19s, transform 0.17s;
+    transition: all 0.2s ease-in-out;
+    text-transform: uppercase;
 }
 
-.lobby-btn.trial {
-    background-color: #ffda44;
-    color: #442200;
+.lobby-btn.trial, .action-btn.play {
+    background-color: var(--accent-color);
+    color: var(--primary-color);
 }
-.lobby-btn.trial:hover {
-    background-color: #ffe880;
-    transform: scale(1.07);
-    box-shadow: 0 6px 24px #ffd84c70;
+.lobby-btn.trial:hover, .action-btn.play:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px var(--accent-color);
 }
 
-.lobby-btn.match {
-    background-color: #3a2b68;
-    color: #fff;
+.lobby-btn.match, .action-btn.pass {
+    background-color: var(--secondary-color);
+    color: var(--text-color);
 }
-.lobby-btn.match:disabled {
-    background-color: #aaa;
-    color: #555;
+
+.lobby-btn:disabled, .action-btn:disabled {
+    background-color: #333;
+    color: #888;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* === GAME BOARD (General) === */
+.game-board-container {
+    width: 100%;
+    height: 100vh;
+    display: grid;
+    grid-template-rows: 1fr 2fr 1fr;
+    grid-template-columns: 1fr;
+    padding: 0.5rem;
+    gap: 0.5rem;
+    background: url('/assets/table-bg.jpg') no-repeat center center/cover;
+}
+
+.player-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.top-player, .bottom-player {
+    grid-column: 1 / -1;
+}
+
+.middle-area {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    align-items: center;
+    gap: 1rem;
+}
+
+.player-pod {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    background: rgba(26, 34, 56, 0.8);
+    border-radius: var(--border-radius);
+    transition: box-shadow 0.3s;
+}
+
+.player-info {
+    text-align: center;
+}
+.player-name {
+    font-weight: bold;
+    color: var(--accent-color);
+}
+.card-count {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.hand-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+}
+
+/* === CARD STYLES (General & Thirteen Water specific) === */
+.card {
+    position: absolute;
+    width: 60px;
+    height: 84px;
+    border-radius: 5px;
+    background: var(--card-bg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    transition: transform 0.13s, box-shadow 0.13s, border 0.13s;
+    cursor: pointer;
+}
+
+.card img {
+    width: 100%;
+    height: 100%;
+    border-radius: 5px;
+    pointer-events: none;
+}
+
+.card.selected {
+    transform: translateY(-15px);
+    border: 2.5px solid var(--sss-card-selected-border);
+    box-shadow: var(--sss-card-selected-shadow);
+}
+.card:not(.selected):hover {
+    transform: translateY(-5px);
+}
+
+/* Specific for Doudizhu hand rendering (non-stacked) */
+.bottom-player .hand-container .card {
+    position: relative;
+    margin: 0 -15px;
+}
+.hand-container.hidden .card {
+    position: relative;
+    margin: 0 -30px;
+}
+
+.played-cards-area, .landlord-cards-area {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 90px;
+}
+.played-cards-area .card, .landlord-cards-area .card {
+    position: relative;
+    margin: 0 2px;
+}
+
+.action-buttons-container {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.status-indicator, .bidding-status-indicator {
+    padding: 0.5rem 1rem;
+    background: rgba(0,0,0,0.7);
+    color: var(--accent-color);
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 8px;
+    z-index: 100;
+}
+
+/* === 记牌器 === */
+.card-counter {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    background: rgba(30,30,30,0.88);
+    color: #ffc947;
+    padding: 10px 18px;
+    border-radius: 14px;
+    font-size: 15px;
+    z-index: 99;
+    box-shadow: 0 4px 16px #0002;
+}
+.card-counter span {
+    display: inline-block;
+    margin-right: 8px;
+}
+
+/* === 地主高亮动画 === */
+.player-pod.active, .player-pod.landlord {
+    animation: landlord-glow 1.2s infinite alternate;
+    box-shadow: 0 0 24px #ffc947;
+}
+@keyframes landlord-glow {
+    0% { box-shadow: 0 0 24px #ffc947;}
+    100% { box-shadow: 0 0 48px #ffd84c;}
+}
+
+/* === 倍数动画 === */
+.multiplier-indicator {
+    position: absolute;
+    left: 50%;
+    top: 32px;
+    transform: translateX(-50%);
+    background: #222;
+    color: #ffc947;
+    font-weight: bold;
+    font-size: 1.4rem;
+    padding: 4px 20px;
+    border-radius: 20px;
+    box-shadow: 0 4px 14px #ffd84c99;
+    z-index: 98;
+}
+.multiplier-flash {
+    animation: multiplier-pop 0.8s;
+}
+@keyframes multiplier-pop {
+    0% { font-size: 1.4rem; background: #ffc947; color: #222;}
+    50% { font-size: 2.1rem; background: #ffd84c; color: #222;}
+    100% { font-size: 1.4rem; background: #222; color: #ffc947;}
+}
+
+/* === 出牌动画 === */
+.effect-flash {
+    animation: flash 0.7s;
+}
+@keyframes flash {
+    0% { box-shadow: 0 0 30px #ffc947;}
+    80% { box-shadow: 0 0 10px #ffc947;}
+    100% { box-shadow: none;}
+}
+
+/* === THIRTEEN WATER STYLES === */
+.thirteen-water-container {
+    background: var(--sss-background-dark);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    padding: 16px;
+    max-width: 420px;
+    width: 100%;
+    margin: 30px auto;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 22px var(--sss-seat-border), 0 1.5px 5px #1a462a6a;
+}
+
+.sss-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.exit-btn {
+    background: linear-gradient(90deg, #fff 60%, #ffd984 100%);
+    color: var(--primary-color);
+    font-weight: bold;
+    border: none;
+    border-radius: 9px;
+    padding: 7px 22px;
+    cursor: pointer;
+    margin-right: 18px;
+    font-size: 17px;
+    box-shadow: 0 1.5px 6px rgba(255, 201, 71, 0.3);
+    transition: all 0.2s;
+}
+.exit-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(255, 201, 71, 0.4); }
+
+.player-score {
+    flex: 1;
+    text-align: right;
+    color: var(--sss-text-color-bright);
+    font-weight: 900;
+    font-size: 21px;
+    letter-spacing: 2px;
+    margin-right: 8px;
+    text-shadow: 0 2px 7px rgba(255, 201, 71, 0.4);
+}
+.player-score span { font-size: 18px; margin-right: 4px; }
+
+.player-seats {
+    display: flex;
+    margin-bottom: 18px;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.player-seat {
+    border: none;
+    border-radius: 10px;
+    flex-grow: 1;
+    color: var(--sss-text-color-bright);
+    background: var(--sss-seat-bg-ai);
+    text-align: center;
+    padding: 12px 0;
+    font-weight: 700;
+    font-size: 17px;
+    box-shadow: 0 4px 22px rgba(255, 201, 71, 0.2), 0 1.5px 5px rgba(26, 34, 56, 0.4);
+    box-sizing: border-box;
+    transition: color .28s, background .28s, box-shadow .28s;
+}
+.player-seat:first-child {
+    color: var(--sss-text-color-bright);
+    background: var(--sss-seat-bg-me);
+}
+.player-seat .status {
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 400;
+}
+.player-seat.processed {
+    background: var(--accent-color);
+    color: var(--primary-color);
+    box-shadow: 0 4px 22px var(--accent-color), 0 1.5px 5px rgba(26, 34, 56, 0.4);
+}
+
+.dun-area {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.sss-hand-area {
+    position: relative;
+    width: 100%;
+    min-height: 133px;
+    height: 133px;
+    border-radius: 14px;
+    background: var(--sss-dun-bg);
+    margin-bottom: 20px;
+    box-shadow: 0 4px 22px rgba(0, 0, 0, 0.2), 0 1.5px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 0 16px;
+    overflow: hidden;
+}
+
+.dun-area .card-display-area {
+    flex: 1;
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.dun-area .dun-label {
+    color: var(--sss-text-color-bright);
+    font-size: 18px;
+    font-weight: 600;
+    pointer-events: none;
+    background: transparent;
+    white-space: nowrap;
+    margin-left: 16px;
+}
+
+.sss-hand-area.droppable-dun, .dun-area.droppable-dun {
+     border: 2px dashed var(--sss-dun-border);
+}
+
+.sss-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 14px;
+    justify-content: space-between;
+}
+
+.sss-actions .action-btn {
+    flex: 1;
+    padding: 13px 0;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 10px;
+    box-shadow: 0 2px 9px rgba(0,0,0,0.2);
+}
+
+.sss-actions .action-btn.ready {
+    background: var(--sss-button-ready);
+    color: var(--primary-color);
+    box-shadow: 0 2px 9px rgba(255, 201, 71, 0.4);
+}
+.sss-actions .action-btn.ready:hover:not(:disabled) {
+    background: var(--sss-button-ready-hover);
+}
+
+.sss-actions .action-btn.auto-split {
+    background: var(--secondary-color);
+    color: var(--text-color);
+    box-shadow: 0 2px 9px rgba(42, 58, 94, 0.4);
+}
+
+.sss-actions .action-btn.compare {
+    background: var(--accent-color);
+    color: var(--primary-color);
+    box-shadow: 0 2px 9px rgba(255, 201, 71, 0.4);
+}
+
+.sss-actions .action-btn:disabled {
+    background: #444;
+    color: #888;
     cursor: not-allowed;
     box-shadow: none;
 }
-.lobby-btn.match:not(:disabled):hover {
-    background-color: #5a43a3;
-    box-shadow: 0 6px 18px #ffd84c33;
-    transform: scale(1.06);
-}
 
-@media (max-width: 850px) {
-    .game-menu {
-        grid-template-columns: 1fr;
-        max-width: 94vw;
-        gap: 1.5rem;
-    }
-}
-
-@media (max-width: 600px) {
-    .lobby-title {
-        font-size: 2.2rem;
-        margin-bottom: 1.7rem;
-    }
-    .game-card {
-        padding: 1.2rem 0.7rem 1.5rem 0.7rem;
-        border-radius: 16px;
-    }
-    .game-title {
-        font-size: 1.3rem;
-        margin-bottom: 0.5rem;
-    }
-    .game-description {
-        font-size: 1rem;
-        margin-bottom: 1.1rem;
-    }
-    .lobby-btn {
-        font-size: 1rem;
-        border-radius: 11px;
-        padding: 0.7rem 1.2rem;
-    }
-}
-
-/* 禁止全局滚动条 */
-body, html, #app, .lobby-container {
-    overflow: hidden !important;
-}
-
-/* 可选：主界面底部版权 */
-.lobby-footer {
-    width: 100%;
+.sss-message-area {
+    color: var(--sss-message-color);
     text-align: center;
-    color: #ffd84c;
-    font-size: 0.95rem;
-    opacity: 0.8;
-    margin-top: 2.7rem;
-    letter-spacing: 1px;
+    font-size: 16px;
+    margin-top: 8px;
+    min-height: 24px;
+}
+
+.results-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 500;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem;
+    color: white;
+    overflow-y: auto;
+}
+.player-result {
+    background: var(--primary-color);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    width: 95%;
+    max-width: 500px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+}
+.player-result .score-info {
+    font-weight: 700;
+    color: var(--accent-color);
+    margin-bottom: 8px;
+}
+.player-result .foul-status {
+    color: #d9534f;
+    font-weight: 800;
+    margin-left: 6px;
+}
+.player-result .dun-display {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 3px;
+}
+.player-result .card-img-small {
+    width: 46px;
+    height: 66px;
+    border-radius: 5px;
+}
+
+/* === MEDIA QUERIES FOR RESPONSIVE DESIGN === */
+@media (min-width: 768px) {
+    .game-menu {
+        grid-template-columns: 1fr 1fr;
+    }
+    .game-board-container {
+        grid-template-rows: 1fr 3fr 1fr;
+        grid-template-columns: 150px 1fr 150px;
+        padding: 1rem;
+        gap: 1rem;
+    }
+    .top-player { grid-column: 2 / 3; }
+    .left-player { grid-column: 1 / 2; grid-row: 2 / 3; }
+    .middle-area { grid-column: 2 / 3; grid-row: 2 / 3; display: flex; flex-direction: column; justify-content: space-around;}
+    .right-player { grid-column: 3 / 4; grid-row: 2 / 3; }
+    .bottom-player { grid-column: 1 / -1; grid-row: 3 / 4; }
+    .player-area {
+        justify-content: center;
+    }
+    .card {
+        width: 70px;
+        height: 98px;
+    }
+    .bottom-player .hand-container .card {
+        position: relative;
+        margin: 0 -25px;
+    }
+     .hand-container.hidden .card {
+        position: relative;
+        margin: 0 -40px;
+    }
+    .thirteen-water-board {
+        flex-direction: row;
+        gap: 1rem;
+    }
+    .player-main-area {
+        height: 100%;
+        width: 70%;
+    }
+    .dun-area-container {
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: 1fr;
+    }
+    .opponent-areas {
+        flex-direction: column;
+        width: 15%;
+        height: 100%;
+    }
+    .thirteen-water-controls {
+        flex-direction: column;
+        width: 15%;
+        height: 100%;
+    }
+     .thirteen-water-controls .action-btn {
+        width: 100%;
+    }
+    .player-hand-area {
+        height: 30%;
+    }
+}
+
+@media (min-width: 1200px) {
+     .card {
+        width: 80px;
+        height: 112px;
+    }
+     .bottom-player .hand-container .card {
+        margin: 0 -30px;
+    }
+    .hand-container.hidden .card {
+        margin: 0 -50px;
+    }
+}
+
+@media (max-width: 480px) {
+    .player-seat {
+        margin-right: 4px !important;
+        flex-basis: 24% !important;
+        min-width: 0 !important;
+        font-size: 15px !important;
+        padding: 8px 0 !important;
+    }
+    .player-seat .status { font-size: 12px !important; }
+    .card {
+        width: 55px;
+        height: 77px;
+    }
+    .sss-hand-area, .dun-area {
+        min-height: 110px;
+        height: 110px;
+    }
+    .sss-actions .action-btn {
+        font-size: 16px;
+        padding: 10px 0;
+    }
+     .exit-btn {
+        font-size: 15px;
+        padding: 6px 16px;
+    }
+    .player-score {
+        font-size: 18px;
+    }
 }
