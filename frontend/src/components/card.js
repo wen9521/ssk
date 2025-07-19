@@ -1,18 +1,12 @@
 /**
- * card.js (Refactored for Drag-and-Drop)
- *
- * 这个模块现在包含为十三水游戏创建可拖拽卡牌的逻辑。
+ * card.js (斗地主横向堆叠手牌)
  */
 import { playSound } from '../services/audio-service.js';
 
-// Constants for card dimensions in Thirteen Water context
-const PAI_DUN_HEIGHT = 133;
-const CARD_HEIGHT = Math.round(PAI_DUN_HEIGHT * 0.94);
-const CARD_WIDTH = Math.round(CARD_HEIGHT * 46 / 66);
-
-let draggedCard = null;
-let draggedCardId = null;
-let dragSourceArea = null;
+// Constants for card dimensions
+const CARD_HEIGHT = 94;
+const CARD_WIDTH = 66;
+const DDZ_HAND_OVERLAP = 0.42; // 斗地主手牌重叠度
 
 function createCardElement(card, isDraggable = false) {
     const cardDiv = document.createElement('div');
@@ -37,20 +31,16 @@ function createCardElement(card, isDraggable = false) {
 }
 
 function handleDragStart(e) {
-    draggedCard = e.target.closest('.card');
-    draggedCardId = draggedCard.dataset.cardId;
-    dragSourceArea = draggedCard.parentElement ? draggedCard.parentElement.id : '';
-    e.dataTransfer.setData('text/plain', draggedCardId);
+    // 仅十三水用，斗地主不用。
+    e.dataTransfer.setData('text/plain', e.target.dataset.cardId);
     e.dataTransfer.effectAllowed = 'move';
     setTimeout(() => {
-        draggedCard.style.opacity = '0.5';
+        e.target.style.opacity = '0.5';
     }, 0);
 }
 
-function handleDragEnd() {
-    if (draggedCard) {
-        draggedCard.style.opacity = '1';
-    }
+function handleDragEnd(e) {
+    e.target.style.opacity = '1';
 }
 
 export function renderStackedCards(
@@ -66,77 +56,55 @@ export function renderStackedCards(
     containerElement.innerHTML = '';
     const cardWidth = options.cardWidth || CARD_WIDTH;
     const cardHeight = options.cardHeight || CARD_HEIGHT;
-    const baseOverlapPercent = options.baseOverlapPercent || 0.3;
+    const baseOverlapPercent = options.baseOverlapPercent ?? DDZ_HAND_OVERLAP;
 
     let overlap = Math.floor(cardWidth * baseOverlapPercent);
-    const paddingX = 16;
-    const containerInnerWidth = containerElement.clientWidth - paddingX;
     if (cards.length > 1) {
         const totalCalculatedWidth = cardWidth + (cards.length - 1) * overlap;
-        if (totalCalculatedWidth > containerInnerWidth && containerInnerWidth > cardWidth) {
-            overlap = Math.floor((containerInnerWidth - cardWidth) / (cards.length - 1));
+        if (totalCalculatedWidth > containerElement.clientWidth - 16) {
+            overlap = Math.floor((containerElement.clientWidth - 16 - cardWidth) / (cards.length - 1));
             if (overlap < 0) overlap = 0;
         }
     } else {
         overlap = 0;
     }
     const lefts = cards.map((_, i) => i * overlap);
+
+    containerElement.style.position = 'relative';
+    containerElement.style.height = `${cardHeight + 6}px`;
+
     cards.forEach((card, idx) => {
         const cardDiv = createCardElement(card, options.isDraggable);
         const isCardSelected = selectedCards.some(sCard => sCard.id === card.id);
-        if (isCardSelected) {
-            cardDiv.classList.add('selected');
-        }
-        Object.assign(cardDiv.style, {
-            position: 'absolute',
-            left: `${lefts[idx]}px`,
-            top: `${(containerElement.clientHeight - cardHeight) / 2}px`,
-            zIndex: idx,
-            width: `${cardWidth}px`,
-            height: `${cardHeight}px`,
-            borderRadius: '5px',
-            background: 'var(--card-bg)',
-            boxShadow: isCardSelected ? '0 0 16px 2px var(--accent-color)' : '0 1px 3px rgba(0,0,0,0.5)',
-            transition: 'transform 0.13s, box-shadow 0.13s, border 0.13s',
-            border: isCardSelected ? '2.5px solid var(--accent-color)' : 'none',
-        });
+        cardDiv.style.position = 'absolute';
+        cardDiv.style.left = `${lefts[idx]}px`;
+        cardDiv.style.bottom = '0px';
+        cardDiv.style.zIndex = idx;
+        cardDiv.style.width = `${cardWidth}px`;
+        cardDiv.style.height = `${cardHeight}px`;
+        cardDiv.style.borderRadius = '5px';
+        cardDiv.style.background = 'var(--card-bg)';
+        cardDiv.style.boxShadow = isCardSelected ? '0 0 16px 2px var(--accent-color)' : '0 1px 3px rgba(0,0,0,0.5)';
+        cardDiv.style.transition = 'transform 0.13s, box-shadow 0.13s, border 0.13s';
+        cardDiv.style.border = isCardSelected ? '2.5px solid var(--accent-color)' : 'none';
+        cardDiv.style.cursor = onCardClick ? 'pointer' : 'default';
         if (!isCardSelected) {
             cardDiv.onmouseover = () => { cardDiv.style.transform = 'translateY(-5px)'; };
             cardDiv.onmouseout = () => { cardDiv.style.transform = 'translateY(0)'; };
         } else {
-             cardDiv.style.transform = 'translateY(-15px)';
+            cardDiv.style.transform = 'translateY(-15px)';
         }
         if (onCardClick) {
             cardDiv.addEventListener('click', (e) => {
                 e.stopPropagation();
                 onCardClick(card, areaId, e);
+                cardDiv.classList.toggle('selected');
             });
         }
-        cardDiv.style.cursor = onCardClick ? 'pointer' : 'default';
         containerElement.appendChild(cardDiv);
     });
-    containerElement.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        containerElement.classList.add('drag-over');
-    });
-    containerElement.addEventListener('dragleave', () => {
-        containerElement.classList.remove('drag-over');
-    });
-    containerElement.addEventListener('drop', (e) => {
-        e.preventDefault();
-        containerElement.classList.remove('drag-over');
-        const droppedCardId = e.dataTransfer.getData('text/plain');
-        if (draggedCardId && droppedCardId === draggedCardId && onDropCard) {
-            onDropCard(draggedCardId, dragSourceArea, areaId);
-            draggedCard = null;
-            draggedCardId = null;
-            dragSourceArea = null;
-        }
-    });
-    if (areaId.includes('dun')) {
-        containerElement.classList.add('droppable-dun');
-    }
+
+    // 拖拽功能仅十三水用
 }
 
 export function renderPlayerHand(containerId, hand, isHidden = false) {
@@ -148,16 +116,8 @@ export function renderPlayerHand(containerId, hand, isHidden = false) {
     } else {
         handContainer.classList.remove('hidden');
     }
-    hand.forEach(card => {
-        const cardElement = createCardElement(card, false);
-        if (isHidden) {
-            const cardBack = document.createElement('div');
-            cardBack.className = 'card-back';
-            cardElement.innerHTML = '';
-            cardElement.appendChild(cardBack);
-        }
-        handContainer.appendChild(cardElement);
-    });
+    // 斗地主用横向堆叠方式
+    renderStackedCards(handContainer, hand, 'hand', [], null, null, { cardWidth: CARD_WIDTH, cardHeight: CARD_HEIGHT, baseOverlapPercent: DDZ_HAND_OVERLAP });
 }
 
 export function updateCardCount(playerId, count) {
@@ -171,8 +131,5 @@ export function renderPlayedCards(containerId, cards) {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = '';
-    cards.forEach(card => {
-        const cardElement = createCardElement(card, false);
-        container.appendChild(cardElement);
-    });
+    renderStackedCards(container, cards, 'play', [], null, null, { cardWidth: CARD_WIDTH, cardHeight: CARD_HEIGHT, baseOverlapPercent: DDZ_HAND_OVERLAP });
 }
