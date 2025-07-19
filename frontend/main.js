@@ -91,7 +91,7 @@ function handleCardDrop(cardElement, targetDun) {
     const card = currentGame.players[0].hand.find(c => c.id === cardId);
     playerGroups[dunIndex].push(card);
     
-    checkAllDuns Validity();
+    checkAllDunsValidity();
     return true; // Allow drop
 }
 
