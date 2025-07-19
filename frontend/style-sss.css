@@ -1,0 +1,284 @@
+/* 十三水专用样式 */
+
+html, body, #app {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden !important;
+    padding: 0;
+    margin: 0;
+    background: linear-gradient(180deg, #1f344d 0%, #2b4562 100%);
+}
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+}
+:root {
+    --sss-background-dark: #1f344d;
+    --sss-background-light: #2b4562;
+    --accent-color: #ffc947;
+    --primary-color: #1a2238;
+    --secondary-color: #2a3a5e;
+    --card-bg: #fff;
+    --sss-seat-bg-me: #2a3a5e;
+    --sss-seat-bg-ai: #1f344d;
+    --sss-seat-border: #ffc947;
+    --sss-dun-bg: #1f344d;
+    --sss-dun-border: #4a6c92;
+    --sss-card-selected-border: #ffc947;
+    --sss-card-selected-shadow: 0 0 16px 2px rgba(255, 201, 71, 0.6);
+    --sss-message-color: #ffde94;
+    --border-radius: 16px;
+}
+
+/* 主容器 */
+.thirteen-water-container {
+    background: var(--sss-background-dark);
+    min-height: 100vh;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    padding: 16px;
+    max-width: 420px;
+    width: 100vw;
+    margin: 0 auto;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 22px var(--sss-seat-border), 0 1.5px 5px #1a462a6a;
+    overflow: hidden;
+}
+
+/* 顶部 */
+.sss-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 14px;
+}
+.exit-btn {
+    background: linear-gradient(90deg, #fff 60%, #ffd984 100%);
+    color: #1a2238;
+    font-weight: bold;
+    border: none;
+    border-radius: 9px;
+    padding: 7px 22px;
+    cursor: pointer;
+    margin-right: 18px;
+    font-size: 17px;
+    box-shadow: 0 1.5px 6px rgba(255, 201, 71, 0.3);
+    transition: all 0.2s;
+}
+.exit-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(255, 201, 71, 0.4); }
+.player-score {
+    flex: 1;
+    text-align: right;
+    color: var(--accent-color);
+    font-weight: 900;
+    font-size: 21px;
+    letter-spacing: 2px;
+    margin-right: 8px;
+    text-shadow: 0 2px 7px rgba(255, 201, 71, 0.4);
+}
+.player-score span { font-size: 18px; margin-right: 4px; }
+
+/* 座位区 */
+.player-seats {
+    display: flex;
+    margin-bottom: 18px;
+    gap: 8px;
+    justify-content: space-between;
+}
+.player-seat {
+    border: none;
+    border-radius: 10px;
+    flex-grow: 1;
+    color: var(--accent-color);
+    background: var(--sss-seat-bg-ai);
+    text-align: center;
+    padding: 12px 0;
+    font-weight: 700;
+    font-size: 17px;
+    box-shadow: 0 4px 22px rgba(255, 201, 71, 0.2), 0 1.5px 5px rgba(26, 34, 56, 0.4);
+    box-sizing: border-box;
+    transition: color .28s, background .28s, box-shadow .28s;
+}
+.player-seat:first-child {
+    color: var(--accent-color);
+    background: var(--sss-seat-bg-me);
+}
+.player-seat .status {
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 400;
+}
+.player-seat.processed {
+    background: var(--accent-color);
+    color: #1a2238;
+    box-shadow: 0 4px 22px var(--accent-color), 0 1.5px 5px rgba(26, 34, 56, 0.4);
+}
+
+/* 手牌与道区 */
+.sss-hand-area {
+    position: relative;
+    width: 100vw;
+    min-height: 133px;
+    height: 133px;
+    border-radius: 14px;
+    background: var(--sss-dun-bg);
+    margin-bottom: 20px;
+    box-shadow: 0 4px 22px rgba(0, 0, 0, 0.2), 0 1.5px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 0 16px;
+    overflow: hidden;
+}
+.dun-area {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+.dun-area .card-display-area {
+    flex: 1;
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+.dun-area .dun-label {
+    color: var(--accent-color);
+    font-size: 18px;
+    font-weight: 600;
+    pointer-events: none;
+    background: transparent;
+    white-space: nowrap;
+    margin-left: 16px;
+}
+.sss-hand-area.droppable-dun, .dun-area.droppable-dun {
+     border: 2px dashed var(--sss-dun-border);
+}
+
+/* 卡牌样式 */
+.card {
+    position: absolute;
+    width: 56px;
+    height: 76px;
+    border-radius: 6px;
+    background: var(--card-bg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    transition: transform 0.13s, box-shadow 0.13s, border 0.13s;
+    cursor: pointer;
+}
+.card img {
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    pointer-events: none;
+}
+.card.selected {
+    transform: translateY(-15px);
+    border: 2.5px solid var(--sss-card-selected-border);
+    box-shadow: var(--sss-card-selected-shadow);
+}
+.card:not(.selected):hover {
+    transform: translateY(-5px);
+}
+
+/* 操作区 */
+.sss-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 14px;
+    justify-content: space-between;
+}
+.sss-actions .action-btn {
+    flex: 1;
+    padding: 13px 0;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 10px;
+    box-shadow: 0 2px 9px rgba(0,0,0,0.2);
+}
+.sss-actions .action-btn.ready {
+    background: var(--accent-color);
+    color: #1a2238;
+    box-shadow: 0 2px 9px rgba(255, 201, 71, 0.4);
+}
+.sss-actions .action-btn.ready:hover:not(:disabled) {
+    background: #ffd984;
+}
+.sss-actions .action-btn.auto-split {
+    background: var(--secondary-color);
+    color: #f0f0f0;
+    box-shadow: 0 2px 9px rgba(42, 58, 94, 0.4);
+}
+.sss-actions .action-btn.compare {
+    background: var(--accent-color);
+    color: #1a2238;
+    box-shadow: 0 2px 9px rgba(255, 201, 71, 0.4);
+}
+.sss-actions .action-btn:disabled {
+    background: #444;
+    color: #888;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+.sss-message-area {
+    color: var(--sss-message-color);
+    text-align: center;
+    font-size: 16px;
+    margin-top: 8px;
+    min-height: 24px;
+}
+
+/* 结果弹窗 */
+.results-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 500;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem;
+    color: white;
+    overflow: hidden;
+}
+.player-result {
+    background: var(--primary-color);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    width: 95%;
+    max-width: 500px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+}
+.player-result .score-info {
+    font-weight: 700;
+    color: var(--accent-color);
+    margin-bottom: 8px;
+}
+.player-result .foul-status {
+    color: #d9534f;
+    font-weight: 800;
+    margin-left: 6px;
+}
+.player-result .dun-display {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 3px;
+}
+.player-result .card-img-small {
+    width: 46px;
+    height: 66px;
+    border-radius: 5px;
+}
+
+/* 禁止任何滚动条 */
+body, html, #app, .thirteen-water-container, .sss-hand-area, .dun-area, .results-overlay {
+    overflow: hidden !important;
+}
