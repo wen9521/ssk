@@ -1,4 +1,5 @@
 export function renderThirteenWaterBoard(players) {
+    // 蓝灰橙风格布局，对应 style.css
     return `
         <div class="thirteen-water-container">
             <div class="sss-header">
