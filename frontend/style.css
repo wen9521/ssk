@@ -1,25 +1,184 @@
-/* 基础通用样式（重置和按钮） */
+/* === CSS RESET === */
 *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
-html, body, #app {
+
+html, body {
     width: 100vw;
-    height: 100vh;
-    padding: 0;
-    margin: 0;
-    overflow: hidden !important;
-}
-body {
+    min-height: 100vh;
+    font-size: 16px;
+    -webkit-tap-highlight-color: transparent;
+    background: linear-gradient(135deg, #222f4e 0%, #2d234f 100%);
+    color: #fff;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: #181c2b;
+    overflow: hidden;
+}
+
+#app {
+    width: 100vw;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* === LOBBY MAIN SCREEN === */
+.lobby-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    background: none;
+}
+
+.lobby-title {
+    font-size: 3.2rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    margin-bottom: 2.7rem;
+    color: #ffd84c;
+    text-shadow: 0 3px 12px #0004, 0 0px 80px #ffd84c80;
+    font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.game-menu {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.2rem;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.game-card {
+    background: linear-gradient(135deg, #3c2b68 70%, #ffda44 100%);
+    padding: 2.2rem 1.5rem 2.7rem 1.5rem;
+    border-radius: 22px;
+    box-shadow: 0 8px 32px #0005, 0 0px 120px #ffd84c22;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.22s, box-shadow 0.22s;
+    cursor: pointer;
+}
+
+.game-card:hover {
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: 0 16px 52px #ffd84c60;
+}
+
+.game-title {
+    font-size: 2.1rem;
+    font-weight: bold;
+    margin-bottom: 0.7rem;
+    color: #ffda44;
+    text-shadow: 0 2px 8px #44220033;
+    letter-spacing: 2px;
+}
+
+.game-description {
+    font-size: 1.15rem;
+    color: #fff;
+    margin-bottom: 2.2rem;
+    opacity: 0.93;
+    text-align: center;
+    line-height: 1.6;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1.3rem;
+}
+
+.lobby-btn {
+    padding: 0.9rem 2.2rem;
+    border: none;
+    border-radius: 16px;
+    font-size: 1.18rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 3px 15px #ffd84c44;
+    letter-spacing: 1px;
+    transition: background 0.19s, box-shadow 0.19s, transform 0.17s;
+}
+
+.lobby-btn.trial {
+    background-color: #ffda44;
+    color: #442200;
+}
+.lobby-btn.trial:hover {
+    background-color: #ffe880;
+    transform: scale(1.07);
+    box-shadow: 0 6px 24px #ffd84c70;
+}
+
+.lobby-btn.match {
+    background-color: #3a2b68;
     color: #fff;
 }
-button, .action-btn {
-    outline: none;
-    border: none;
-    font-size: 1rem;
-    font-family: inherit;
-    user-select: none;
+.lobby-btn.match:disabled {
+    background-color: #aaa;
+    color: #555;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+.lobby-btn.match:not(:disabled):hover {
+    background-color: #5a43a3;
+    box-shadow: 0 6px 18px #ffd84c33;
+    transform: scale(1.06);
+}
+
+@media (max-width: 850px) {
+    .game-menu {
+        grid-template-columns: 1fr;
+        max-width: 94vw;
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .lobby-title {
+        font-size: 2.2rem;
+        margin-bottom: 1.7rem;
+    }
+    .game-card {
+        padding: 1.2rem 0.7rem 1.5rem 0.7rem;
+        border-radius: 16px;
+    }
+    .game-title {
+        font-size: 1.3rem;
+        margin-bottom: 0.5rem;
+    }
+    .game-description {
+        font-size: 1rem;
+        margin-bottom: 1.1rem;
+    }
+    .lobby-btn {
+        font-size: 1rem;
+        border-radius: 11px;
+        padding: 0.7rem 1.2rem;
+    }
+}
+
+/* 禁止全局滚动条 */
+body, html, #app, .lobby-container {
+    overflow: hidden !important;
+}
+
+/* 可选：主界面底部版权 */
+.lobby-footer {
+    width: 100%;
+    text-align: center;
+    color: #ffd84c;
+    font-size: 0.95rem;
+    opacity: 0.8;
+    margin-top: 2.7rem;
+    letter-spacing: 1px;
 }
