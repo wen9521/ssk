@@ -41,12 +41,47 @@ export function renderPlayerHand(playerId, hand, isPlayer = false) {
     const handContainer = document.getElementById(`hand-${playerId}`);
     if (!handContainer) return;
 
-    handContainer.innerHTML = ''; 
-    hand.forEach((card, index) => {
-        const cardElement = createCardElement(card, isPlayer);
-        cardElement.style.animation = `cardFlyIn 0.5s ${index * 0.05}s ease-out both`;
-        handContainer.appendChild(cardElement);
-    });
+    handContainer.innerHTML = '';
+
+    // 扇形平铺只对玩家自己手牌生效（即 isPlayer === false）
+    if (!isPlayer && hand.length > 0) {
+        // 扇形参数
+        const total = hand.length;
+        const maxAngle = 32;  // 扇形最大角度（总角度）
+        const maxSpread = 50; // 最大左右平移距离(px)
+        const cardWidth = 85; // 牌宽度（可根据实际样式调整）
+
+        handContainer.style.position = 'relative';
+        handContainer.style.height = '140px'; // 给牌腾出空间
+
+        hand.forEach((card, index) => {
+            const cardElement = createCardElement(card, isPlayer);
+
+            // 扇形核心：每张牌角度和横向偏移
+            const middle = (total - 1) / 2;
+            const angle = (index - middle) * (maxAngle / total);
+            const offset = (index - middle) * (maxSpread / middle);
+
+            cardElement.style.position = 'absolute';
+            cardElement.style.left = '50%';
+            cardElement.style.bottom = '0';
+            cardElement.style.transform = `
+                translateX(${offset}px)
+                rotate(${angle}deg)
+            `;
+            cardElement.style.zIndex = index;
+
+            cardElement.style.animation = `cardFlyIn 0.5s ${index * 0.05}s ease-out both`;
+            handContainer.appendChild(cardElement);
+        });
+    } else {
+        // AI手牌/非玩家手牌仍用老方式横向排列
+        hand.forEach((card, index) => {
+            const cardElement = createCardElement(card, isPlayer);
+            cardElement.style.animation = `cardFlyIn 0.5s ${index * 0.05}s ease-out both`;
+            handContainer.appendChild(cardElement);
+        });
+    }
 }
 
 /**
