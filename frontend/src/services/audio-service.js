@@ -1,29 +1,26 @@
 const soundMap = {
-    // General Sounds
-    'playCard': '/assets/sounds/fapai.mp3',
-    'pass': '/assets/sounds/woman_bu_jiao.ogg',
-    'selectCard': '/assets/sounds/fapai1.mp3',
-    'gameStart': '/assets/sounds/start.mp3',
-    
-    // Dou Dizhu Sounds
-    'doudizhu-bgMusic': '/assets/sounds/bg.mp3',
-    'doudizhu-win': '/assets/sounds/start_a.ogg',
-    'doudizhu-lose': '/assets/sounds/woman_bu_jiao.ogg',
-    'bid1': '/assets/sounds/woman_jiao_di_zhu.ogg',
-    'bid2': '/assets/sounds/woman_jiao_di_zhu.ogg',
-    'bid3': '/assets/sounds/woman_jiao_di_zhu.ogg',
-    'trio': '/assets/sounds/man_san_dai_yi_dui.ogg',
-    'trio_single': '/assets/sounds/man_san_dai_yi_dui.ogg',
-    'trio_pair': '/assets/sounds/man_san_dai_yi_dui.ogg',
-    'straight': '/assets/sounds/shunzi.mp3',
-    'pair': '/assets/sounds/duizi.mp3',
-    'bomb': '/assets/sounds/zhadan.mp3',
-    'rocket': '/assets/sounds/wangzha.mp3',
-    'airplane': '/assets/sounds/feiji.mp3',
+    // --- Shared Sounds ---
+    'gameStart': '/assets/sounds/thirteen-water/game-start.mp3', // Using a generic start sound
+    'selectCard': '/assets/sounds/thirteen-water/set-cards.mp3', // Using a generic select sound
 
-    // Thirteen Water Sounds
+    // --- Dou Dizhu Sounds (Currently disabled due to missing files) ---
+    // 'doudizhu-bgMusic': '/assets/sounds/bg.mp3',
+    // 'doudizhu-win': '/assets/sounds/start_a.ogg',
+    // 'doudizhu-lose': '/assets/sounds/woman_bu_jiao.ogg',
+    // 'pass': '/assets/sounds/woman_bu_jiao.ogg',
+    // 'bid1': '/assets/sounds/woman_jiao_di_zhu.ogg',
+    // 'bid2': '/assets/sounds/woman_jiao_di_zhu.ogg',
+    // 'bid3': '/assets/sounds/woman_jiao_di_zhu.ogg',
+    // 'playCard': '/assets/sounds/fapai.mp3',
+    // 'pair': '/assets/sounds/duizi.mp3',
+    // 'trio': '/assets/sounds/man_san_dai_yi_dui.ogg',
+    // 'bomb': '/assets/sounds/zhadan.mp3',
+    // 'rocket': '/assets/sounds/wangzha.mp3',
+    // 'airplane': '/assets/sounds/feiji.mp3',
+    // 'straight': '/assets/sounds/shunzi.mp3',
+
+    // --- Thirteen Water Sounds (Verified Paths) ---
     'thirteen-water-bgMusic': '/assets/sounds/thirteen-water/background.mp3',
-    'thirteen-water-start': '/assets/sounds/thirteen-water/game-start.mp3',
     'thirteen-water-deal': '/assets/sounds/thirteen-water/deal-cards.mp3',
     'thirteen-water-set': '/assets/sounds/thirteen-water/set-cards.mp3',
     'thirteen-water-compare': '/assets/sounds/thirteen-water/compare.mp3',
@@ -46,9 +43,8 @@ function loadSound(name, src) {
         };
         sound.onerror = () => {
             console.warn(`Warning: Sound file not found or failed to load: ${src}. The sound for '${name}' will not be played.`);
-            resolve(null); // Resolve with null on error
+            resolve(null);
         };
-        // Timeout to prevent getting stuck
         setTimeout(() => resolve(sound), 3000);
     });
 }
@@ -60,6 +56,7 @@ export async function preloadSounds() {
 }
 
 export function playSound(name, { loop = false, volume = 1.0 } = {}) {
+    if (!soundMap[name]) return; // Do not attempt to play a disabled sound
     const sound = audioCache[name];
     if (sound) {
         sound.currentTime = 0;
@@ -70,6 +67,7 @@ export function playSound(name, { loop = false, volume = 1.0 } = {}) {
 }
 
 export function stopSound(name) {
+    if (!soundMap[name]) return;
     const sound = audioCache[name];
     if (sound) {
         sound.pause();
