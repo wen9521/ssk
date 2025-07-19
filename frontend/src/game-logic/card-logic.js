@@ -19,6 +19,7 @@ function isConsecutive(ranks) {
     return true;
 }
 
+// 基础牌型
 function getSingle(cards, counts) {
     if (cards.length !== 1) return null;
     return { type: 'single', rank: cards[0].rank, name: '单张', cards };
@@ -83,17 +84,23 @@ function getTrioWithAttachment(cards, counts) {
     return null;
 }
 function getFourWithAttachment(cards, counts) {
-    if (cards.length !== 6 && cards.length !== 8) return null;
     let fourRank = -1;
     counts.forEach((count, rank) => {
         if (count === 4) fourRank = rank;
     });
     if (fourRank === -1) return null;
-    if (cards.length === 6) return { type: 'four_two_singles', rank: fourRank, name: '四带二', cards };
+    // 四带二单
+    if (cards.length === 6) {
+        const singles = cards.filter(c => c.rank !== fourRank);
+        if (singles.length === 2 && singles[0].rank !== singles[1].rank) {
+            return { type: 'four_two_singles', rank: fourRank, name: '四带二', cards };
+        }
+    }
+    // 四带两对
     if (cards.length === 8) {
-        let pairCount = 0;
-        counts.forEach((count) => { if (count === 2) pairCount++; });
-        if (pairCount === 2) {
+        const pairs = cards.filter(c => c.rank !== fourRank);
+        const countsPairs = getRankCounts(pairs);
+        if ([...countsPairs.values()].every(count => count === 2)) {
             return { type: 'four_two_pairs', rank: fourRank, name: '四带两对', cards };
         }
     }
@@ -107,19 +114,21 @@ function getAirplane(cards, counts) {
     trioRanks.sort((a, b) => a - b);
     if (trioRanks.length < 2 || !isConsecutive(trioRanks)) return null;
     const numTrios = trioRanks.length;
+    // 飞机不带
     if (cards.length === numTrios * 3 && counts.size === numTrios) {
         return { type: 'airplane', rank: trioRanks[0], name: '飞机', cards };
     }
+    // 飞机带单（小翼）
     if (cards.length === numTrios * 4) {
-        const singleCount = cards.length - numTrios * 3;
-        if (singleCount === numTrios) {
+        const wings = cards.filter(c => trioRanks.indexOf(c.rank) === -1);
+        if (wings.length === numTrios && wings.every((c, i, arr) => arr.filter(x=>x.rank===c.rank).length===1)) {
             return { type: 'airplane_singles', rank: trioRanks[0], name: '飞机带小翼', cards };
         }
     }
+    // 飞机带对（大翼）
     if (cards.length === numTrios * 5) {
-        let pairCount = 0;
-        counts.forEach(count => { if (count === 2) pairCount++; });
-        if (pairCount === numTrios) {
+        const wings = cards.filter(c => trioRanks.indexOf(c.rank) === -1);
+        if (wings.length === numTrios * 2 && wings.every((c, i, arr) => arr.filter(x=>x.rank===c.rank).length===2)) {
             return { type: 'airplane_pairs', rank: trioRanks[0], name: '飞机带大翼', cards };
         }
     }
@@ -129,14 +138,14 @@ function getAirplane(cards, counts) {
 const parsers = [
     getRocket,
     getBomb,
+    getAirplane,
     getSingle,
     getPair,
     getTrio,
     getStraight,
     getConsecutivePairs,
     getTrioWithAttachment,
-    getFourWithAttachment,
-    getAirplane
+    getFourWithAttachment
 ];
 
 export function parseCardType(cards) {
