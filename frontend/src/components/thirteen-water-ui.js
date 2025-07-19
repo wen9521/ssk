@@ -18,18 +18,21 @@ export function renderThirteenWaterBoard(players) {
             </div>
 
             <div id="player-hand-area" class="sss-hand-area">
-                <!-- 玩家的13张手牌将在这里渲染 -->
+                <!-- This will also serve as a card display area -->
             </div>
 
             <div class="dun-area-container">
                 <div class="dun-area" id="front-dun" data-dun-index="0">
-                    <div class="dun-label">头道 (3)</div>
+                    <div class="card-display-area"></div>
+                    <div class="dun-label">头道 (0)</div>
                 </div>
                 <div class="dun-area" id="middle-dun" data-dun-index="1">
-                    <div class="dun-label">中道 (5)</div>
+                    <div class="card-display-area"></div>
+                    <div class="dun-label">中道 (0)</div>
                 </div>
                 <div class="dun-area" id="back-dun" data-dun-index="2">
-                    <div class="dun-label">尾道 (5)</div>
+                    <div class="card-display-area"></div>
+                    <div class="dun-label">尾道 (0)</div>
                 </div>
             </div>
 

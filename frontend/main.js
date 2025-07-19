@@ -240,14 +240,14 @@ function renderThirteenWaterUI() {
     const { hand, head, middle, tail, selected, isReady } = thirteenWaterGameState;
 
     const handContainer = document.getElementById('player-hand-area');
-    const headContainer = document.getElementById('front-dun');
-    const middleContainer = document.getElementById('middle-dun');
-    const tailContainer = document.getElementById('back-dun');
+    const headDunContainer = document.querySelector('#front-dun .card-display-area');
+    const middleDunContainer = document.querySelector('#middle-dun .card-display-area');
+    const tailDunContainer = document.querySelector('#back-dun .card-display-area');
 
     // Render player's duns and hand with stacked cards
-    renderStackedCards(headContainer, head, 'head', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
-    renderStackedCards(middleContainer, middle, 'middle', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
-    renderStackedCards(tailContainer, tail, 'tail', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
+    renderStackedCards(headDunContainer, head, 'head', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
+    renderStackedCards(middleDunContainer, middle, 'middle', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
+    renderStackedCards(tailDunContainer, tail, 'tail', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
     renderStackedCards(handContainer, hand, 'hand', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
 
     // Update dun labels with card count
@@ -280,11 +280,11 @@ function handleReadyClick() {
         currentGame.startGame(); // Deals cards internally
         const myHand = currentGame.players[0].hand;
         
-        // Distribute cards to player's hand and duns (initial messy state)
-        thirteenWaterGameState.hand = myHand.slice(0, 3); // Example initial state
-        thirteenWaterGameState.head = myHand.slice(3, 6);
-        thirteenWaterGameState.middle = myHand.slice(6, 11);
-        thirteenWaterGameState.tail = myHand.slice(11, 13);
+        // **FIX**: All cards go to the hand initially. Duns are empty.
+        thirteenWaterGameState.hand = myHand;
+        thirteenWaterGameState.head = [];
+        thirteenWaterGameState.middle = [];
+        thirteenWaterGameState.tail = [];
         
         // AI processing
         thirteenWaterGameState.aiProcessed = [false, false, false];

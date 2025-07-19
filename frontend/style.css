@@ -358,7 +358,15 @@ body {
     box-shadow: 0 4px 22px var(--accent-color), 0 1.5px 5px rgba(26, 34, 56, 0.4);
 }
 
-.sss-hand-area, .dun-area {
+.dun-area {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Distribute label and card area */
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.sss-hand-area {
     position: relative;
     width: 100%;
     min-height: 133px; /* PAI_DUN_HEIGHT */
@@ -370,29 +378,30 @@ body {
     display: flex;
     align-items: center;
     box-sizing: border-box;
-    padding-left: 16px;
-    padding-right: 70px; /* Space for label */
+    padding: 0 16px;
     overflow: hidden; /* Hide overflowing cards */
 }
 
-.sss-hand-area.droppable-dun, .dun-area.droppable-dun {
-     border: 2px dashed var(--sss-dun-border); /* Dashed border for droppable areas */
-}
-
-.dun-area .dun-label {
-    position: absolute;
-    right: 16px;
-    top: 50%;
-    transform: translateY(-50%);
+.dun-area .card-display-area {
+    flex: 1; /* Allow card area to grow */
+    position: relative;
     height: 100%;
     display: flex;
     align-items: center;
+}
+
+.dun-area .dun-label {
     color: var(--sss-text-color-bright);
     font-size: 18px;
     font-weight: 600;
     pointer-events: none;
     background: transparent;
     white-space: nowrap;
+    margin-left: 16px; /* Space between cards and label */
+}
+
+.sss-hand-area.droppable-dun, .dun-area.droppable-dun {
+     border: 2px dashed var(--sss-dun-border); /* Dashed border for droppable areas */
 }
 
 .sss-actions {
