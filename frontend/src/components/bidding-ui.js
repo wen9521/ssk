@@ -28,22 +28,3 @@ export function renderBiddingControls(highestBid = 0) {
 export function renderBiddingStatus(text) {
     return `<div class="bidding-status-indicator">${text}</div>`;
 }
-
-/**
- * 我们还需要为这些新元素添加一些CSS样式。
- * 可以将以下样式代码添加到 style.css 中
- * 
- * .bidding-status-indicator {
- *   position: absolute;
- *   bottom: 120px;
- *   left: 50%;
- *   transform: translateX(-50%);
- *   background: rgba(0,0,0,0.7);
- *   color: white;
- *   padding: 15px 30px;
- *   border-radius: 20px;
- *   font-size: 1.5rem;
- *   font-weight: bold;
- *   z-index: 250;
- * }
- */
