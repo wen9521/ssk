@@ -139,18 +139,17 @@ export class DouDizhuGame {
     }
 
     // --- AI智能叫分 ---
-    aiSmartBid(aiPlayerId) {
+    aiSimpleBid(aiPlayerId) {
+        // 智能AI叫分逻辑
         const player = this.getPlayerById(aiPlayerId);
         const hand = player.hand;
         let score = 0;
         let bombCount = 0, kingCount = 0, highCardCount = 0, longStraight = 0;
-        // 统计关键牌
         hand.forEach(c => {
             if (c.rank === 98 || c.rank === 99) kingCount++;
             if (hand.filter(x => x.rank === c.rank).length === 4) bombCount++;
             if (c.rank >= 14) highCardCount++;
         });
-        // 顺子判定
         let ranks = [...new Set(hand.map(c => c.rank))].sort((a, b) => a - b);
         let current = 1, maxStraight = 1;
         for (let i = 1; i < ranks.length; i++) {
@@ -160,14 +159,14 @@ export class DouDizhuGame {
         }
         longStraight = maxStraight;
         score = bombCount*2 + kingCount + highCardCount*0.5 + (longStraight>=5?1:0);
-        if (score >= 4) return 3;
-        if (score >= 2.5) return 2;
-        if (score >= 1.2) return 1;
+        if (score >= 4 && this.highestBid < 3) return 3;
+        if (score >= 2.5 && this.highestBid < 2) return 2;
+        if (score >= 1.2 && this.highestBid < 1) return 1;
         return 0;
     }
 
     // --- AI智能出牌（优先复杂牌型） ---
-    aiSmartPlay(aiPlayerId) {
+    aiSimplePlay(aiPlayerId) {
         const player = this.getPlayerById(aiPlayerId);
         const isFreePlay = this.passPlayCount >= 2 || !this.lastValidPlay.cardType;
         const allPlays = this.findAllPlays(player.hand, true); // true:复杂牌型
