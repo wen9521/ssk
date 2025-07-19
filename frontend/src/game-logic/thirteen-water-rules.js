@@ -41,7 +41,7 @@ const SpecialCardTypes = {
  * @returns {object} - { type, rank, name, cards }
  */
 function getHandDetails(hand) {
-    if (!hand || hand.length === 0) return { type: CardTypes.HIGH_CARD, rank: 0, name: '乌龙' }; // Changed to return object with type directly
+    if (!hand || hand.length === 0) return { type: CardTypes.HIGH_CARD, rank: 0, name: '乌龙' };
 
     const ranks = hand.map(c => c.rank).sort((a, b) => a - b);
     const suits = hand.map(c => c.suit.key);
@@ -88,8 +88,8 @@ function compareHands(hand1, hand2) {
     const details1 = getHandDetails(hand1);
     const details2 = getHandDetails(hand2);
 
-    if (details1.type.value > details2.type.value) return 1; // Access value property here
-    if (details1.type.value < details2.type.value) return -1; // Access value property here
+    if (details1.type.value > details2.type.value) return 1;
+    if (details1.type.value < details2.type.value) return -1;
     
     // 类型相同，比较点数
     if (details1.rank > details2.rank) return 1;
@@ -120,7 +120,7 @@ export class ThirteenWaterGame {
     }
 
     startGame() {
-        this.deck = shuffle(createDeck());
+        this.deck = shuffle(createDeck().filter(card => card.type !== 'joker'));
         this.players.forEach((p, i) => {
             p.hand = this.deck.slice(i * 13, (i + 1) * 13).sort((a, b) => a.rank - b.rank);
             p.specialType = this.checkSpecialType(p.hand);
@@ -135,26 +135,19 @@ export class ThirteenWaterGame {
         const rankCounts = new Map();
         ranks.forEach(r => rankCounts.set(r, (rankCounts.get(r) || 0) + 1));
         
-        // 优先检查最特殊的牌型
         if (uniqueRanks.length === 13) return SpecialCardTypes.DRAGON;
         if (hand.filter(c => c.rank > 7).length === 13) return SpecialCardTypes.ALL_BIG;
         if (hand.filter(c => c.rank < 8).length === 13) return SpecialCardTypes.ALL_SMALL;
+        
+        const front = getHandDetails(hand.slice(0,3));
+        const middle = getHandDetails(hand.slice(3,8));
+        const back = getHandDetails(hand.slice(8,13));
+        if(front.type.value === CardTypes.FLUSH.value && middle.type.value === CardTypes.FLUSH.value && back.type.value === CardTypes.FLUSH.value) return SpecialCardTypes.THREE_FLUSHES;
+        if(front.type.value === CardTypes.STRAIGHT.value && middle.type.value === CardTypes.STRAIGHT.value && back.type.value === CardTypes.STRAIGHT.value) return SpecialCardTypes.THREE_STRAIGHTS;
 
-        // 检查三同花和三顺子需要先将牌分成三墩的可能性
-        // 注意：这里的实现简化了，没有进行复杂的组合搜索，只检查了按序分组的情况
-        // 一个更完善的实现需要尝试所有可能的三墩组合来检查是否有三同花或三顺子。
-        // 但对于这个简单的AI，我们可以假设它会尽量理出牌型。
-        // 如果需要更精确的特殊牌型判断，需要更复杂的算法。
-
-        // 简化检查：假设牌已经大致排序，检查是否有连续的三同花/三顺子
-        // (这并不是完全符合规则的实现，十三水的三同花/三顺子不要求牌是连续的)
-        // 为了修复当前的bug并允许游戏进行，我们暂时跳过这个简化判断
-        // 一个正确的实现应该在理牌后检查三同花/三顺子。
-
-        // 检查六对半
         if ([...rankCounts.values()].filter(c => c === 2).length === 6) return SpecialCardTypes.SIX_PAIRS;
 
-        return null; // 不是特殊牌型
+        return null;
     }
     
     // 高效的AI自动理牌
@@ -177,61 +170,29 @@ export class ThirteenWaterGame {
         let front = remaining1.filter(c => !bestMiddle.find(mc => mc.id === c.id));
         
         // 3. 检查是否 "倒水" (乌龙)
-        // 现在 getHandDetails 返回对象包含 type.value
-        const backDetails = getHandDetails(bestBack);
-        const middleDetails = getHandDetails(bestMiddle);
-        const frontDetails = getHandDetails(front);
-
         if (compareHands(bestBack, bestMiddle) >= 0 && compareHands(bestMiddle, front) >= 0) {
             player.groups = [front, bestMiddle, bestBack];
         } else {
              // 如果倒水了，就降级牌型再试
              // 比如尾墩强拆一个同花，用顺子去组
              // 这里为了简化，我们只做一个简单的降级：把头墩最强的牌和中墩最弱的牌交换
-            if(front.length > 0 && bestMiddle.length > 0) { // Add check for empty arrays
-                 const cardToMove = front.pop();
-                 bestMiddle.push(cardToMove);
-                 front.sort((a,b)=>a.rank - b.rank);
-                 bestMiddle.sort((a,b)=>a.rank-b.rank);
-            }
+            bestMiddle.push(front.pop());
+            front.push(bestMiddle.shift());
+            front.sort((a,b)=>a.rank - b.rank);
+            bestMiddle.sort((a,b)=>a.rank-b.rank);
             player.groups = [front, bestMiddle, bestBack];
-        }
-
-         // 在理牌后检查三同花和三顺子
-         // 注意：这个检查应该更复杂，需要考虑所有可能的分墩组合，这里只是一个简化的快速检查
-        if (!player.specialType) { // 确保不是已知的特殊牌型
-            const currentFrontDetails = getHandDetails(player.groups[0]);
-            const currentMiddleDetails = getHandDetails(player.groups[1]);
-            const currentBackDetails = getHandDetails(player.groups[2]);
-             if(
-                 currentFrontDetails.type.value === CardTypes.FLUSH.value && 
-                 currentMiddleDetails.type.value === CardTypes.FLUSH.value && 
-                 currentBackDetails.type.value === CardTypes.FLUSH.value
-                ) {
-                 player.specialType = SpecialCardTypes.THREE_FLUSHES;
-                 player.groups = [[],[],[]]; // 特殊牌型清空墩
-             } else if (
-                 currentFrontDetails.type.value === CardTypes.STRAIGHT.value && 
-                 currentMiddleDetails.type.value === CardTypes.STRAIGHT.value && 
-                 currentBackDetails.type.value === CardTypes.STRAIGHT.value
-                ) {
-                 player.specialType = SpecialCardTypes.THREE_STRAIGHTS;
-                 player.groups = [[],[],[]]; // 特殊牌型清空墩
-             }
         }
     }
     
     findBestHand(hand, size) {
         // 简化版的找最大牌型，不是全组合搜索
-        if (hand.length < size) return []; // Add check for hand size
         let bestHand = hand.slice(0, size);
         let bestDetails = getHandDetails(bestHand);
 
         // 这里仅作示例，实际需要更复杂的搜索
         // 比如暴力找出所有组合，然后比较大小
         // 为了性能，我们只随机抽样一部分组合
-        for(let i=0; i< (hand.length > size ? 500 : 100); i++) { // 限制迭代次数并根据手牌大小调整
-             if (hand.length < size) break; // Ensure hand is large enough
+        for(let i=0; i< (hand.length > 8 ? 500 : 100); i++) { // 限制迭代次数
             const randomHand = shuffle(hand).slice(0, size);
             const randomDetails = getHandDetails(randomHand);
             if(compareHands(randomHand, bestHand) > 0) {
@@ -253,8 +214,8 @@ export class ThirteenWaterGame {
                 
                 let sessionScore = 0;
                 // 1. 比较特殊牌型
-                const p1Special = p1.specialType?.value || 0; // Access value property
-                const p2Special = p2.specialType?.value || 0; // Access value property
+                const p1Special = p1.specialType?.value || 0;
+                const p2Special = p2.specialType?.value || 0;
 
                 if (p1Special || p2Special) {
                     if (p1Special > p2Special) sessionScore = (p1Special - 9) * 2; // 特殊牌型基础分
@@ -269,11 +230,10 @@ export class ThirteenWaterGame {
 
                     // 牌型加分
                     const scoreByHand = (handDetails) => {
-                         if (!handDetails || !handDetails.type) return 0; // Add check for valid handDetails
-                        if (handDetails.type.value === CardTypes.THREE_OF_A_KIND.value) return 2; // 冲三
-                        if (handDetails.type.value === CardTypes.FULL_HOUSE.value) return 1; // 中墩葫芦
-                        if (handDetails.type.value === CardTypes.FOUR_OF_A_KIND.value) return handDetails.cards.length === 5 ? 7 : 4; // 尾/中墩铁支
-                        if (handDetails.type.value === CardTypes.STRAIGHT_FLUSH.value) return handDetails.cards.length === 5 ? 10: 5; // 尾/中墩同花顺
+                        if (handDetails.type === CardTypes.THREE_OF_A_KIND) return 2; // 冲三
+                        if (handDetails.type === CardTypes.FULL_HOUSE) return 1; // 中墩葫芦
+                        if (handDetails.type === CardTypes.FOUR_OF_A_KIND) return handDetails.cards.length === 5 ? 7 : 4; // 尾/中墩铁支
+                        if (handDetails.type === CardTypes.STRAIGHT_FLUSH) return handDetails.cards.length === 5 ? 10: 5; // 尾/中墩同花顺
                         return 0;
                     }
                     p1RoundScore += scoreByHand(getHandDetails(p1.groups[2])); // 尾墩
@@ -283,10 +243,9 @@ export class ThirteenWaterGame {
                     p1RoundScore += scoreByHand(getHandDetails(p1.groups[0])); // 头墩
                     
                     // 打枪判断
-                    // Simplified check for '打枪'
-                    if(p1RoundScore === 3) p1RoundScore = 6; // 打枪对方3墩
-                    if(p1RoundScore === -3) p1RoundScore = -6; // 被对方打枪3墩
-                    
+                    if(Math.abs(p1RoundScore.toString().split('').filter(s=>s!=='-').join('')) === 3) {
+                       p1RoundScore *= 2;
+                    }
                     sessionScore = p1RoundScore;
                 }
                 
@@ -300,8 +259,7 @@ export class ThirteenWaterGame {
             id: p.id,
             name: p.name,
             score: scores.get(p.id),
-            // Ensure groups are correctly represented for results display
-            groups: p.specialType ? [] : p.groups.map(g => ({ ...getHandDetails(g), cards: g })),
+            groups: p.groups.map(g => ({ ...getHandDetails(g), cards: g })),
             specialType: p.specialType,
         }));
     }
