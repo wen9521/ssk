@@ -390,6 +390,41 @@ body {
 }
 
 
+/* --- 特殊效果 --- */
+.special-effect-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 999;
+    pointer-events: none;
+    font-size: 5rem;
+    font-weight: bold;
+    color: #ffde0a;
+    text-shadow: 0 0 10px #000, 0 0 20px #ffc400, 0 0 30px #ff8c00;
+    animation: effect-zoom-out 1.5s ease-out forwards;
+}
+
+@keyframes effect-zoom-out {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+    }
+    20% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 1;
+    }
+    80% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0;
+    }
+}
+
+
 /* 防止dialog和弹窗溢出 */
 dialog, .modal, .popup {
     max-width: 95vw !important;
