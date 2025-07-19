@@ -1,30 +1,62 @@
 package com.example.myapp;
 
-import androidx.appcompat.app.AppCompatActivity;
+import android.app.Activity;
+import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.webkit.WebSettings;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
+
+    private WebView myWebView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        
+        myWebView = findViewById(R.id.webview);
+        MyApplication.initializeWebView(myWebView); // 使用 Application 类中的方法来初始化
 
-        WebView webView = new WebView(this);
-        setContentView(webView);
+        // 添加 JavaScript 接口，命名为 "Android"
+        myWebView.addJavascriptInterface(new WebAppInterface(this), "Android");
+        
+        myWebView.loadUrl("https://3000-wen9521-ssk-1k8f3y4bs3b.ws-us115.gitpod.io");
+    }
 
-        WebSettings webSettings = webView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
-        webSettings.setDomStorageEnabled(true);
+    @Override
+    public void onBackPressed() {
+        if (myWebView.canGoBack()) {
+            myWebView.goBack();
+        } else {
+            super.onBackPressed();
+        }
+    }
 
-        webView.setVerticalScrollBarEnabled(false);
-        webView.setHorizontalScrollBarEnabled(false);
+    /**
+     * WebAppInterface 类允许 JavaScript 控制 Android 原生功能
+     */
+    public class WebAppInterface {
+        Activity activity;
 
-        webView.setWebViewClient(new WebViewClient());
+        /** Instantiate the interface and set the context */
+        WebAppInterface(Activity activity) {
+            this.activity = activity;
+        }
 
-        // 加载你的前端页面地址
-        webView.loadUrl("https://gewe.dpdns.org");
+        /** 从 JavaScript 调用，将屏幕设置为横屏 */
+        @JavascriptInterface
+        public void setOrientationToLandscape() {
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        }
+
+        /** 从 JavaScript 调用，将屏幕设置为竖屏 */
+        @JavascriptInterface
+        public void setOrientationToPortrait() {
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        }
     }
 }
