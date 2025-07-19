@@ -24,13 +24,29 @@ body {
     --background-color: #121828;
     --primary-color: #1a2238;
     --secondary-color: #2a3a5e;
-    --accent-color: #ffc947;
+    --accent-color: #ffc947; /* 主界面的橙色 */
     --text-color: #f0f0f0;
     --success-color: #5cb85c;
     --danger-color: #d9534f;
     --card-bg: #fff;
     --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     --border-radius: 12px;
+
+    /* Thirteen Water specific colors (orange theme) */
+    --sss-background-dark: #1f344d; /* 稍深的蓝灰色 */
+    --sss-background-light: #2b4562; /* 稍浅的蓝灰色 */
+    --sss-button-ready: #ffb14d; /* 准备按钮的橙色 */
+    --sss-button-ready-hover: #ffc947; 
+    --sss-text-color-bright: var(--accent-color); /* 十三水亮色文字 */
+    --sss-text-color-faded: #c0c0c0; /* 十三水次要文字 */
+    --sss-seat-bg-me: #3a5c7a; /* 我的座位背景 */
+    --sss-seat-bg-ai: #1f344d; /* AI座位背景 */
+    --sss-seat-border: var(--accent-color); /* 座位边框 */
+    --sss-dun-bg: #1f344d; /* 墩区背景 */
+    --sss-dun-border: #4a6c92; /* 墩区边框 */
+    --sss-card-selected-border: var(--accent-color); /* 选中卡牌边框 */
+    --sss-card-selected-shadow: 0 0 16px 2px rgba(255, 201, 71, 0.6); /* 选中卡牌阴影 */
+    --sss-message-color: #ffde94; /* 消息区域颜色 */
 }
 
 #app {
@@ -189,34 +205,42 @@ body {
     position: relative;
 }
 
-/* === CARD STYLES === */
+/* === CARD STYLES (General & Thirteen Water specific) === */
 .card {
-    position: relative;
+    position: absolute; /* Changed to absolute for stacking */
     width: 60px; /* Base width */
     height: 84px; /* Base height */
-    transition: transform 0.2s, filter 0.2s;
+    border-radius: 5px;
+    background: var(--card-bg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    transition: transform 0.13s, box-shadow 0.13s, border 0.13s;
     cursor: pointer;
 }
+
 .card img {
     width: 100%;
     height: 100%;
     border-radius: 5px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    pointer-events: none; /* Allow click on parent div */
 }
 
 .card.selected {
     transform: translateY(-15px);
-    filter: brightness(1.2);
+    border: 2.5px solid var(--sss-card-selected-border);
+    box-shadow: var(--sss-card-selected-shadow);
 }
 .card:not(.selected):hover {
     transform: translateY(-5px);
 }
 
+/* Specific for Doudizhu hand rendering (non-stacked) */
 .bottom-player .hand-container .card {
+    position: relative; /* Override absolute for stacking */
     margin: 0 -15px;
 }
 .hand-container.hidden .card {
-     margin: 0 -30px;
+    position: relative; /* Override absolute for stacking */
+    margin: 0 -30px;
 }
 
 /* --- Gameplay Areas --- */
@@ -227,17 +251,18 @@ body {
     min-height: 90px;
 }
 .played-cards-area .card, .landlord-cards-area .card {
+    position: relative; /* Override absolute for played cards */
     margin: 0 2px;
 }
 
-/* --- Action Buttons --- */
+/* --- Action Buttons (General) --- */
 .action-buttons-container {
     display: flex;
     gap: 1rem;
     margin-top: 1rem;
 }
 
-/* --- Status Indicators --- */
+/* --- Status Indicators (General) --- */
 .status-indicator, .bidding-status-indicator {
     padding: 0.5rem 1rem;
     background: rgba(0,0,0,0.7);
@@ -249,87 +274,177 @@ body {
 }
 
 
-/* === THIRTEEN WATER SPECIFIC STYLES === */
-.thirteen-water-board {
+/* === THIRTEEN WATER NEW STYLES === */
+.thirteen-water-container {
+    background: var(--sss-background-dark); /* Darker blue-grey */
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    padding: 0.5rem;
-    height: 100vh;
-    gap: 0.5rem;
-}
-
-.opponent-areas {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 0.5rem;
-    height: 15%;
-}
-
-.opponent {
-    border: 2px dashed var(--secondary-color);
+    box-sizing: border-box;
+    padding: 16px; /* Padding for the entire container */
+    max-width: 420px; /* Outer max width from React snippet */
+    width: 100%;
+    margin: 30px auto;
     border-radius: var(--border-radius);
-    color: var(--text-color);
+    box-shadow: 0 4px 22px var(--sss-seat-border), 0 1.5px 5px #1a462a6a; /* Adjusted shadow */
+}
+
+.sss-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 0.5rem;
-    font-size: 0.9rem;
+    margin-bottom: 14px;
 }
 
-.player-main-area {
-    height: 70%;
+.exit-btn {
+    background: linear-gradient(90deg, #fff 60%, #ffefd0 100%); /* Light orange gradient */
+    color: var(--primary-color);
+    font-weight: bold;
+    border: none;
+    border-radius: 9px;
+    padding: 7px 22px;
+    cursor: pointer;
+    margin-right: 18px;
+    font-size: 17px;
+    box-shadow: 0 1.5px 6px rgba(255, 201, 71, 0.3);
+    transition: all 0.2s;
+}
+.exit-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(255, 201, 71, 0.4); }
+
+.player-score {
+    flex: 1;
+    text-align: right;
+    color: var(--sss-text-color-bright);
+    font-weight: 900;
+    font-size: 21px;
+    letter-spacing: 2px;
+    margin-right: 8px;
+    text-shadow: 0 2px 7px rgba(255, 201, 71, 0.4);
+}
+.player-score span { font-size: 18px; margin-right: 4px; }
+
+.player-seats {
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    margin-bottom: 18px;
+    gap: 8px;
+    justify-content: space-between; /* Distribute players evenly */
 }
 
-.dun-area-container {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr 1fr 1fr;
-    gap: 0.5rem;
+.player-seat {
+    border: none;
+    border-radius: 10px;
+    flex-grow: 1; /* Allow seats to grow */
+    color: var(--sss-text-color-bright); /* Default for AI */
+    background: var(--sss-seat-bg-ai); /* Default for AI */
+    text-align: center;
+    padding: 12px 0;
+    font-weight: 700;
+    font-size: 17px;
+    box-shadow: 0 4px 22px rgba(255, 201, 71, 0.2), 0 1.5px 5px rgba(26, 34, 56, 0.4);
+    box-sizing: border-box;
+    transition: color .28s, background .28s, box-shadow .28s;
+}
+.player-seat:first-child { /* My seat */
+    color: var(--sss-text-color-bright);
+    background: var(--sss-seat-bg-me);
+}
+.player-seat .status {
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 400;
+}
+.player-seat.processed {
+    background: var(--accent-color); /* AI processed */
+    color: var(--primary-color);
+    box-shadow: 0 4px 22px var(--accent-color), 0 1.5px 5px rgba(26, 34, 56, 0.4);
+}
+
+.sss-hand-area, .dun-area {
+    position: relative;
+    width: 100%;
+    min-height: 133px; /* PAI_DUN_HEIGHT */
+    height: 133px; /* PAI_DUN_HEIGHT */
+    border-radius: 14px;
+    background: var(--sss-dun-bg);
+    margin-bottom: 20px;
+    box-shadow: 0 4px 22px rgba(0, 0, 0, 0.2), 0 1.5px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    padding-left: 16px;
+    padding-right: 70px; /* Space for label */
+    overflow: hidden; /* Hide overflowing cards */
+}
+
+.sss-hand-area.droppable-dun, .dun-area.droppable-dun {
+     border: 2px dashed var(--sss-dun-border); /* Dashed border for droppable areas */
+}
+
+.dun-area .dun-label {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
     height: 100%;
-}
-
-.dun-area {
-    border: 2px solid var(--secondary-color);
-    background-color: rgba(26, 34, 56, 0.6);
-    border-radius: var(--border-radius);
-    padding: 0.5rem;
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
-    gap: 4px;
-    transition: background-color 0.3s;
-}
-.dun-area.drag-over {
-    background-color: var(--secondary-color);
-    border-style: solid;
-}
-
-.player-hand-area {
-    height: 25%;
-    border: 2px dashed var(--accent-color);
-    border-radius: var(--border-radius);
-    padding: 0.5rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    align-content: flex-start;
-    justify-content: center;
+    color: var(--sss-text-color-bright);
+    font-size: 18px;
+    font-weight: 600;
+    pointer-events: none;
+    background: transparent;
+    white-space: nowrap;
 }
 
-.thirteen-water-controls {
-    height: 10%;
+.sss-actions {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
+    gap: 12px;
+    margin-top: 14px;
+    justify-content: space-between;
 }
-.thirteen-water-controls .action-btn {
-    width: 45%;
-    max-width: 200px;
+
+.sss-actions .action-btn {
+    flex: 1;
+    padding: 13px 0;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 10px;
+    box-shadow: 0 2px 9px rgba(0,0,0,0.2);
+}
+
+.sss-actions .action-btn.ready {
+    background: var(--sss-button-ready);
+    color: var(--primary-color);
+    box-shadow: 0 2px 9px rgba(255, 177, 77, 0.4);
+}
+.sss-actions .action-btn.ready:hover:not(:disabled) {
+    background: var(--sss-button-ready-hover);
+}
+
+.sss-actions .action-btn.auto-split {
+    background: var(--secondary-color); /* A darker blue for auto-split */
+    color: var(--text-color);
+    box-shadow: 0 2px 9px rgba(42, 58, 94, 0.4);
+}
+
+.sss-actions .action-btn.compare {
+    background: var(--accent-color);
+    color: var(--primary-color);
+    box-shadow: 0 2px 9px rgba(255, 201, 71, 0.4);
+}
+
+.sss-actions .action-btn:disabled {
+    background: #444;
+    color: #888;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.sss-message-area {
+    color: var(--sss-message-color);
+    text-align: center;
+    font-size: 16px;
+    margin-top: 8px;
+    min-height: 24px;
 }
 
 .results-overlay {
@@ -353,6 +468,28 @@ body {
     border-radius: var(--border-radius);
     width: 95%;
     max-width: 500px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+}
+.player-result .score-info {
+    font-weight: 700;
+    color: var(--accent-color);
+    margin-bottom: 8px;
+}
+.player-result .foul-status {
+    color: var(--danger-color);
+    font-weight: 800;
+    margin-left: 6px;
+}
+.player-result .dun-display {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 3px;
+}
+.player-result .card-img-small {
+    width: 46px; /* Adjusted from 60px to 46px based on CARD_WIDTH/HEIGHT ratio */
+    height: 66px; /* Adjusted from 84px to 66px based on CARD_WIDTH/HEIGHT ratio */
+    border-radius: 5px;
 }
 
 /* === MEDIA QUERIES FOR RESPONSIVE DESIGN === */
@@ -385,9 +522,11 @@ body {
         height: 98px;
     }
     .bottom-player .hand-container .card {
+        position: relative;
         margin: 0 -25px;
     }
      .hand-container.hidden .card {
+        position: relative;
         margin: 0 -40px;
     }
 
@@ -395,6 +534,7 @@ body {
         flex-direction: row;
         gap: 1rem;
     }
+    /* The .thirteen-water-container is now the main layout for sss */
     .player-main-area {
         height: 100%;
         width: 70%;
@@ -432,5 +572,37 @@ body {
     }
     .hand-container.hidden .card {
         margin: 0 -50px;
+    }
+}
+
+/* Mobile specific adjustments from React snippet */
+@media (max-width: 480px) {
+    .player-seat {
+        margin-right: 4px !important;
+        flex-basis: 24% !important; /* Use flex-basis for better control */
+        min-width: 0 !important;
+        font-size: 15px !important; /* Smaller font on small screens */
+        padding: 8px 0 !important;
+    }
+    .player-seat .status { font-size: 12px !important; }
+    
+    .card {
+        width: 55px; /* Adjust card size for smaller screens */
+        height: 77px;
+    }
+    .sss-hand-area, .dun-area {
+        min-height: 110px; /* Adjust dun height */
+        height: 110px; /* Adjust dun height */
+    }
+    .sss-actions .action-btn {
+        font-size: 16px; /* Smaller button text */
+        padding: 10px 0;
+    }
+     .exit-btn {
+        font-size: 15px;
+        padding: 6px 16px;
+    }
+    .player-score {
+        font-size: 18px;
     }
 }

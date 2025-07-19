@@ -2,7 +2,7 @@
 import { renderLobby } from './src/components/lobby.js';
 import { playSound, stopSound } from './src/services/audio-service.js';
 import { renderGameBoard } from './src/components/game-board.js';
-import { renderPlayerHand, updateCardCount, renderPlayedCards } from './src/components/card.js';
+import { renderPlayerHand, updateCardCount, renderPlayedCards, renderStackedCards } from './src/components/card.js';
 import { DouDizhuGame } from './src/game-logic/doudizhu-rules.js';
 import { renderBiddingControls } from './src/components/bidding-ui.js';
 import { ThirteenWaterGame } from './src/game-logic/thirteen-water-rules.js';
@@ -11,7 +11,9 @@ import { renderThirteenWaterBoard } from './src/components/thirteen-water-ui.js'
 // --- 全局变量 ---
 const app = document.getElementById('app');
 let currentGame = null;
-let playerGroups = [[], [], []]; // For Thirteen Water manual grouping
+
+// Global state for Thirteen Water game
+let thirteenWaterGameState = {};
 
 // --- 核心UI更新与特效 ---
 
@@ -30,8 +32,7 @@ function playCardEffects(cardType) {
 }
 
 
-// --- 斗地主游戏逻辑 ---
-
+// --- 斗地主游戏逻辑 (omitted for brevity) ---
 function startDoudizhuOffline() {
     currentGame = new DouDizhuGame(['您', '下家AI', '上家AI']);
     currentGame.startGame();
@@ -152,6 +153,7 @@ function doudizhuAiTurn() {
     doudizhuGameLoop();
 }
 
+
 function endDoudizhuGame(winner) {
     stopSound('doudizhu-bgMusic');
     const isWinner = winner.id === 'player-0';
@@ -203,117 +205,209 @@ function startGame(gameId, mode) {
 }
 
 
-// --- 十三水游戏逻辑 ---
+// --- 十三水游戏逻辑 (Refactored) ---
+
+function initializeThirteenWaterState() {
+    thirteenWaterGameState = {
+        isReady: false,
+        hand: [],
+        head: [],
+        middle: [],
+        tail: [],
+        selected: { area: '', cards: [] },
+        aiProcessed: [false, false, false],
+        hasCompared: false,
+        message: ''
+    };
+}
 
 function startThirteenWaterOffline() {
-    playSound('thirteen-water-start');
-    currentGame = new ThirteenWaterGame(['您', 'AI-2', 'AI-3', 'AI-4']);
-    currentGame.startGame();
+    initializeThirteenWaterState();
     
-    playerGroups = [[], [], []];
+    currentGame = new ThirteenWaterGame(['您', '小明', '小红', '小刚']);
+    app.innerHTML = renderThirteenWaterBoard(currentGame.players);
 
-    app.innerHTML = renderThirteenWaterBoard(currentGame.players, handleCardDrop);
+    // --- Bind Event Listeners ---
+    document.getElementById('exit-sss-btn').addEventListener('click', showLobby);
+    document.getElementById('ready-btn').addEventListener('click', handleReadyClick);
+    document.getElementById('auto-group-btn').addEventListener('click', autoGroupAndRender);
+    document.getElementById('compare-btn').addEventListener('click', compareThirteenWater);
 
-    setTimeout(() => {
-        playSound('thirteen-water-deal');
-        renderPlayerHand('player-hand-area', currentGame.players[0].hand, true);
-    }, 500);
-
-    for (let i = 1; i < 4; i++) {
-        currentGame.autoGroup(currentGame.players[i].id);
-    }
-    
-    document.getElementById('auto-group-btn').onclick = autoGroupAndRender;
-    document.getElementById('compare-btn').onclick = compareThirteenWater;
+    renderThirteenWaterUI(); // Render initial empty state
 }
 
-function handleCardDrop(cardElement, targetDun) {
-    const cardId = cardElement.dataset.cardId;
-    const dunIndex = parseInt(targetDun.dataset.dunIndex, 10);
-    const dunLimits = [3, 5, 5];
+function renderThirteenWaterUI() {
+    const { hand, head, middle, tail, selected, isReady } = thirteenWaterGameState;
 
-    playerGroups.forEach(group => {
-        const index = group.findIndex(c => c.id === cardId);
-        if (index > -1) group.splice(index, 1);
-    });
+    const handContainer = document.getElementById('player-hand-area');
+    const headContainer = document.getElementById('front-dun');
+    const middleContainer = document.getElementById('middle-dun');
+    const tailContainer = document.getElementById('back-dun');
 
-    if (playerGroups[dunIndex].length >= dunLimits[dunIndex]) {
-        document.getElementById('player-hand-area').appendChild(cardElement);
-        return false;
-    }
-    
-    const card = currentGame.players[0].hand.find(c => c.id === cardId);
-    playerGroups[dunIndex].push(card);
-    
-    checkAllDunsValidity();
-    return true;
-}
+    // Render player's duns and hand with stacked cards
+    renderStackedCards(headContainer, head, 'head', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
+    renderStackedCards(middleContainer, middle, 'middle', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
+    renderStackedCards(tailContainer, tail, 'tail', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
+    renderStackedCards(handContainer, hand, 'hand', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
 
-function checkAllDunsValidity() {
+    // Update dun labels with card count
+    document.querySelector('#front-dun .dun-label').textContent = `头道 (${head.length})`;
+    document.querySelector('#middle-dun .dun-label').textContent = `中道 (${middle.length})`;
+    document.querySelector('#back-dun .dun-label').textContent = `尾道 (${tail.length})`;
+
+    // Update message area
+    const msgEl = document.getElementById('sss-message');
+    if (msgEl) msgEl.textContent = thirteenWaterGameState.message;
+
+    // Update button states
+    const autoGroupBtn = document.getElementById('auto-group-btn');
     const compareBtn = document.getElementById('compare-btn');
-    const totalCards = playerGroups.reduce((sum, g) => sum + g.length, 0);
-    if (totalCards === 13) {
-        compareBtn.disabled = false;
-    } else {
-        compareBtn.disabled = true;
+    if (autoGroupBtn) autoGroupBtn.disabled = !isReady;
+    if (compareBtn) {
+        const totalCardsInDuns = head.length + middle.length + tail.length;
+        const allAIReady = thirteenWaterGameState.aiProcessed.every(p => p);
+        compareBtn.disabled = !(isReady && totalCardsInDuns === 13 && allAIReady);
     }
+}
+
+function handleReadyClick() {
+    const readyBtn = document.getElementById('ready-btn');
+    if (!thirteenWaterGameState.isReady) {
+        // --- Player is getting ready ---
+        thirteenWaterGameState.isReady = true;
+        readyBtn.textContent = '取消准备';
+
+        currentGame.startGame(); // Deals cards internally
+        const myHand = currentGame.players[0].hand;
+        
+        // Distribute cards to player's hand and duns (initial messy state)
+        thirteenWaterGameState.hand = myHand.slice(0, 3); // Example initial state
+        thirteenWaterGameState.head = myHand.slice(3, 6);
+        thirteenWaterGameState.middle = myHand.slice(6, 11);
+        thirteenWaterGameState.tail = myHand.slice(11, 13);
+        
+        // AI processing
+        thirteenWaterGameState.aiProcessed = [false, false, false];
+        currentGame.players.slice(1).forEach((aiPlayer, idx) => {
+            setTimeout(() => {
+                currentGame.autoGroup(aiPlayer.id);
+                thirteenWaterGameState.aiProcessed[idx] = true;
+                const aiSeat = document.querySelector(`#seat-${aiPlayer.id} .status`);
+                if (aiSeat) aiSeat.textContent = '已理牌';
+                document.querySelector(`#seat-${aiPlayer.id}`).classList.add('processed');
+                renderThirteenWaterUI(); // Re-render to update compare button state
+            }, 500 + idx * 300);
+        });
+
+    } else {
+        // --- Player is canceling ---
+        thirteenWaterGameState.isReady = false;
+        readyBtn.textContent = '准备';
+        initializeThirteenWaterState(); // Reset state
+    }
+    renderThirteenWaterUI();
+}
+
+function onCardClickSSS(card, areaId) {
+    let { selected } = thirteenWaterGameState;
+
+    if (selected.area !== areaId) {
+        // New area selected, select just this card
+        selected = { area: areaId, cards: [card] };
+    } else {
+        // Same area, toggle selection
+        const isSelected = selected.cards.some(c => c.id === card.id);
+        if (isSelected) {
+            selected.cards = selected.cards.filter(c => c.id !== card.id);
+        } else {
+            selected.cards.push(card);
+        }
+    }
+    thirteenWaterGameState.selected = selected;
+    renderThirteenWaterUI(); // Re-render to show selection
+}
+
+function onDropCardSSS(cardId, sourceAreaId, targetAreaId) {
+    if (sourceAreaId === targetAreaId) return;
+
+    let { hand, head, middle, tail, selected } = thirteenWaterGameState;
+    let cardToMove;
+
+    // Find and remove card from source
+    const removeFrom = (arr, id) => {
+        const index = arr.findIndex(c => c.id === id);
+        if (index > -1) {
+            cardToMove = arr[index];
+            return arr.filter(c => c.id !== id);
+        }
+        return arr;
+    };
+    
+    if (sourceAreaId === 'hand') hand = removeFrom(hand, cardId);
+    else if (sourceAreaId === 'head') head = removeFrom(head, cardId);
+    else if (sourceAreaId === 'middle') middle = removeFrom(middle, cardId);
+    else if (sourceAreaId === 'tail') tail = removeFrom(tail, cardId);
+
+    // Add card to target
+    if (cardToMove) {
+        if (targetAreaId === 'hand') hand.push(cardToMove);
+        else if (targetAreaId === 'head') head.push(cardToMove);
+        else if (targetAreaId === 'middle') middle.push(cardToMove);
+        else if (targetAreaId === 'tail') tail.push(cardToMove);
+    }
+    
+    // Update state
+    thirteenWaterGameState = { ...thirteenWaterGameState, hand, head, middle, tail, selected: { area: '', cards: [] } };
+    renderThirteenWaterUI();
 }
 
 function autoGroupAndRender() {
-    playSound('thirteen-water-set');
+    if (!thirteenWaterGameState.isReady) return;
+    
     currentGame.autoGroup('player-0');
-    playerGroups = currentGame.players[0].groups;
+    const player = currentGame.players[0];
+    
+    thirteenWaterGameState.head = player.groups[0];
+    thirteenWaterGameState.middle = player.groups[1];
+    thirteenWaterGameState.tail = player.groups[2];
+    thirteenWaterGameState.hand = []; // All cards are in duns now
 
-    document.getElementById('player-hand-area').innerHTML = '';
-    document.getElementById('front-dun').innerHTML = '';
-    document.getElementById('middle-dun').innerHTML = '';
-    document.getElementById('back-dun').innerHTML = '';
-    
-    renderPlayerHand('front-dun', playerGroups[0], true);
-    renderPlayerHand('middle-dun', playerGroups[1], true);
-    renderPlayerHand('back-dun', playerGroups[2], true);
-    
-    checkAllDunsValidity();
+    renderThirteenWaterUI();
 }
 
 function compareThirteenWater() {
-    playSound('thirteen-water-compare');
-    currentGame.players[0].groups = playerGroups;
-    
-    const results = currentGame.compareAll();
+    // Logic to be implemented or adapted
+    // alert("比牌逻辑待实现！");
+    const player = currentGame.players[0];
+    player.groups = [thirteenWaterGameState.head, thirteenWaterGameState.middle, thirteenWaterGameState.tail];
 
+    const results = currentGame.compareAll();
     const resultsArea = document.getElementById('thirteen-water-results');
     resultsArea.style.display = 'flex';
+    
     resultsArea.innerHTML = results.map(res => {
         let content;
         if (res.specialType) {
             content = `<div class="special-type-display">${res.specialType.name}</div>`;
         } else {
-            content = res.groups.map(g => `
-                <div class="group-display">
-                    <p>${g.name}</p>
-                    <div class="hand">${g.cards.map(c => `<div class="card"><img src="/assets/cards/${c.svg}" alt="${c.fullName}"></div>`).join('')}</div>
-                </div>`).join('');
+            content = res.groups.map(g => {
+                const cardsHtml = g.cards.map(c => `<img src="/assets/cards/${c.id}" alt="${c.fullName}" class="card-img-small">`).join('');
+                return `<div class="dun-display">${cardsHtml}</div>`;
+            }).join('');
         }
         return `
             <div class="player-result">
-                <h4>${res.name} (${res.score > 0 ? '+' : ''}${res.score}分)</h4>
+                <div class="score-info">${res.name} (${res.score > 0 ? '+' : ''}${res.score}分)</div>
                 ${content}
             </div>`;
     }).join('');
 
-    const myResult = results.find(r => r.id === 'player-0');
     setTimeout(() => {
-        playSound(myResult.score >= 0 ? 'thirteen-water-win' : 'thirteen-water-lose');
-        if (myResult.score > 10) playSound('thirteen-water-gunshot');
-
-        setTimeout(() => {
-             alert(`比牌结束！
-你获得了 ${myResult.score} 分。`);
-             showLobby();
-        }, 4000);
-    }, 1500);
+        resultsArea.style.display = 'none'; // Hide after a while
+        showLobby();
+    }, 5000);
 }
+
 
 // --- Common UI Functions ---
 function updatePlayerStatus(playerId, text, isYou = false) {
