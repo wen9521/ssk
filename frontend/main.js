@@ -15,7 +15,61 @@ let currentGame = null;
 // Global state for Thirteen Water game
 let thirteenWaterGameState = {};
 
-// --- 核心UI更新与特效 ---
+// --- 记牌器/倍数动画 ---
+function updateCardCounter() {
+    if (!currentGame || !currentGame.players) return;
+    let allCards = [];
+    currentGame.players.forEach(p => allCards = allCards.concat(p.hand));
+    const counts = {};
+    allCards.forEach(c => {
+        counts[c.rank] = (counts[c.rank] || 0) + 1;
+    });
+    let html = '';
+    Object.keys(counts).sort((a,b)=>b-a).forEach(rank => {
+        html += `<span>${rank}: ${counts[rank]}</span> `;
+    });
+    let counterEl = document.getElementById('card-counter');
+    if (!counterEl) {
+        counterEl = document.createElement('div');
+        counterEl.id = 'card-counter';
+        counterEl.className = 'card-counter';
+        document.body.appendChild(counterEl);
+    }
+    counterEl.innerHTML = html;
+}
+
+function updateMultiplierDisplay(multiplier) {
+    let el = document.getElementById('multiplier-indicator');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'multiplier-indicator';
+        el.className = 'multiplier-indicator';
+        document.body.appendChild(el);
+    }
+    el.textContent = `倍数: x${multiplier}`;
+    el.classList.add('multiplier-flash');
+    setTimeout(()=>el.classList.remove('multiplier-flash'), 800);
+}
+
+function highlightLandlord() {
+    const landlord = currentGame.players.find(p => p.isLandlord);
+    document.querySelectorAll('.player-pod').forEach(el => el.classList.remove('landlord'));
+    if (landlord) {
+        const el = document.getElementById(landlord.id);
+        if (el) el.classList.add('landlord');
+    }
+}
+
+function playCardEffects(cardType) {
+    if (!cardType || !cardType.type) return;
+    if (cardType.type === 'bomb') playSound('bomb');
+    else if (cardType.type === 'rocket') playSound('rocket');
+    else if (cardType.type.startsWith('airplane')) playSound('airplane');
+    else if (cardType.type === 'straight') playSound('straight');
+    const playedArea = document.getElementById('played-cards-area');
+    playedArea.classList.add('effect-flash');
+    setTimeout(()=>playedArea.classList.remove('effect-flash'), 700);
+}
 
 function showSpecialEffect(text) {
     const effectDiv = document.createElement('div');
@@ -25,14 +79,7 @@ function showSpecialEffect(text) {
     setTimeout(() => effectDiv.remove(), 1500);
 }
 
-function playCardEffects(cardType) {
-    if (!cardType || !cardType.type) return;
-    const type = cardType.type;
-    // ... (sound and effect logic remains the same)
-}
-
-
-// --- 斗地主游戏逻辑 (omitted for brevity) ---
+// --- 斗地主游戏逻辑 ---
 function startDoudizhuOffline() {
     currentGame = new DouDizhuGame(['您', '下家AI', '上家AI']);
     currentGame.startGame();
@@ -86,10 +133,13 @@ function finalizeDoudizhuBoard() {
         startDoudizhuOffline();
         return;
     }
+    highlightLandlord();
     document.querySelector(`#${landlord.id} .player-name`).innerHTML += ' (地主)';
     renderPlayedCards('landlord-cards-area', currentGame.landlordCards);
     renderPlayerHand(`hand-${landlord.id}`, landlord.hand, landlord.id !== 'player-0');
     updateCardCount(landlord.id, landlord.hand.length);
+    updateMultiplierDisplay(currentGame.multiplier);
+
     const container = document.querySelector('.player-area.bottom-player');
     container.insertAdjacentHTML('beforeend', `
         <div id="play-buttons-container" class="action-buttons-container">
@@ -104,6 +154,9 @@ function finalizeDoudizhuBoard() {
 }
 
 function doudizhuGameLoop() {
+    updateCardCounter();
+    updateMultiplierDisplay(currentGame.multiplier);
+
     if (currentGame.gameState === 'ended') {
         endDoudizhuGame(currentGame.getWinner());
         return;
@@ -153,7 +206,6 @@ function doudizhuAiTurn() {
     doudizhuGameLoop();
 }
 
-
 function endDoudizhuGame(winner) {
     stopSound('doudizhu-bgMusic');
     const isWinner = winner.id === 'player-0';
@@ -175,7 +227,6 @@ ${isWinner ? "恭喜你，你赢了！" : `你输了，胜利者是 ${winner.nam
 }
 
 // --- 游戏流程管理 ---
-
 function showLobby() {
     stopSound('doudizhu-bgMusic');
     stopSound('thirteen-water-bgMusic');
@@ -204,9 +255,7 @@ function startGame(gameId, mode) {
     }
 }
 
-
-// --- 十三水游戏逻辑 (Refactored) ---
-
+// --- 十三水游戏逻辑 ---
 function initializeThirteenWaterState() {
     thirteenWaterGameState = {
         isReady: false,
@@ -223,43 +272,36 @@ function initializeThirteenWaterState() {
 
 function startThirteenWaterOffline() {
     initializeThirteenWaterState();
-    
     currentGame = new ThirteenWaterGame(['您', '小明', '小红', '小刚']);
     app.innerHTML = renderThirteenWaterBoard(currentGame.players);
 
-    // --- Bind Event Listeners ---
     document.getElementById('exit-sss-btn').addEventListener('click', showLobby);
     document.getElementById('ready-btn').addEventListener('click', handleReadyClick);
     document.getElementById('auto-group-btn').addEventListener('click', autoGroupAndRender);
     document.getElementById('compare-btn').addEventListener('click', compareThirteenWater);
 
-    renderThirteenWaterUI(); // Render initial empty state
+    renderThirteenWaterUI();
 }
 
 function renderThirteenWaterUI() {
     const { hand, head, middle, tail, selected, isReady } = thirteenWaterGameState;
-
     const handContainer = document.getElementById('player-hand-area');
     const headDunContainer = document.querySelector('#front-dun .card-display-area');
     const middleDunContainer = document.querySelector('#middle-dun .card-display-area');
     const tailDunContainer = document.querySelector('#back-dun .card-display-area');
 
-    // Render player's duns and hand with stacked cards
     renderStackedCards(headDunContainer, head, 'head', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
     renderStackedCards(middleDunContainer, middle, 'middle', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
     renderStackedCards(tailDunContainer, tail, 'tail', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
     renderStackedCards(handContainer, hand, 'hand', selected.cards, onCardClickSSS, onDropCardSSS, { isDraggable: isReady });
 
-    // Update dun labels with card count
     document.querySelector('#front-dun .dun-label').textContent = `头道 (${head.length})`;
     document.querySelector('#middle-dun .dun-label').textContent = `中道 (${middle.length})`;
     document.querySelector('#back-dun .dun-label').textContent = `尾道 (${tail.length})`;
 
-    // Update message area
     const msgEl = document.getElementById('sss-message');
     if (msgEl) msgEl.textContent = thirteenWaterGameState.message;
 
-    // Update button states
     const autoGroupBtn = document.getElementById('auto-group-btn');
     const compareBtn = document.getElementById('compare-btn');
     if (autoGroupBtn) autoGroupBtn.disabled = !isReady;
@@ -273,20 +315,14 @@ function renderThirteenWaterUI() {
 function handleReadyClick() {
     const readyBtn = document.getElementById('ready-btn');
     if (!thirteenWaterGameState.isReady) {
-        // --- Player is getting ready ---
         thirteenWaterGameState.isReady = true;
         readyBtn.textContent = '取消准备';
-
-        currentGame.startGame(); // Deals cards internally
+        currentGame.startGame();
         const myHand = currentGame.players[0].hand;
-        
-        // **FIX**: All cards go to the hand initially. Duns are empty.
         thirteenWaterGameState.hand = myHand;
         thirteenWaterGameState.head = [];
         thirteenWaterGameState.middle = [];
         thirteenWaterGameState.tail = [];
-        
-        // AI processing
         thirteenWaterGameState.aiProcessed = [false, false, false];
         currentGame.players.slice(1).forEach((aiPlayer, idx) => {
             setTimeout(() => {
@@ -295,15 +331,14 @@ function handleReadyClick() {
                 const aiSeat = document.querySelector(`#seat-${aiPlayer.id} .status`);
                 if (aiSeat) aiSeat.textContent = '已理牌';
                 document.querySelector(`#seat-${aiPlayer.id}`).classList.add('processed');
-                renderThirteenWaterUI(); // Re-render to update compare button state
+                renderThirteenWaterUI();
             }, 500 + idx * 300);
         });
 
     } else {
-        // --- Player is canceling ---
         thirteenWaterGameState.isReady = false;
         readyBtn.textContent = '准备';
-        initializeThirteenWaterState(); // Reset state
+        initializeThirteenWaterState();
     }
     renderThirteenWaterUI();
 }
@@ -312,10 +347,8 @@ function onCardClickSSS(card, areaId) {
     let { selected } = thirteenWaterGameState;
 
     if (selected.area !== areaId) {
-        // New area selected, select just this card
         selected = { area: areaId, cards: [card] };
     } else {
-        // Same area, toggle selection
         const isSelected = selected.cards.some(c => c.id === card.id);
         if (isSelected) {
             selected.cards = selected.cards.filter(c => c.id !== card.id);
@@ -324,16 +357,13 @@ function onCardClickSSS(card, areaId) {
         }
     }
     thirteenWaterGameState.selected = selected;
-    renderThirteenWaterUI(); // Re-render to show selection
+    renderThirteenWaterUI();
 }
 
 function onDropCardSSS(cardId, sourceAreaId, targetAreaId) {
     if (sourceAreaId === targetAreaId) return;
-
     let { hand, head, middle, tail, selected } = thirteenWaterGameState;
     let cardToMove;
-
-    // Find and remove card from source
     const removeFrom = (arr, id) => {
         const index = arr.findIndex(c => c.id === id);
         if (index > -1) {
@@ -342,49 +372,38 @@ function onDropCardSSS(cardId, sourceAreaId, targetAreaId) {
         }
         return arr;
     };
-    
     if (sourceAreaId === 'hand') hand = removeFrom(hand, cardId);
     else if (sourceAreaId === 'head') head = removeFrom(head, cardId);
     else if (sourceAreaId === 'middle') middle = removeFrom(middle, cardId);
     else if (sourceAreaId === 'tail') tail = removeFrom(tail, cardId);
-
-    // Add card to target
     if (cardToMove) {
         if (targetAreaId === 'hand') hand.push(cardToMove);
         else if (targetAreaId === 'head') head.push(cardToMove);
         else if (targetAreaId === 'middle') middle.push(cardToMove);
         else if (targetAreaId === 'tail') tail.push(cardToMove);
     }
-    
-    // Update state
     thirteenWaterGameState = { ...thirteenWaterGameState, hand, head, middle, tail, selected: { area: '', cards: [] } };
     renderThirteenWaterUI();
 }
 
 function autoGroupAndRender() {
     if (!thirteenWaterGameState.isReady) return;
-    
     currentGame.autoGroup('player-0');
     const player = currentGame.players[0];
-    
     thirteenWaterGameState.head = player.groups[0];
     thirteenWaterGameState.middle = player.groups[1];
     thirteenWaterGameState.tail = player.groups[2];
-    thirteenWaterGameState.hand = []; // All cards are in duns now
-
+    thirteenWaterGameState.hand = [];
     renderThirteenWaterUI();
 }
 
 function compareThirteenWater() {
-    // Logic to be implemented or adapted
-    // alert("比牌逻辑待实现！");
     const player = currentGame.players[0];
     player.groups = [thirteenWaterGameState.head, thirteenWaterGameState.middle, thirteenWaterGameState.tail];
 
     const results = currentGame.compareAll();
     const resultsArea = document.getElementById('thirteen-water-results');
     resultsArea.style.display = 'flex';
-    
     resultsArea.innerHTML = results.map(res => {
         let content;
         if (res.specialType) {
@@ -401,15 +420,13 @@ function compareThirteenWater() {
                 ${content}
             </div>`;
     }).join('');
-
     setTimeout(() => {
-        resultsArea.style.display = 'none'; // Hide after a while
+        resultsArea.style.display = 'none';
         showLobby();
     }, 5000);
 }
 
-
-// --- Common UI Functions ---
+// --- 公共UI函数 ---
 function updatePlayerStatus(playerId, text, isYou = false) {
     if (isYou) {
         let indicator = document.querySelector('.bidding-status-indicator');
@@ -430,12 +447,10 @@ function updatePlayerStatus(playerId, text, isYou = false) {
     }
 }
 
-
 function updateUITurn(player, phase) {
     document.querySelectorAll('.player-pod').forEach(el => el.style.boxShadow = 'none');
     const playerEl = document.getElementById(player.id);
     if(playerEl) playerEl.style.boxShadow = '0 0 25px var(--accent-color)';
-
     if (phase === 'playing' && document.getElementById('play-btn')) {
         const isMyTurn = player.id === 'player-0';
         const canPass = currentGame.lastValidPlay.playerId && currentGame.passPlayCount < currentGame.players.length - 1;
