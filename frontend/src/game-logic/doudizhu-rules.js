@@ -31,6 +31,7 @@ export class DouDizhuGame {
             p.hand = this.deck.splice(0, 17);
             this.sortHand(p.hand);
             p.playsCount = 0;
+            p.isLandlord = false;
         });
         this.landlordCards = this.deck;
         this.gameState = 'bidding';
@@ -38,6 +39,10 @@ export class DouDizhuGame {
         this.multiplier = 1;
         this.highestBid = 0;
         this.bidWinner = null;
+        this.passBidCount = 0;
+        this.lastValidPlay = { playerId: null, cardType: null };
+        this.passPlayCount = 0;
+        this.winner = null;
     }
 
     playerBid(playerId, bid) {
@@ -70,6 +75,9 @@ export class DouDizhuGame {
         this.baseScore = this.highestBid;
         this.gameState = 'playing';
         this.playTurn = this.players.findIndex(p => p.id === landlordPlayer.id);
+        this.multiplier = 1;
+        this.lastValidPlay = { playerId: null, cardType: null };
+        this.passPlayCount = 0;
     }
 
     playCards(playerId, cardIds) {
@@ -114,9 +122,11 @@ export class DouDizhuGame {
         if (winner) {
             this.winner = winner;
             this.gameState = 'ended';
+            // 春天/反春判定
+            const landlordPlays = this.players.find(p => p.isLandlord).playsCount;
             if (winner.isLandlord && this.players.every(p => p.isLandlord || p.playsCount === 0)) {
                 this.multiplier *= 2;
-            } else if (!winner.isLandlord && this.getPlayerById(this.players.find(p => p.isLandlord).id).playsCount <= 1) {
+            } else if (!winner.isLandlord && landlordPlays <= 1) {
                 this.multiplier *= 2;
             }
             return true;
@@ -125,31 +135,47 @@ export class DouDizhuGame {
     }
 
     endGame() {
-        // 结算逻辑
+        // 可扩展结算逻辑
     }
 
-    aiSimpleBid(aiPlayerId) {
-        // 简单AI叫分逻辑，也可自行扩展
-        if (this.highestBid < 2) return Math.random() > 0.5 ? this.highestBid + 1 : 0;
+    // --- AI智能叫分 ---
+    aiSmartBid(aiPlayerId) {
+        const player = this.getPlayerById(aiPlayerId);
+        const hand = player.hand;
+        let score = 0;
+        let bombCount = 0, kingCount = 0, highCardCount = 0, longStraight = 0;
+        // 统计关键牌
+        hand.forEach(c => {
+            if (c.rank === 98 || c.rank === 99) kingCount++;
+            if (hand.filter(x => x.rank === c.rank).length === 4) bombCount++;
+            if (c.rank >= 14) highCardCount++;
+        });
+        // 顺子判定
+        let ranks = [...new Set(hand.map(c => c.rank))].sort((a, b) => a - b);
+        let current = 1, maxStraight = 1;
+        for (let i = 1; i < ranks.length; i++) {
+            if (ranks[i] === ranks[i-1] + 1 && ranks[i] < 14) current++;
+            else current = 1;
+            if (current > maxStraight) maxStraight = current;
+        }
+        longStraight = maxStraight;
+        score = bombCount*2 + kingCount + highCardCount*0.5 + (longStraight>=5?1:0);
+        if (score >= 4) return 3;
+        if (score >= 2.5) return 2;
+        if (score >= 1.2) return 1;
         return 0;
     }
 
-    aiSimplePlay(aiPlayerId) {
+    // --- AI智能出牌（优先复杂牌型） ---
+    aiSmartPlay(aiPlayerId) {
         const player = this.getPlayerById(aiPlayerId);
         const isFreePlay = this.passPlayCount >= 2 || !this.lastValidPlay.cardType;
-        const landlord = this.players.find(p => p.isLandlord);
-        const teammateIsLastPlayer = this.lastValidPlay.playerId && this.getPlayerById(this.lastValidPlay.playerId).isLandlord === player.isLandlord;
-        if (teammateIsLastPlayer && landlord.hand.length > 2) {
-            return this.passTurn(aiPlayerId) ? null : this.playSmallest(aiPlayerId);
-        }
-        const allPlays = this.findAllPlays(player.hand);
-        const validPlays = isFreePlay ? allPlays : allPlays.filter(play => canPlayOver(play, this.lastValidPlay.cardType));
+        const allPlays = this.findAllPlays(player.hand, true); // true:复杂牌型
+        let validPlays = isFreePlay ? allPlays : allPlays.filter(play => canPlayOver(play, this.lastValidPlay.cardType));
+        // 优先顺子 > 连对 > 飞机 > 三带 > 对子 > 单张，炸弹/王留到最后
+        const priority = ['rocket', 'bomb', 'airplane_pairs', 'airplane_singles', 'airplane', 'straight', 'consecutive_pairs', 'trio_pair', 'trio_single', 'trio', 'pair', 'single'];
+        validPlays.sort((a, b) => priority.indexOf(a.type) - priority.indexOf(b.type) || a.rank - b.rank);
         if (validPlays.length > 0) {
-            if (!player.isLandlord && landlord.hand.length === 1) {
-                validPlays.sort((a, b) => b.rank - a.rank);
-                return this.playCards(aiPlayerId, validPlays[0].cards.map(c => c.id));
-            }
-            validPlays.sort((a, b) => a.rank - b.rank);
             return this.playCards(aiPlayerId, validPlays[0].cards.map(c => c.id));
         }
         return this.passTurn(aiPlayerId) ? null : this.playSmallest(aiPlayerId);
@@ -161,28 +187,15 @@ export class DouDizhuGame {
         return this.playCards(playerId, [cardToPlay.id]);
     }
 
-    findAllPlays(hand) {
-        // 只给出基本单张/对子/三条，顺子/炸弹等可自行扩展
+    // 扫描全部可出牌型（支持复杂牌型）
+    findAllPlays(hand, supportComplex = false) {
         const plays = [];
-        hand.forEach(c => { const t = parseCardType([c]); if (t) plays.push(t); });
-        // 对子
-        for (let i = 0; i < hand.length - 1; i++) {
-            if (hand[i].rank === hand[i + 1].rank) {
-                const t = parseCardType([hand[i], hand[i + 1]]);
-                if (t) plays.push(t);
-            }
-        }
-        // 三条
-        for (let i = 0; i < hand.length - 2; i++) {
-            if (hand[i].rank === hand[i + 1].rank && hand[i].rank === hand[i + 2].rank) {
-                const t = parseCardType([hand[i], hand[i + 1], hand[i + 2]]);
-                if (t) plays.push(t);
-            }
-        }
-        // 炸弹
-        for (let i = 0; i < hand.length - 3; i++) {
-            if (hand[i].rank === hand[i + 1].rank && hand[i].rank === hand[i + 2].rank && hand[i].rank === hand[i + 3].rank) {
-                const t = parseCardType([hand[i], hand[i + 1], hand[i + 2], hand[i + 3]]);
+        // 使用全排列/组合方式枚举所有可能牌型（复杂的可以用更高效的算法优化）
+        const n = hand.length;
+        for (let size = 1; size <= Math.min(n, 8); size++) {
+            for (let i = 0; i <= n - size; i++) {
+                const slice = hand.slice(i, i + size);
+                const t = parseCardType(slice);
                 if (t) plays.push(t);
             }
         }
