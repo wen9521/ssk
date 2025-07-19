@@ -1,6 +1,6 @@
 // Extended Thirteen Water Game Logic
 
-import { Deck } from './deck.js';
+import { createDeck, shuffle } from './deck.js';
 
 // --- 卡牌和牌型定义 ---
 const SUITS = ['spades', 'hearts', 'clubs', 'diamonds'];
@@ -79,13 +79,18 @@ export class ThirteenWaterGame {
             groups: [], // [head, middle, tail]
             isFoul: false,
         }));
-        this.deck = new Deck(SUITS, RANKS);
+        this.deck = [];
     }
 
     startGame() {
-        this.deck.shuffle();
-        const hands = this.deck.deal(this.players.length, 13);
-        this.players.forEach((player, i) => player.hand = hands[i]);
+        this.deck = createDeck().filter(c => c.value !== 'joker'); // 十三水不用鬼牌
+        this.deck = shuffle(this.deck);
+        
+        const numPlayers = this.players.length;
+        const cardsPerPlayer = 13;
+        for (let i = 0; i < numPlayers; i++) {
+            this.players[i].hand = this.deck.slice(i * cardsPerPlayer, (i + 1) * cardsPerPlayer);
+        }
     }
 
     // --- 智能分牌核心逻辑 ---

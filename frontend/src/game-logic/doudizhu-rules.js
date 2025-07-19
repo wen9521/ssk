@@ -1,215 +1,241 @@
 import { createDeck, shuffle } from './deck.js';
-import { parseCardType, canPlayOver } from './card-logic.js';
 
-export class DouDizhuGame {
-    constructor(playerNames = ['您', '右侧AI', '左侧AI']) {
-        this.players = playerNames.map((name, index) => ({
+class DouDizhuGame {
+    constructor(playerIds) {
+        this.players = playerIds.map((id, index) => ({
             id: `player-${index}`,
-            name: name,
+            name: id,
             hand: [],
             isLandlord: false,
             playsCount: 0,
         }));
-        this.deck = [];
-        this.landlordCards = [];
-        this.winner = null;
-        this.gameState = 'pending';
-        this.baseScore = 1;
+        this.baseScore = 10;
         this.multiplier = 1;
-        this.bidTurn = -1;
-        this.highestBid = 0;
-        this.bidWinner = null;
-        this.passBidCount = 0;
-        this.playTurn = -1;
-        this.lastValidPlay = { playerId: null, cardType: null };
+        this.landlordCards = [];
+        this.currentTurnIndex = 0;
+        this.lastValidPlay = { playerId: null, cards: [] };
         this.passPlayCount = 0;
+        this.gameState = 'bidding'; // bidding, playing, ended
+        this.biddingCycle = {
+            bids: {}, // playerId: bid (0 for pass, 1, 2, 3)
+            currentPlayerIndex: 0,
+            highestBid: 0,
+            lastBidder: null,
+        };
     }
 
     startGame() {
-        this.deck = shuffle(createDeck());
-        this.players.forEach(p => {
-            p.hand = this.deck.splice(0, 17);
-            this.sortHand(p.hand);
-            p.playsCount = 0;
-            p.isLandlord = false;
+        let deck = createDeck();
+        deck = shuffle(deck);
+
+        // Deal cards
+        const hands = this.deal(deck, this.players.length, 17);
+        this.players.forEach((player, i) => {
+            player.hand = this.sortHand(hands[i]);
         });
-        this.landlordCards = this.deck;
-        this.gameState = 'bidding';
-        this.bidTurn = Math.floor(Math.random() * this.players.length);
-        this.multiplier = 1;
-        this.highestBid = 0;
-        this.bidWinner = null;
-        this.passBidCount = 0;
-        this.lastValidPlay = { playerId: null, cardType: null };
-        this.passPlayCount = 0;
-        this.winner = null;
+        this.landlordCards = deck.slice(this.players.length * 17);
+        
+        // Randomly decide who starts bidding
+        this.biddingCycle.currentPlayerIndex = Math.floor(Math.random() * this.players.length);
+    }
+
+    deal(deck, numPlayers, numCards) {
+        const hands = [];
+        for (let i = 0; i < numPlayers; i++) {
+            hands.push(deck.slice(i * numCards, (i + 1) * numCards));
+        }
+        return hands;
+    }
+    
+    sortHand(hand) {
+        return hand.sort((a, b) => {
+            if (a.rank !== b.rank) {
+                return b.rank - a.rank;
+            }
+            return SUITS.indexOf(b.suit) - SUITS.indexOf(a.suit);
+        });
+    }
+
+    // Bidding logic
+    getCurrentBiddingPlayer() {
+        return this.players[this.biddingCycle.currentPlayerIndex];
     }
 
     playerBid(playerId, bid) {
-        if (this.gameState !== 'bidding' || this.players[this.bidTurn].id !== playerId) return false;
-        if (bid > 0 && bid > this.highestBid) {
-            this.highestBid = bid;
-            this.bidWinner = this.players[this.bidTurn];
-            this.passBidCount = 0;
+        const playerIndex = this.players.findIndex(p => p.id === playerId);
+        if (playerIndex !== this.biddingCycle.currentPlayerIndex) return false;
+
+        if (bid > 0 && bid > this.biddingCycle.highestBid) {
+            this.biddingCycle.bids[playerId] = bid;
+            this.biddingCycle.highestBid = bid;
+            this.biddingCycle.lastBidder = playerId;
         } else {
-            this.passBidCount++;
+            this.biddingCycle.bids[playerId] = 0; // Pass
         }
-        if (this.highestBid === 3 || (this.bidWinner && this.passBidCount >= this.players.length - 1)) {
-            this.setLandlord(this.bidWinner);
-        } else if (this.passBidCount >= this.players.length) {
-            this.startGame();
+        
+        const totalBids = Object.keys(this.biddingCycle.bids).length;
+        
+        if (this.biddingCycle.highestBid === 3 || totalBids === this.players.length) {
+            this.finalizeBidding();
         } else {
-            this.bidTurn = (this.bidTurn + 1) % this.players.length;
+             // Move to next player
+            this.biddingCycle.currentPlayerIndex = (this.biddingCycle.currentPlayerIndex + 1) % this.players.length;
         }
         return true;
     }
 
-    setLandlord(landlordPlayer) {
-        if (!landlordPlayer) {
-            this.startGame();
-            return;
+    finalizeBidding() {
+        const landlordId = this.biddingCycle.lastBidder;
+        if (landlordId) {
+            const landlord = this.getPlayerById(landlordId);
+            landlord.isLandlord = true;
+            landlord.hand = this.sortHand([...landlord.hand, ...this.landlordCards]);
+            this.multiplier = this.biddingCycle.highestBid;
+            this.currentTurnIndex = this.players.findIndex(p => p.id === landlordId);
+            this.gameState = 'playing';
+        } else {
+            // Everyone passed, handle redeal scenario
+            this.gameState = 'ended'; // Or some other state to indicate a failed round
         }
-        landlordPlayer.isLandlord = true;
-        landlordPlayer.hand.push(...this.landlordCards);
-        this.sortHand(landlordPlayer.hand);
-        this.baseScore = this.highestBid;
-        this.gameState = 'playing';
-        this.playTurn = this.players.findIndex(p => p.id === landlordPlayer.id);
-        this.multiplier = 1;
-        this.lastValidPlay = { playerId: null, cardType: null };
-        this.passPlayCount = 0;
+    }
+    
+    // Gameplay logic
+    getCurrentPlayingPlayer() {
+        return this.players[this.currentTurnIndex];
+    }
+    
+    getPlayerById(playerId) {
+        return this.players.find(p => p.id === playerId);
+    }
+    
+    getWinner() {
+        return this.players.find(p => p.hand.length === 0);
     }
 
     playCards(playerId, cardIds) {
-        if (this.gameState !== 'playing' || this.players[this.playTurn].id !== playerId) return null;
         const player = this.getPlayerById(playerId);
+        if (player.id !== this.getCurrentPlayingPlayer().id) return null;
+
         const cardsToPlay = player.hand.filter(c => cardIds.includes(c.id));
         if (cardsToPlay.length !== cardIds.length) return null;
-        const myPlayType = parseCardType(cardsToPlay);
-        if (!myPlayType) return null;
-        const lastPlayType = (this.passPlayCount < this.players.length - 1) ? this.lastValidPlay.cardType : null;
-        if (!canPlayOver(myPlayType, lastPlayType)) return null;
+
+        const cardType = this.getCardType(cardsToPlay);
+        if (cardType.type === 'invalid') return null;
+
+        if (this.lastValidPlay.playerId && this.lastValidPlay.playerId !== playerId) {
+            const lastPlayType = this.getCardType(this.lastValidPlay.cards);
+            if (!this.canBeat(cardType, lastPlayType)) return null;
+        }
+
         player.hand = player.hand.filter(c => !cardIds.includes(c.id));
         player.playsCount++;
-        if (myPlayType.type === 'bomb' || myPlayType.type === 'rocket') {
-            this.multiplier *= 2;
-        }
-        this.lastValidPlay = { playerId, cardType: myPlayType };
+        this.lastValidPlay = { playerId, cards: cardsToPlay };
         this.passPlayCount = 0;
-        if (this.checkWinner()) {
-            this.endGame();
-        } else {
-            this.nextPlayTurn();
+        this.currentTurnIndex = (this.currentTurnIndex + 1) % this.players.length;
+        
+        if (player.hand.length === 0) {
+            this.gameState = 'ended';
         }
-        return { playedCards: cardsToPlay, cardType: myPlayType };
+
+        return { playedCards: cardsToPlay, cardType: cardType };
     }
 
     passTurn(playerId) {
-        if (this.gameState !== 'playing' || this.players[this.playTurn].id !== playerId) return false;
-        const isFreePlay = this.passPlayCount >= this.players.length - 1 || !this.lastValidPlay.playerId;
-        if (isFreePlay) return false;
+        if (playerId !== this.getCurrentPlayingPlayer().id) return false;
+        if (!this.lastValidPlay.playerId) return false; // Cannot pass on the first play of a round
+
         this.passPlayCount++;
-        this.nextPlayTurn();
+        this.currentTurnIndex = (this.currentTurnIndex + 1) % this.players.length;
+
+        if (this.passPlayCount === this.players.length - 1) {
+            // Everyone else passed, this player starts a new round
+            this.lastValidPlay = { playerId: null, cards: [] };
+            this.passPlayCount = 0;
+        }
         return true;
     }
 
-    nextPlayTurn() {
-        this.playTurn = (this.playTurn + 1) % this.players.length;
+    // Card validation and comparison logic
+    getCardType(cards) {
+        // This is a simplified implementation. A real one would be much more complex.
+        const len = cards.length;
+        if (len === 0) return { type: 'invalid' };
+        
+        const ranks = cards.map(c => c.rank).sort((a,b)=>a-b);
+        const firstRank = ranks[0];
+
+        if (len === 1) return { type: 'single', rank: firstRank };
+        if (len === 2 && ranks[0] === ranks[1]) return { type: 'pair', rank: firstRank };
+        if (len === 4 && ranks[0] === ranks[3]) return { type: 'bomb', rank: firstRank };
+        if (len === 2 && cards.every(c => c.value === 'joker')) return { type: 'rocket', rank: 99 }; // Rocket
+        
+        // Simplified straights
+        let isStraight = true;
+        for (let i = 1; i < len; i++) {
+            if (ranks[i] !== ranks[i-1] + 1 || ranks[i] > 14) { // No 2s or jokers in straights
+                isStraight = false;
+                break;
+            }
+        }
+        if(isStraight && len >= 5) return { type: 'straight', rank: firstRank, length: len };
+
+        return { type: 'invalid' };
     }
 
-    checkWinner() {
-        const winner = this.players.find(p => p.hand.length === 0);
-        if (winner) {
-            this.winner = winner;
-            this.gameState = 'ended';
-            // 春天/反春判定
-            const landlordPlays = this.players.find(p => p.isLandlord).playsCount;
-            if (winner.isLandlord && this.players.every(p => p.isLandlord || p.playsCount === 0)) {
-                this.multiplier *= 2;
-            } else if (!winner.isLandlord && landlordPlays <= 1) {
-                this.multiplier *= 2;
-            }
+    canBeat(currentPlay, lastPlay) {
+        if (currentPlay.type === 'rocket') return true;
+        if (lastPlay.type === 'rocket') return false;
+        
+        if (currentPlay.type === 'bomb') {
+            if(lastPlay.type === 'bomb') return currentPlay.rank > lastPlay.rank;
             return true;
         }
+
+        if (currentPlay.type === lastPlay.type && currentPlay.length === lastPlay.length && currentPlay.rank > lastPlay.rank) {
+            return true;
+        }
+
         return false;
     }
 
-    endGame() {
-        // 可扩展结算逻辑
-    }
-
-    // --- AI智能叫分 ---
-    aiSimpleBid(aiPlayerId) {
-        // 智能AI叫分逻辑
-        const player = this.getPlayerById(aiPlayerId);
-        const hand = player.hand;
-        let score = 0;
-        let bombCount = 0, kingCount = 0, highCardCount = 0, longStraight = 0;
-        hand.forEach(c => {
-            if (c.rank === 98 || c.rank === 99) kingCount++;
-            if (hand.filter(x => x.rank === c.rank).length === 4) bombCount++;
-            if (c.rank >= 14) highCardCount++;
-        });
-        let ranks = [...new Set(hand.map(c => c.rank))].sort((a, b) => a - b);
-        let current = 1, maxStraight = 1;
-        for (let i = 1; i < ranks.length; i++) {
-            if (ranks[i] === ranks[i-1] + 1 && ranks[i] < 14) current++;
-            else current = 1;
-            if (current > maxStraight) maxStraight = current;
-        }
-        longStraight = maxStraight;
-        score = bombCount*2 + kingCount + highCardCount*0.5 + (longStraight>=5?1:0);
-        if (score >= 4 && this.highestBid < 3) return 3;
-        if (score >= 2.5 && this.highestBid < 2) return 2;
-        if (score >= 1.2 && this.highestBid < 1) return 1;
-        return 0;
-    }
-
-    // --- AI智能出牌（优先复杂牌型） ---
-    aiSimplePlay(aiPlayerId) {
-        const player = this.getPlayerById(aiPlayerId);
-        const isFreePlay = this.passPlayCount >= 2 || !this.lastValidPlay.cardType;
-        const allPlays = this.findAllPlays(player.hand, true); // true:复杂牌型
-        let validPlays = isFreePlay ? allPlays : allPlays.filter(play => canPlayOver(play, this.lastValidPlay.cardType));
-        // 优先顺子 > 连对 > 飞机 > 三带 > 对子 > 单张，炸弹/王留到最后
-        const priority = ['rocket', 'bomb', 'airplane_pairs', 'airplane_singles', 'airplane', 'straight', 'consecutive_pairs', 'trio_pair', 'trio_single', 'trio', 'pair', 'single'];
-        validPlays.sort((a, b) => priority.indexOf(a.type) - priority.indexOf(b.type) || a.rank - b.rank);
-        if (validPlays.length > 0) {
-            return this.playCards(aiPlayerId, validPlays[0].cards.map(c => c.id));
-        }
-        return this.passTurn(aiPlayerId) ? null : this.playSmallest(aiPlayerId);
-    }
-
-    playSmallest(playerId) {
+    // AI Logic
+    aiSimplePlay(playerId) {
+        // Super simple AI: find the smallest single card to play
         const player = this.getPlayerById(playerId);
-        const cardToPlay = player.hand[player.hand.length - 1];
-        return this.playCards(playerId, [cardToPlay.id]);
-    }
+        const hand = player.hand;
 
-    // 扫描全部可出牌型（支持复杂牌型）
-    findAllPlays(hand, supportComplex = false) {
-        const plays = [];
-        // 使用全排列/组合方式枚举所有可能牌型（复杂的可以用更高效的算法优化）
-        const n = hand.length;
-        for (let size = 1; size <= Math.min(n, 8); size++) {
-            for (let i = 0; i <= n - size; i++) {
-                const slice = hand.slice(i, i + size);
-                const t = parseCardType(slice);
-                if (t) plays.push(t);
+        if (!this.lastValidPlay.playerId) { // AI starts a new round
+            return this.playCards(playerId, [hand[hand.length-1].id]); // Play smallest card
+        }
+        
+        // Try to beat the last play
+        const lastPlayType = this.getCardType(this.lastValidPlay.cards);
+        
+        // Simple AI: only tries to beat singles
+        if (lastPlayType.type === 'single') {
+            for(let i = hand.length - 1; i >= 0; i--) {
+                const potentialPlay = { type: 'single', rank: hand[i].rank };
+                if (this.canBeat(potentialPlay, lastPlayType)) {
+                    return this.playCards(playerId, [hand[i].id]);
+                }
             }
         }
-        // 火箭
-        const jokerCards = hand.filter(c => c.rank >= 98);
-        if (jokerCards.length === 2) {
-            const t = parseCardType(jokerCards);
-            if (t) plays.push(t);
-        }
-        return plays;
+        
+        // Cannot beat, so pass
+        return this.passTurn(playerId);
     }
-
-    sortHand = (hand) => hand.sort((a, b) => b.rank - a.rank);
-    getPlayerById = (id) => this.players.find(p => p.id === id);
-    getCurrentBiddingPlayer = () => this.players[this.bidTurn];
-    getCurrentPlayingPlayer = () => this.players[this.playTurn];
-    getWinner = () => this.winner;
+    
+    aiSimpleBid(playerId) {
+        const player = this.getPlayerById(playerId);
+        const goodCards = player.hand.filter(c => c.rank > 13).length; // Count Aces, 2s, Jokers
+        
+        if (goodCards > 4 && this.biddingCycle.highestBid < 3) return 3;
+        if (goodCards > 3 && this.biddingCycle.highestBid < 2) return 2;
+        if (goodCards > 2 && this.biddingCycle.highestBid < 1) return 1;
+        
+        return 0; // Pass
+    }
 }
+
+// For use in other modules
+export { DouDizhuGame };
