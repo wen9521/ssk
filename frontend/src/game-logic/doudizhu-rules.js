@@ -1,0 +1,203 @@
+import { createDeck, shuffle } from './deck.js';
+import { parseCardType, canPlayOver } from './card-logic.js';
+
+export class DouDizhuGame {
+    constructor(playerNames = ['您', '右侧AI', '左侧AI']) {
+        this.players = playerNames.map((name, index) => ({
+            id: `player-${index}`,
+            name: name,
+            hand: [],
+            isLandlord: false,
+            playsCount: 0,
+        }));
+        this.deck = [];
+        this.landlordCards = [];
+        this.winner = null;
+        this.gameState = 'pending';
+        this.baseScore = 1;
+        this.multiplier = 1;
+        this.bidTurn = -1;
+        this.highestBid = 0;
+        this.bidWinner = null;
+        this.passBidCount = 0;
+        this.playTurn = -1;
+        this.lastValidPlay = { playerId: null, cardType: null };
+        this.passPlayCount = 0;
+    }
+
+    startGame() {
+        this.deck = shuffle(createDeck());
+        this.players.forEach(p => {
+            p.hand = this.deck.splice(0, 17);
+            this.sortHand(p.hand);
+            p.playsCount = 0;
+        });
+        this.landlordCards = this.deck;
+        this.gameState = 'bidding';
+        this.bidTurn = Math.floor(Math.random() * this.players.length);
+        this.multiplier = 1;
+        this.highestBid = 0;
+        this.bidWinner = null;
+    }
+
+    playerBid(playerId, bid) {
+        if (this.gameState !== 'bidding' || this.players[this.bidTurn].id !== playerId) return false;
+        if (bid > 0 && bid > this.highestBid) {
+            this.highestBid = bid;
+            this.bidWinner = this.players[this.bidTurn];
+            this.passBidCount = 0;
+        } else {
+            this.passBidCount++;
+        }
+        if (this.highestBid === 3 || (this.bidWinner && this.passBidCount >= this.players.length - 1)) {
+            this.setLandlord(this.bidWinner);
+        } else if (this.passBidCount >= this.players.length) {
+            this.startGame();
+        } else {
+            this.bidTurn = (this.bidTurn + 1) % this.players.length;
+        }
+        return true;
+    }
+
+    setLandlord(landlordPlayer) {
+        if (!landlordPlayer) {
+            this.startGame();
+            return;
+        }
+        landlordPlayer.isLandlord = true;
+        landlordPlayer.hand.push(...this.landlordCards);
+        this.sortHand(landlordPlayer.hand);
+        this.baseScore = this.highestBid;
+        this.gameState = 'playing';
+        this.playTurn = this.players.findIndex(p => p.id === landlordPlayer.id);
+    }
+
+    playCards(playerId, cardIds) {
+        if (this.gameState !== 'playing' || this.players[this.playTurn].id !== playerId) return null;
+        const player = this.getPlayerById(playerId);
+        const cardsToPlay = player.hand.filter(c => cardIds.includes(c.id));
+        if (cardsToPlay.length !== cardIds.length) return null;
+        const myPlayType = parseCardType(cardsToPlay);
+        if (!myPlayType) return null;
+        const lastPlayType = (this.passPlayCount < this.players.length - 1) ? this.lastValidPlay.cardType : null;
+        if (!canPlayOver(myPlayType, lastPlayType)) return null;
+        player.hand = player.hand.filter(c => !cardIds.includes(c.id));
+        player.playsCount++;
+        if (myPlayType.type === 'bomb' || myPlayType.type === 'rocket') {
+            this.multiplier *= 2;
+        }
+        this.lastValidPlay = { playerId, cardType: myPlayType };
+        this.passPlayCount = 0;
+        if (this.checkWinner()) {
+            this.endGame();
+        } else {
+            this.nextPlayTurn();
+        }
+        return { playedCards: cardsToPlay, cardType: myPlayType };
+    }
+
+    passTurn(playerId) {
+        if (this.gameState !== 'playing' || this.players[this.playTurn].id !== playerId) return false;
+        const isFreePlay = this.passPlayCount >= this.players.length - 1 || !this.lastValidPlay.playerId;
+        if (isFreePlay) return false;
+        this.passPlayCount++;
+        this.nextPlayTurn();
+        return true;
+    }
+
+    nextPlayTurn() {
+        this.playTurn = (this.playTurn + 1) % this.players.length;
+    }
+
+    checkWinner() {
+        const winner = this.players.find(p => p.hand.length === 0);
+        if (winner) {
+            this.winner = winner;
+            this.gameState = 'ended';
+            if (winner.isLandlord && this.players.every(p => p.isLandlord || p.playsCount === 0)) {
+                this.multiplier *= 2;
+            } else if (!winner.isLandlord && this.getPlayerById(this.players.find(p => p.isLandlord).id).playsCount <= 1) {
+                this.multiplier *= 2;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    endGame() {
+        // 结算逻辑
+    }
+
+    aiSimpleBid(aiPlayerId) {
+        // 简单AI叫分逻辑，也可自行扩展
+        if (this.highestBid < 2) return Math.random() > 0.5 ? this.highestBid + 1 : 0;
+        return 0;
+    }
+
+    aiSimplePlay(aiPlayerId) {
+        const player = this.getPlayerById(aiPlayerId);
+        const isFreePlay = this.passPlayCount >= 2 || !this.lastValidPlay.cardType;
+        const landlord = this.players.find(p => p.isLandlord);
+        const teammateIsLastPlayer = this.lastValidPlay.playerId && this.getPlayerById(this.lastValidPlay.playerId).isLandlord === player.isLandlord;
+        if (teammateIsLastPlayer && landlord.hand.length > 2) {
+            return this.passTurn(aiPlayerId) ? null : this.playSmallest(aiPlayerId);
+        }
+        const allPlays = this.findAllPlays(player.hand);
+        const validPlays = isFreePlay ? allPlays : allPlays.filter(play => canPlayOver(play, this.lastValidPlay.cardType));
+        if (validPlays.length > 0) {
+            if (!player.isLandlord && landlord.hand.length === 1) {
+                validPlays.sort((a, b) => b.rank - a.rank);
+                return this.playCards(aiPlayerId, validPlays[0].cards.map(c => c.id));
+            }
+            validPlays.sort((a, b) => a.rank - b.rank);
+            return this.playCards(aiPlayerId, validPlays[0].cards.map(c => c.id));
+        }
+        return this.passTurn(aiPlayerId) ? null : this.playSmallest(aiPlayerId);
+    }
+
+    playSmallest(playerId) {
+        const player = this.getPlayerById(playerId);
+        const cardToPlay = player.hand[player.hand.length - 1];
+        return this.playCards(playerId, [cardToPlay.id]);
+    }
+
+    findAllPlays(hand) {
+        // 只给出基本单张/对子/三条，顺子/炸弹等可自行扩展
+        const plays = [];
+        hand.forEach(c => { const t = parseCardType([c]); if (t) plays.push(t); });
+        // 对子
+        for (let i = 0; i < hand.length - 1; i++) {
+            if (hand[i].rank === hand[i + 1].rank) {
+                const t = parseCardType([hand[i], hand[i + 1]]);
+                if (t) plays.push(t);
+            }
+        }
+        // 三条
+        for (let i = 0; i < hand.length - 2; i++) {
+            if (hand[i].rank === hand[i + 1].rank && hand[i].rank === hand[i + 2].rank) {
+                const t = parseCardType([hand[i], hand[i + 1], hand[i + 2]]);
+                if (t) plays.push(t);
+            }
+        }
+        // 炸弹
+        for (let i = 0; i < hand.length - 3; i++) {
+            if (hand[i].rank === hand[i + 1].rank && hand[i].rank === hand[i + 2].rank && hand[i].rank === hand[i + 3].rank) {
+                const t = parseCardType([hand[i], hand[i + 1], hand[i + 2], hand[i + 3]]);
+                if (t) plays.push(t);
+            }
+        }
+        // 火箭
+        const jokerCards = hand.filter(c => c.rank >= 98);
+        if (jokerCards.length === 2) {
+            const t = parseCardType(jokerCards);
+            if (t) plays.push(t);
+        }
+        return plays;
+    }
+
+    sortHand = (hand) => hand.sort((a, b) => b.rank - a.rank);
+    getPlayerById = (id) => this.players.find(p => p.id === id);
+    getCurrentBiddingPlayer = () => this.players[this.bidTurn];
+    getCurrentPlayingPlayer = () => this.players[this.playTurn];
+    getWinner = () => this.winner;
+}
