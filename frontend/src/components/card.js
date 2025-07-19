@@ -3,6 +3,7 @@
  * 
  * 这个模块负责所有与卡牌UI相关的DOM操作。
  */
+import { playSound } from '../services/audio-service.js';
 
 /**
  * 创建单个卡牌的HTML元素。
@@ -24,6 +25,7 @@ function createCardElement(card, isPlayerCard = false) {
     
     if (isPlayerCard) {
         cardDiv.addEventListener('click', () => {
+            playSound('selectCard');
             cardDiv.classList.toggle('selected');
         });
     }

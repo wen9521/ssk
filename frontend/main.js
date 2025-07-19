@@ -1,5 +1,6 @@
 // --- 模块导入 ---
 import { renderLobby } from './src/components/lobby.js';
+import { playSound, stopSound } from './src/services/audio-service.js';
 
 // 斗地主
 import { renderGameBoard } from './src/components/game-board.js';
@@ -23,6 +24,7 @@ let currentGame = null;
 // --- 核心功能 ---
 
 function showLobby() {
+    stopSound('bgMusic');
     app.innerHTML = renderLobby();
     document.querySelectorAll('.game-card').forEach(card => {
         const gameId = card.dataset.game;
@@ -30,10 +32,16 @@ function showLobby() {
         const matchBtn = card.querySelector('.lobby-btn.match');
 
         if (trialBtn && !trialBtn.disabled) {
-            trialBtn.addEventListener('click', () => startGame(gameId, 'offline'));
+            trialBtn.addEventListener('click', () => {
+                playSound('selectCard');
+                startGame(gameId, 'offline');
+            });
         }
         if (matchBtn && !matchBtn.disabled) {
-            matchBtn.addEventListener('click', () => startGame(gameId, 'online'));
+            matchBtn.addEventListener('click', () => {
+                playSound('selectCard');
+                startGame(gameId, 'online');
+            });
         }
     });
 }
@@ -43,6 +51,8 @@ function startGame(gameId, mode) {
         alert('在线匹配模式正在开发中，敬请期待！');
         return;
     }
+
+    playSound('bgMusic', { loop: true, volume: 0.5 });
 
     switch (gameId) {
         case 'doudizhu':
@@ -146,7 +156,8 @@ function biddingLoop() {
 function handleDoudizhuBidClick(event) {
     const button = event.target.closest('button');
     if (!button || button.disabled) return;
-
+    
+    playSound('selectCard');
     const bid = parseInt(button.dataset.bid, 10);
     currentGame.playerBid('player-0', bid);
     
@@ -209,6 +220,7 @@ function handleDoudizhuPlay() {
     const result = currentGame.playCards('player-0', cardIds);
     
     if (result) {
+        playSound('playCard');
         renderPlayedCards('played-cards-area', result.playedCards);
         renderPlayerHand('player-0', currentGame.getPlayerById('player-0').hand, false);
         doudizhuGameLoop();
@@ -219,6 +231,7 @@ function handleDoudizhuPlay() {
 
 function handleDoudizhuPass() {
     if (currentGame.passTurn('player-0')) {
+        playSound('pass');
         updatePlayerStatus('player-0', '不要', true);
         doudizhuGameLoop();
     } else {
@@ -231,9 +244,11 @@ function doudizhuAiTurn() {
     const result = currentGame.aiSimplePlay(aiPlayer.id);
 
     if (result && result.playedCards) {
+        playSound('playCard');
         renderPlayedCards('played-cards-area', result.playedCards);
         updatePlayerStatus(aiPlayer.id, '');
     } else {
+        playSound('pass');
         updatePlayerStatus(aiPlayer.id, '不要');
     }
     
@@ -264,9 +279,11 @@ function bigTwoGameLoop() {
         setTimeout(() => {
             const result = currentGame.aiSimplePlay(currentPlayer.id);
             if (result && result.playedCards) {
+                playSound('playCard');
                 renderPlayedCards('played-cards-area', result.playedCards);
                 updatePlayerStatus(currentPlayer.id, '');
             } else {
+                playSound('pass');
                 updatePlayerStatus(currentPlayer.id, '不要');
             }
             updateCardCount(currentPlayer.id, currentPlayer.hand.length);
@@ -283,6 +300,7 @@ function handleBigTwoPlay() {
     const result = currentGame.playCards('player-0', cardIds);
 
     if (result) {
+        playSound('playCard');
         renderPlayedCards('played-cards-area', result.playedCards);
         renderPlayerHand('player-0', currentGame.players[0].hand, false);
         updateCardCount('player-0', currentGame.players[0].hand.length);
@@ -294,6 +312,7 @@ function handleBigTwoPlay() {
 
 function handleBigTwoPass() {
     if (currentGame.passTurn('player-0')) {
+        playSound('pass');
         updatePlayerStatus('player-0', '不要', true);
         bigTwoGameLoop();
     } else {
@@ -303,6 +322,7 @@ function handleBigTwoPass() {
 
 // --- 十三水主流程 ---
 function handleThirteenWaterGroup() {
+    playSound('selectCard');
     currentGame.autoGroup('player-0');
     document.getElementById('group-btn').disabled = true;
     document.getElementById('compare-btn').disabled = false;
@@ -324,6 +344,7 @@ function showThirteenWaterGroup() {
 }
 
 function handleThirteenWaterCompare() {
+    playSound('playCard');
     const scores = currentGame.compareAll();
     setTimeout(() => {
         let alertMessage = `十三水比牌结果:
@@ -339,6 +360,7 @@ function handleThirteenWaterCompare() {
 
 // --- 通用结束和UI更新 ---
 function endGame(winner) {
+    stopSound('bgMusic');
     setTimeout(() => {
         alert(`游戏结束！胜利者是 ${winner.name}！`);
         showLobby();
