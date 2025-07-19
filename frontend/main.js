@@ -383,7 +383,7 @@ function updatePlayerStatus(playerId, text, isYou = false) {
             indicator = document.createElement('div');
             indicator.className = 'bidding-status-indicator';
             const container = document.querySelector('.player-area.bottom-player');
-            container.appendChild(indicator);
+            if (container) container.appendChild(indicator);
         }
         indicator.textContent = text;
         setTimeout(() => indicator?.remove(), 1200);
@@ -398,9 +398,10 @@ function updatePlayerStatus(playerId, text, isYou = false) {
 
 function updateUITurn(player, phase) {
     document.querySelectorAll('.player-pod').forEach(el => el.style.boxShadow = 'none');
-    document.getElementById(player.id).style.boxShadow = '0 0 25px var(--accent-color)';
+    const playerEl = document.getElementById(player.id);
+    if(playerEl) playerEl.style.boxShadow = '0 0 25px var(--accent-color)';
 
-    if (phase === 'playing') {
+    if (phase === 'playing' && document.getElementById('play-btn')) {
         const isMyTurn = player.id === 'player-0';
         const canPass = currentGame.lastValidPlay.playerId && currentGame.passPlayCount < currentGame.players.length - 1;
         document.getElementById('play-btn').disabled = !isMyTurn;
