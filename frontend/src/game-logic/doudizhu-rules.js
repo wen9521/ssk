@@ -49,11 +49,14 @@ class DouDizhuGame {
     }
     
     sortHand(hand) {
+        // 定义花色的排序顺序
+        const suitOrder = ['spades', 'hearts', 'clubs', 'diamonds'];
         return hand.sort((a, b) => {
             if (a.rank !== b.rank) {
                 return b.rank - a.rank;
             }
-            return SUITS.indexOf(b.suit) - SUITS.indexOf(a.suit);
+            // 如果点数相同，则按花色排序
+            return suitOrder.indexOf(b.suit) - suitOrder.indexOf(a.suit);
         });
     }
 
