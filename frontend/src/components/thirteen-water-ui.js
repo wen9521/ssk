@@ -1,43 +1,74 @@
+// frontend/src/components/thirteen-water-ui.js
+
 export function renderThirteenWaterBoard(players) {
-    // 蓝灰橙风格布局，对应 style.css
+    const you = players[0];
+    const aiPlayers = players.slice(1);
+
     return `
-        <div class="thirteen-water-container">
+    <div class="sss-game-container">
+        <div class="sss-main-panel">
+            
+            <!-- 头部 -->
             <div class="sss-header">
                 <button id="exit-sss-btn" class="exit-btn">&lt; 退出房间</button>
-                <div class="player-score">
-                    <span>🪙</span> 积分：1000
+                <div class="score-display">
+                    <span class="icon">🪙</span>
+                    积分：100
                 </div>
             </div>
-            <div class="player-seats">
-                ${players.map((p, index) => `
-                    <div class="player-seat" id="seat-${p.id}">
-                        <div>${p.name}</div>
-                        <div class="status">${index === 0 ? '你' : '理牌中...'}</div>
+
+            <!-- 玩家座位区 -->
+            <div class="sss-player-seats">
+                <div id="${you.id}" class="sss-seat me">
+                    <div>${you.name}</div>
+                    <div class="status">准备中...</div>
+                </div>
+                ${aiPlayers.map(ai => `
+                    <div id="${ai.id}" class="sss-seat">
+                        <div>${ai.name}</div>
+                        <div class="status">理牌中...</div>
                     </div>
                 `).join('')}
             </div>
-            <div id="player-hand-area" class="sss-hand-area"></div>
-            <div class="dun-area-container">
-                <div class="dun-area" id="front-dun" data-dun-index="0">
-                    <div class="card-display-area"></div>
-                    <div class="dun-label">头道 (0)</div>
-                </div>
-                <div class="dun-area" id="middle-dun" data-dun-index="1">
-                    <div class="card-display-area"></div>
-                    <div class="dun-label">中道 (0)</div>
-                </div>
-                <div class="dun-area" id="back-dun" data-dun-index="2">
-                    <div class="card-display-area"></div>
-                    <div class="dun-label">尾道 (0)</div>
-                </div>
+
+            <!-- 牌墩区域 -->
+            <div id="front-dun" class="sss-dun-area">
+                <div class="card-display-area"></div>
+                <div class="dun-label">头道 (0/3)</div>
             </div>
-            <div class="sss-actions">
-                 <button id="ready-btn" class="action-btn ready">准备</button>
-                 <button id="auto-group-btn" class="action-btn auto-split" disabled>智能分牌</button>
-                 <button id="compare-btn" class="action-btn compare" disabled>开始比牌</button>
+            <div id="middle-dun" class="sss-dun-area">
+                <div class="card-display-area"></div>
+                <div class="dun-label">中道 (0/5)</div>
             </div>
+            <div id="back-dun" class="sss-dun-area">
+                <div class="card-display-area"></div>
+                <div class="dun-label">尾道 (0/5)</div>
+            </div>
+
+            <!-- 自己的手牌/操作区 -->
+            <div id="player-hand-area" class="card-display-area my-hand">
+                <!-- 卡牌由JS动态渲染 -->
+            </div>
+
+            <!-- 按钮区 -->
+            <div class="sss-action-buttons">
+                <button id="ready-btn" class="sss-btn">准备</button>
+                <button id="auto-group-btn" class="sss-btn" disabled>智能分牌</button>
+                <button id="compare-btn" class="sss-btn" disabled>开始比牌</button>
+            </div>
+
+            <!-- 消息区 -->
             <div id="sss-message" class="sss-message-area"></div>
-            <div id="thirteen-water-results" class="results-overlay"></div>
+            
+            <!-- 结果弹窗 -->
+            <div id="thirteen-water-results" class="sss-result-modal-overlay">
+                <div class="sss-result-modal">
+                    <button class="close-btn">&times;</button>
+                    <!-- 结果内容由JS动态生成 -->
+                </div>
+            </div>
+
         </div>
+    </div>
     `;
 }
