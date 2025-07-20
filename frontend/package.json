@@ -6,7 +6,7 @@
   "description": "十三水前端，适用于 Cloudflare Pages 部署与安卓 WebView 集成",
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "PUBLIC_URL=./ react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

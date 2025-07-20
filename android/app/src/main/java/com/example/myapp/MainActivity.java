@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
         myWebView.addJavascriptInterface(new WebAppInterface(this), "Android");
 
         // 加载本地 assets 目录下的 index.html
-        myWebView.loadUrl("file:///android_asset/index.html");
+        myWebView.loadUrl("file:///android_asset/www/index.html");
     }
 
     @Override
