@@ -56,6 +56,8 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+        // Enable core library desugaring
+        coreLibraryDesugaringEnabled true
     }
 
     // 清理任务，在每次构建前删除旧的前端资源
@@ -75,4 +77,6 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'com.google.android.material:material:1.11.0'
+    // Add the desugaring library
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
 }
