@@ -1,22 +1,52 @@
+/* 全局设置 */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #164b2e;
+  color: #fff;
+  font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  font-size: 16px;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .app {
-  /* 全局应用样式 */
-  text-align: center;
-  background: #164b2e; /* 深绿色背景 */
-  color: #fff; /* 白色文字 */
   min-height: 100vh;
-  font-family: sans-serif; /* 示例字体 */
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 0 8px 40px 8px;
+  background: #185a30;
+  box-shadow: 0 8px 40px #23e67a50, 0 1.5px 5px #1a462a6a;
+  border-radius: 0 0 18px 18px;
+  text-align: center;
+}
+
+h1, h2, h3, h4 {
+  margin: 12px 0;
+  font-weight: 700;
+  letter-spacing: .5px;
 }
 
 /* 按钮样式 */
 .btn {
+  display: block;
+  width: 100%;
+  max-width: 350px;
+  margin: 16px auto 0 auto;
   border: none;
   border-radius: 10px;
-  padding: 13px 0;
+  padding: 16px 0;
   font-size: 18px;
   font-weight: 700;
+  background: #23e67a;
+  color: #fff;
+  box-shadow: 0 2px 9px #23e67a44;
   cursor: pointer;
-  transition: background 0.16s, box-shadow 0.16s;
-  flex: 1; /* 在 flex 容器中平分空间 */
+  transition: background .16s, box-shadow .16s;
+}
+
+.btn:active {
+  background: #1c6e41;
 }
 
 .btn:disabled {
@@ -26,85 +56,123 @@
   box-shadow: none;
 }
 
-.btn-ready {
-  background: #23e67a;
-  color: #fff;
-  box-shadow: 0 2px 9px #23e67a22;
-}
-
-.btn-smart-split {
-  background: #23e67a;
-  color: #fff;
-  box-shadow: 0 2px 9px #23e67a44;
-}
-
-.btn-compare {
-  background: #ffb14d;
-  color: #222;
-  box-shadow: 0 2px 9px #ffb14d55;
-}
-
-/* 游戏状态提示样式 */
-.game-status-bar {
-  color: #c3e1d1;
-  text-align: center;
-  font-size: 16px;
-  margin-top: 8px;
-  min-height: 24px;
-  background: rgba(0, 0, 0, 0.1);
-  padding: 8px;
-  border-radius: 8px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.play-container {
-  max-width: 420px;
-  margin: 28px auto 0 auto;
-  background: #185a30; /* 深绿色，和全局统一 */
-  border-radius: 18px;
-  box-shadow: 0 8px 40px #23e67a50, 0 1.5px 5px #1a462a6a;
-  padding: 22px 12px 24px 12px;
-  text-align: center;
-}
-.cards-area {
+/* 牌手区自适应横向滚动 */
+.cards-area, .hand {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   gap: 8px;
-  margin-bottom: 18px;
+  margin: 0 0 18px 0;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 4px;
 }
+
+/* 牌图片适配 */
 .card-img {
-  width: 46px;
-  height: 66px;
+  width: 48px;
+  height: 70px;
+  min-width: 48px;
+  min-height: 70px;
   border-radius: 6px;
-  box-shadow: 0 4px 22px #23e67a44, 0 1.5px 5px #1a462a6a !important;
+  box-shadow: 0 4px 16px #23e67a33, 0 1.5px 5px #1a462a6a !important;
   background: #fff;
   object-fit: contain;
+  margin: 0 2px;
+  transition: box-shadow .13s, border .13s;
 }
+
+.card-img.dragging,
+.hand > div[style*="border: 2px solid blue;"] .card-img {
+  border: 2.5px solid #23e67a;
+  box-shadow: 0 0 16px 2px #23e67a99;
+}
+
+.hand > div {
+  display: inline-block;
+}
+
+/* 牌墩区块 */
+.hand-assignments {
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+@media (min-width: 600px) {
+  .hand-assignments {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+.play-pai-dun {
+  flex: 1;
+  background: #175629;
+  padding: 10px 4px 12px 4px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  min-width: 0;
+}
+
+.play-pai-dun h4 {
+  font-size: 1rem;
+  margin: 0 0 6px 0;
+}
+
+/* 移除按钮 */
+.play-pai-dun button {
+  margin: 2px 2px 4px 2px;
+  padding: 1px 8px;
+  font-size: 13px;
+  border-radius: 6px;
+  background: #fff2;
+  color: #fff;
+  border: none;
+}
+
+/* 比牌按钮 */
+.play-pai-dun > button {
+  display: block;
+  width: 100%;
+  margin: 8px 0 0 0;
+  background: #ffb14d;
+  color: #222;
+  font-weight: 700;
+}
+
+/* 结果区 */
 .result-container {
-  max-width: 350px;
-  margin: 60px auto 0 auto;
-  background: #185a30; /* 深绿色，和全局统一 */
-  border-radius: 18px;
+  max-width: 340px;
+  margin: 28px auto 0 auto;
+  background: #185a30;
+  border-radius: 14px;
   box-shadow: 0 8px 40px #23e67a50, 0 1.5px 5px #23e67a6a;
-  padding: 28px 24px 24px 24px;
+  padding: 18px 8px 16px 8px;
   text-align: center;
 }
-/* 牌墩和seat的绿色暗影风格 */
-.play-seat, .play-seat.empty, .play-pai-dun {
-  border: none !important;
-  box-shadow: 0 4px 22px #23e67a44, 0 1.5px 5px #1a462a6a !important;
-  background: #185a30 !important;
+
+.opponent-hands {
+  margin-top: 16px;
 }
 
-/* 拖拽时的卡牌样式 */
-.card-img.dragging {
-  opacity: 0.5; /* 拖拽时半透明 */
-  border: 2px dashed #fff; /* 拖拽时显示虚线边框 */
+@media (max-width: 480px) {
+  .app {
+    padding: 0 2px 16px 2px;
+    border-radius: 0;
+    max-width: 100vw;
+    box-shadow: none;
+  }
+  .result-container {
+    max-width: 96vw;
+    padding: 8px 2vw 12px 2vw;
+  }
 }
 
-/* 可放置区域的高亮样式 */
-.droppable-highlight {
-    border: 2px dashed #fff; /* 拖拽进入时显示虚线边框 */
-    background-color: rgba(255, 255, 255, 0.1); /* 拖拽进入时背景变浅 */
+/* 触摸优化，提高点按区域 */
+.hand > div {
+  min-width: 48px;
+  min-height: 70px;
+  touch-action: manipulation;
 }
