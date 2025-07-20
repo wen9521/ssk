@@ -1,18 +1,18 @@
 import React from 'react';
 import Card from './Card.jsx';
 
-function Hand({ cards, onCardClick, selectedCards }) {
+function Hand({ cards, onCardClick, selectedCards = [] }) {
   return (
     <div className="hand">
       {cards.map((card, index) => (
         <div 
-          key={`${card.suit}-${card.rank}-${index}`} // 添加index以防万一有重复的牌对象
-          onClick={() => onCardClick(card)}
+          key={`${card.suit}-${card.rank}-${index}`}
+          onClick={() => onCardClick && onCardClick(card)}
           style={{
-            cursor: 'pointer',
+            cursor: onCardClick ? 'pointer' : 'default',
             border: selectedCards.some(selectedCard => 
               selectedCard.suit === card.suit && selectedCard.rank === card.rank
-            ) ? '2px solid blue' : 'none' // 选中时添加蓝色边框
+            ) ? '2px solid blue' : 'none'
           }}
         >
           <Card suit={card.suit} rank={card.rank} />
