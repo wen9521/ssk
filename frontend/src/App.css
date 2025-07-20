@@ -1,0 +1,110 @@
+.app {
+  /* 全局应用样式 */
+  text-align: center;
+  background: #164b2e; /* 深绿色背景 */
+  color: #fff; /* 白色文字 */
+  min-height: 100vh;
+  font-family: sans-serif; /* 示例字体 */
+}
+
+/* 按钮样式 */
+.btn {
+  border: none;
+  border-radius: 10px;
+  padding: 13px 0;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s, box-shadow 0.16s;
+  flex: 1; /* 在 flex 容器中平分空间 */
+}
+
+.btn:disabled {
+  background: #b0b0b0;
+  color: #fff;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-ready {
+  background: #23e67a;
+  color: #fff;
+  box-shadow: 0 2px 9px #23e67a22;
+}
+
+.btn-smart-split {
+  background: #23e67a;
+  color: #fff;
+  box-shadow: 0 2px 9px #23e67a44;
+}
+
+.btn-compare {
+  background: #ffb14d;
+  color: #222;
+  box-shadow: 0 2px 9px #ffb14d55;
+}
+
+/* 游戏状态提示样式 */
+.game-status-bar {
+  color: #c3e1d1;
+  text-align: center;
+  font-size: 16px;
+  margin-top: 8px;
+  min-height: 24px;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  border-radius: 8px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.play-container {
+  max-width: 420px;
+  margin: 28px auto 0 auto;
+  background: #185a30; /* 深绿色，和全局统一 */
+  border-radius: 18px;
+  box-shadow: 0 8px 40px #23e67a50, 0 1.5px 5px #1a462a6a;
+  padding: 22px 12px 24px 12px;
+  text-align: center;
+}
+.cards-area {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.card-img {
+  width: 46px;
+  height: 66px;
+  border-radius: 6px;
+  box-shadow: 0 4px 22px #23e67a44, 0 1.5px 5px #1a462a6a !important;
+  background: #fff;
+  object-fit: contain;
+}
+.result-container {
+  max-width: 350px;
+  margin: 60px auto 0 auto;
+  background: #185a30; /* 深绿色，和全局统一 */
+  border-radius: 18px;
+  box-shadow: 0 8px 40px #23e67a50, 0 1.5px 5px #23e67a6a;
+  padding: 28px 24px 24px 24px;
+  text-align: center;
+}
+/* 牌墩和seat的绿色暗影风格 */
+.play-seat, .play-seat.empty, .play-pai-dun {
+  border: none !important;
+  box-shadow: 0 4px 22px #23e67a44, 0 1.5px 5px #1a462a6a !important;
+  background: #185a30 !important;
+}
+
+/* 拖拽时的卡牌样式 */
+.card-img.dragging {
+  opacity: 0.5; /* 拖拽时半透明 */
+  border: 2px dashed #fff; /* 拖拽时显示虚线边框 */
+}
+
+/* 可放置区域的高亮样式 */
+.droppable-highlight {
+    border: 2px dashed #fff; /* 拖拽进入时显示虚线边框 */
+    background-color: rgba(255, 255, 255, 0.1); /* 拖拽进入时背景变浅 */
+}

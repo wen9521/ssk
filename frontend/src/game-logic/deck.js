@@ -1,33 +1,42 @@
-import { SUITS, VALUES } from '../constants.js';
-import { parseCardFilename } from '../services/card-parser.js';
+// frontend/src/game-logic/deck.js
 
-// 生成一副完整扑克牌的文件名列表
-function generateFullDeckFiles() {
-    const files = [];
-    for (const suitKey in SUITS) {
-        for (const valueKey in VALUES) {
-            files.push(`${valueKey}_of_${suitKey}.svg`);
-        }
-    }
-    files.push('red_joker.svg');
-    files.push('black_joker.svg');
-    return files;
-}
-
-export const FULL_DECK_FILES = generateFullDeckFiles();
-
-// 创建一副完整的、解析好的牌组
 export function createDeck() {
-    return FULL_DECK_FILES.map(file => parseCardFilename(file));
+  const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
+  const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
+  const deck = [];
+
+  for (const suit of suits) {
+    for (const rank of ranks) {
+      deck.push({ suit, rank });
+    }
+  }
+
+  return deck;
 }
 
-// 洗牌
-export function shuffle(deck) {
-    let currentIndex = deck.length, randomIndex;
-    while (currentIndex !== 0) {
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex--;
-        [deck[currentIndex], deck[randomIndex]] = [deck[randomIndex], deck[currentIndex]];
+export function shuffleDeck(deck) {
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]]; // Swap elements
+  }
+  return deck;
+}
+
+export function dealCards(shuffledDeck, numPlayers, numCardsPerPlayer) {
+  const hands = [];
+  for (let i = 0; i < numPlayers; i++) {
+    hands.push([]);
+  }
+
+  let currentCardIndex = 0;
+  for (let i = 0; i < numCardsPerPlayer; i++) {
+    for (let j = 0; j < numPlayers; j++) {
+      if (currentCardIndex < shuffledDeck.length) {
+        hands[j].push(shuffledDeck[currentCardIndex]);
+        currentCardIndex++;
+      }
     }
-    return deck;
+  }
+
+  return hands;
 }
