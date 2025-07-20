@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
-import GameBoard from './components/GameBoard.jsx';
-import './App.css'; // 确保App.css被引入
+import Play from './components/Play.jsx'; // 导入真正的 Play 组件
+import './App.css'; 
 
 // 游戏大厅（首页）
 function Lobby() {
@@ -34,7 +34,6 @@ function ThirteenWaterMenu() {
     <div className="app">
       <h2>十三水</h2>
       <div className="menu">
-        {/* Play.jsx 现在是 GameBoard.jsx 的父组件，处理路由和返回逻辑 */}
         <Link to="/play" className="btn">试玩（离线）</Link>
         <Link to="/thirteen/auto" className="btn">自动匹配</Link>
         <Link to="/thirteen/rooms" className="btn">房间列表</Link>
@@ -43,19 +42,6 @@ function ThirteenWaterMenu() {
     </div>
   );
 }
-
-// 专门用于承载游戏板的组件，处理返回逻辑
-function Play() {
-    const navigate = useNavigate();
-    return (
-        <div className="app">
-             {/* GameBoard 不再需要 navigate, 因为它的父组件处理了 */}
-            <GameBoard />
-            <button className="btn btn-back" onClick={() => navigate(-1)}>返回菜单</button>
-        </div>
-    );
-}
-
 
 export default function App() {
   return (

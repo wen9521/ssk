@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { aiSmartSplit, getPlayerSmartSplits } from '../game-logic/thirteen-water-rules';
 import { calcSSSAllScores, isFoul } from '../game-logic/thirteen-water-rules';
 import { getShuffledDeck, dealHands } from '../game-logic/deck';
@@ -8,6 +9,7 @@ import './Play.css';
 const AI_NAMES = ['小明', '小红', '小刚'];
 
 export default function Play() {
+  const navigate = useNavigate();
   const [head, setHead] = useState([]);
   const [middle, setMiddle] = useState([]);
   const [tail, setTail] = useState([]);
@@ -155,26 +157,29 @@ export default function Play() {
   }
 
   return (
-    <GameBoard
-      head={head}
-      middle={middle}
-      tail={tail}
-      selected={selected}
-      msg={msg}
-      aiPlayers={aiPlayers}
-      showResult={showResult}
-      scores={scores}
-      isReady={isReady}
-      hasCompared={hasCompared}
-      foulStates={foulStates}
-      aiProcessed={aiProcessed}
-      handleReady={handleReady}
-      handleCardClick={handleCardClick}
-      moveTo={moveTo}
-      handleSmartSplit={handleSmartSplit}
-      handleStartCompare={handleStartCompare}
-      setShowResult={setShowResult}
-    />
+    <div>
+        <GameBoard
+          head={head}
+          middle={middle}
+          tail={tail}
+          selected={selected}
+          msg={msg}
+          aiPlayers={aiPlayers}
+          showResult={showResult}
+          scores={scores}
+          isReady={isReady}
+          hasCompared={hasCompared}
+          foulStates={foulStates}
+          aiProcessed={aiProcessed}
+          handleReady={handleReady}
+          handleCardClick={handleCardClick}
+          moveTo={moveTo}
+          handleSmartSplit={handleSmartSplit}
+          handleStartCompare={handleStartCompare}
+          setShowResult={setShowResult}
+        />
+        <button className="btn btn-back" onClick={() => navigate(-1)} style={{marginTop: '20px'}}>返回菜单</button>
+    </div>
   );
 }
 

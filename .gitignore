@@ -1,15 +1,22 @@
+# Dependencies
+/node_modules
+/frontend/node_modules
+/backend/vendor
+
+# Build output
+/frontend/build
+
 # IDE and OS files
 .idea/
 .vscode/
 *.swp
+*~
 .DS_Store
 
-# Dependencies
-/node_modules/
-/backend/vendor/
-
-# Log files
-*.log
-
-# Build output (if any)
-/dist/
+# Android files
+/android/.gradle/
+/android/build/
+/android/app/build/
+*.apk
+*.aab
+release-key.jks
