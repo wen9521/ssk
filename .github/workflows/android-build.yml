@@ -57,7 +57,16 @@ jobs:
           rm -rf android/app/src/main/assets/*
           cp -r frontend/build/* android/app/src/main/assets/
 
-      - name: 构建 Debug APK 并运行单元测试
+      - name: 确保 Gradle Wrapper 正常
+        run: |
+          if [ ! -f android/gradle/wrapper/gradle-wrapper.jar ]; then
+            sudo apt-get update
+            sudo apt-get install -y gradle
+            cd android
+            gradle wrapper
+          fi
+
+      - name: 授权并构建 Debug APK
         run: |
           chmod +x android/gradlew
           cd android
@@ -89,6 +98,15 @@ jobs:
         run: |
           emulator -avd test-emu -no-window -no-snapshot -gpu swiftshader_indirect &
           adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done;'
+
+      - name: 确保 Gradle Wrapper 正常
+        run: |
+          if [ ! -f android/gradle/wrapper/gradle-wrapper.jar ]; then
+            sudo apt-get update
+            sudo apt-get install -y gradle
+            cd android
+            gradle wrapper
+          fi
 
       - name: 执行 Instrumentation 测试
         run: |
