@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Hand from './Hand.jsx';
 import { createDeck, shuffleDeck, dealCards } from '../game-logic/deck';
 import { calculateScore, simpleAI } from '../game-logic/thirteen-water-rules'; 
-import '/frontend/src/App.css'; // 导入 CSS 文件
-// 可能还需要其他组件，例如 PlayerArea, TableArea 等
+// import './App.css'; // 建议删除，因为App.jsx已经引入
 
 function GameBoard() {
   const [playerCards, setPlayerCards] = useState([]);
@@ -132,17 +131,17 @@ function GameBoard() {
   };
 
   return (
-    <div className="play-container"> {/* 应用 play-container 样式 */}
+    <div className="play-container">
       <h2>游戏区域</h2>
       <button onClick={startNewGame}>开始新游戏</button>
 
-      <div className="cards-area"> {/* 应用 cards-area 样式 */}
+      <div className="cards-area">
         <h3>我的手牌 ({playerCards.length} 张)</h3>
         <Hand cards={playerCards} onCardClick={handleCardClick} selectedCards={selectedCards} />
       </div>
 
-      <div className="hand-assignments"> {/* 可能需要为这个区域或其子元素添加样式 */}
-        <div className="play-pai-dun"> {/* 应用 play-pai-dun 样式 */}
+      <div className="hand-assignments">
+        <div className="play-pai-dun">
           <h4>前墩 ({frontHand.length}/3)</h4>
           <Hand cards={frontHand} />
             {frontHand.map((card, index) => (
@@ -150,7 +149,7 @@ function GameBoard() {
             ))}
           <button onClick={() => assignToHand('front')}>分配到前墩</button>
         </div>
-        <div className="play-pai-dun"> {/* 应用 play-pai-dun 样式 */}
+        <div className="play-pai-dun">
           <h4>中墩 ({middleHand.length}/5)</h4>
           <Hand cards={middleHand} />
             {middleHand.map((card, index) => (
@@ -158,7 +157,7 @@ function GameBoard() {
             ))}
           <button onClick={() => assignToHand('middle')}>分配到中墩</button>
         </div>
-        <div className="play-pai-dun"> {/* 应用 play-pai-dun 样式 */}
+        <div className="play-pai-dun">
           <h4>后墩 ({backHand.length}/5)</h4>
           <Hand cards={backHand} />
              {backHand.map((card, index) => (
@@ -173,7 +172,7 @@ function GameBoard() {
         )}
 
         {gameResult !== null && (
-            <div className="result-container"> {/* 应用 result-container 样式 */}
+            <div className="result-container">
                 <h3>游戏结果</h3>
                 {gameResult > 0 ? (
                     <p>恭喜！你赢了 {gameResult} 分！</p>
@@ -186,17 +185,17 @@ function GameBoard() {
         )}
 
         {opponentHands && (
-             <div className="opponent-hands"> {/* 可能需要为对手区域添加样式 */}
+             <div className="opponent-hands">
                  <h3>对手的牌墩</h3>
-                 <div className="play-pai-dun"> {/* 应用 play-pai-dun 样式 */}
+                 <div className="play-pai-dun">
                      <h4>前墩</h4>
                      <Hand cards={opponentHands.front} />
                  </div>
-                 <div className="play-pai-dun"> {/* 应用 play-pai-dun 样式 */}
+                 <div className="play-pai-dun">
                      <h4>中墩</h4>
                      <Hand cards={opponentHands.middle} />
                  </div>
-                 <div className="play-pai-dun"> {/* 应用 play-pai-dun 样式 */}
+                 <div className="play-pai-dun">
                      <h4>后墩</h4>
                      <Hand cards={opponentHands.back} />
                  </div>
