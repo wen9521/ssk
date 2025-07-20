@@ -24,7 +24,7 @@ public class MainActivity extends AppCompatActivity {
         // 添加 JavaScript 接口，命名为 "Android"
         myWebView.addJavascriptInterface(new WebAppInterface(this), "Android");
         
-        myWebView.loadUrl("https://3000-wen9521-ssk-1k8f3y4bs3b.ws-us115.gitpod.io");
+        myWebView.loadUrl("https://gewe.dpdns.org");
     }
 
     @Override
@@ -42,12 +42,12 @@ public class MainActivity extends AppCompatActivity {
     public class WebAppInterface {
         Activity activity;
 
-        /** Instantiate the interface and set the context */
+        // Instantiate the interface and set the context
         WebAppInterface(Activity activity) {
             this.activity = activity;
         }
 
-        /** 从 JavaScript 调用，将屏幕设置为横屏 */
+        // setOrientationToLandscape 方法
         @JavascriptInterface
         public void setOrientationToLandscape() {
             activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
