@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toCardFilename } from '../utils/card-utils'; // 导入工具函数
 import './Play.css';
 
 const GameBoard = ({
@@ -41,10 +42,11 @@ const GameBoard = ({
       <div className={`card-container ${isResult ? 'result-card-container' : ''}`}>
         {cards.map((card, idx) => {
           const isSelected = selected.area === area && selected.cards.includes(card);
+          const cardFilename = toCardFilename(card); // 使用工具函数转换卡牌名称
           return (
             <img
               key={card}
-              src={`/cards/${card}.svg`}
+              src={`/assets/cards/${cardFilename}.svg`} // 更新图片路径
               alt={card}
               className={`card-img ${isSelected ? 'selected' : ''}`}
               style={{ zIndex: idx, left: `calc(var(--card-overlap) * ${idx})` }}
