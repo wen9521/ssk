@@ -30,11 +30,22 @@ public class MainActivity extends AppCompatActivity {
         // 启用 DOM Storage
         webSettings.setDomStorageEnabled(true);
 
+        // 允许通过 file:// 协议访问文件
+        webSettings.setAllowFileAccess(true);
+        webSettings.setAllowFileAccessFromFileURLs(true);
+        webSettings.setAllowUniversalAccessFromFileURLs(true);
+
+
         // 保证跳转还在 WebView 内
         myWebView.setWebViewClient(new WebViewClient());
 
         // 添加 JS 接口
         myWebView.addJavascriptInterface(new WebAppInterface(this), "Android");
+        
+        // 启用 WebView 调试
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+            WebView.setWebContentsDebuggingEnabled(true);
+        }
 
         // 加载本地 assets 目录下的 index.html
         myWebView.loadUrl("file:///android_asset/www/index.html");
