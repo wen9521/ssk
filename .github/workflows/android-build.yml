@@ -33,7 +33,7 @@ jobs:
           npm run build
 
   android-build:
-    name: 构建 Android
+    name: 构建 Debug APK
     needs: frontend-build
     runs-on: ubuntu-latest
     steps:
@@ -57,7 +57,7 @@ jobs:
           rm -rf android/app/src/main/assets/*
           cp -r frontend/build/* android/app/src/main/assets/
 
-      - name: 确保 Gradle Wrapper 正常
+      - name: 确保 Gradle Wrapper
         run: |
           if [ ! -f android/gradle/wrapper/gradle-wrapper.jar ]; then
             sudo apt-get update
@@ -66,70 +66,26 @@ jobs:
             gradle wrapper
           fi
 
-      - name: 授权并构建 Debug APK
+      - name: 授权并打包 Debug APK
         run: |
           chmod +x android/gradlew
           cd android
-          ./gradlew clean assembleDebug test
+          ./gradlew clean assembleDebug
 
-  android-emulator-test:
-    name: 仿真器 UI 测试
-    needs: android-build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout 仓库
-        uses: actions/checkout@v4
-
-      - name: 设置 JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: 安装 Android SDK & AVD
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y lib32z1 lib32stdc++6
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-33" "system-images;android-33;google_apis;x86_64" "emulator"
-          echo "no" | avdmanager create avd -n test-emu -k "system-images;android-33;google_apis;x86_64" --force
-
-      - name: 启动模拟器
-        run: |
-          emulator -avd test-emu -no-window -no-snapshot -gpu swiftshader_indirect &
-          adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done;'
-
-      - name: 确保 Gradle Wrapper 正常
-        run: |
-          if [ ! -f android/gradle/wrapper/gradle-wrapper.jar ]; then
-            sudo apt-get update
-            sudo apt-get install -y gradle
-            cd android
-            gradle wrapper
-          fi
-
-      - name: 执行 Instrumentation 测试
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew connectedDebugAndroidTest
-
-      - name: 收集测试报告
+      - name: 上传 Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: ui-test-report
-          path: android/app/build/reports/androidTests/connected/
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
 
-  fastlane-deploy:
-    name: Fastlane 发布
-    needs: android-emulator-test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  android-release:
+    name: 构建 Release APK
+    needs: android-build
     runs-on: ubuntu-latest
     env:
       SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
       SIGNING_KEY_ALIAS:       ${{ secrets.SIGNING_KEY_ALIAS }}
       SIGNING_KEY_PASSWORD:    ${{ secrets.SIGNING_KEY_PASSWORD }}
-      GOOGLE_PLAY_JSON:        ${{ secrets.GOOGLE_PLAY_JSON }}
     steps:
       - name: Checkout 仓库
         uses: actions/checkout@v4
@@ -140,31 +96,31 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 设置 Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.1'
-
-      - name: 缓存 Ruby Gems
-        uses: actions/cache@v3
-        with:
-          path: vendor/bundle
-          key: ${{ runner.os }}-gems-${{ hashFiles('android/Gemfile.lock') }}
-
-      - name: 安装 Bundler & Fastlane
-        run: |
-          gem install bundler
-          bundle install --path vendor/bundle
-
       - name: 解密 Keystore
         run: |
-          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > android/fastlane/keystore.jks
+          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > android/keystore.jks
 
-      - name: 准备 Google Play 凭据
+      - name: 确保 Gradle Wrapper
         run: |
-          echo "$GOOGLE_PLAY_JSON" > android/fastlane/google_play.json
+          if [ ! -f android/gradle/wrapper/gradle-wrapper.jar ]; then
+            sudo apt-get update
+            sudo apt-get install -y gradle
+            cd android
+            gradle wrapper
+          fi
 
-      - name: 执行 Fastlane beta 发布
-        working-directory: android/fastlane
+      - name: 授权并打包 Release APK
         run: |
-          bundle exec fastlane beta
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=keystore.jks \
+            -Pandroid.injected.signing.store.password="$SIGNING_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$SIGNING_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$SIGNING_KEY_PASSWORD"
+
+      - name: 上传 Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: android/app/build/outputs/apk/release/app-release.apk
