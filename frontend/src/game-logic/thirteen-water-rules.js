@@ -58,7 +58,7 @@ function compareHands(handA, handB) {
 
 // 导出isFoul函数，用于实时检查
 export function isFoul(head, middle, tail) {
-    if (head.length !== 3 || middle.length !== 5 || tail.length !== 5) return false; // 未完成理牌，不算倒水
+    if (!head || !middle || !tail || head.length !== 3 || middle.length !== 5 || tail.length !== 5) return false; // 未完成理牌或数据不完整，不算倒水
     return compareHands(head, middle) > 0 || compareHands(middle, tail) > 0;
 }
 
