@@ -1,6 +1,6 @@
 import React from 'react';
 import GameBoard from './components/GameBoard.jsx';
-import '/frontend/src/App.css'; // 导入 CSS 文件
+import './App.css'; // 正确的相对路径
 
 function App() {
   return (
