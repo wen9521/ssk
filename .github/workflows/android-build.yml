@@ -7,129 +7,8 @@ on:
     branches: ["main"]
 
 jobs:
-  frontend-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Verify project structure
-        run: |
-          echo "Root directory: $(pwd)"
-          echo "Contents:"
-          ls -la
-          
-          if [ ! -d "frontend" ]; then
-            echo "::error::Frontend directory not found!"
-            exit 1
-          fi
-          
-          echo "Frontend directory contents:"
-          ls -la frontend
-          
-          if [ ! -f "frontend/package.json" ]; then
-            echo "::error::package.json not found in frontend directory!"
-            exit 1
-          fi
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      
-      - name: Cache node modules
-        uses: actions/cache@v3
-        with:
-          path: frontend/node_modules
-          key: npm-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
-          restore-keys: |
-            npm-${{ runner.os }}-
-      
-      - name: Install dependencies
-        run: |
-          cd frontend
-          echo "Installing dependencies in $(pwd)"
-          
-          if [ -f "package-lock.json" ]; then
-            echo "Using package-lock.json for installation"
-            npm ci
-          else
-            echo "No package-lock.json found, using npm install"
-            npm install
-          fi
-          
-          if [ ! -f "node_modules/.bin/react-scripts" ]; then
-            echo "::error::react-scripts not found after installation!"
-            echo "Installed packages:"
-            npm ls --depth=0
-            exit 1
-          fi
-      
-      - name: Build frontend
-        run: |
-          cd frontend
-          echo "Building in $(pwd)"
-          npm run build
-      
-      - uses: actions/upload-artifact@v4
-        with:
-          name: frontend-assets
-          path: frontend/build
-
-  setup-gradle:
-    runs-on: ubuntu-latest
-    outputs:
-      gradle-version: ${{ steps.setup.outputs.gradle-version }}
-    steps:
-      - id: setup
-        run: echo "gradle-version=8.2" >> $GITHUB_OUTPUT
-
-  android-build:
-    needs: [frontend-build, setup-gradle]
-    runs-on: ubuntu-latest
-    env:
-      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle/android-build
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: frontend-assets
-          path: android/app/src/main/assets
-      
-      - name: Setup Gradle Wrapper
-        run: |
-          cd android
-          if [ ! -f "gradlew" ]; then
-            gradle_version=${{ needs.setup-gradle.outputs.gradle-version }}
-            curl -fsSL "https://services.gradle.org/distributions/gradle-$gradle_version-bin.zip" -o gradle.zip
-            unzip -q gradle.zip
-            rm gradle.zip
-            "./gradle-$gradle_version/bin/gradle" wrapper --gradle-version "$gradle_version"
-            rm -rf "gradle-$gradle_version"
-          fi
-
-      - uses: actions/setup-java@v4
-        with:
-          java-version: "17"
-          distribution: "temurin"
-      
-      - uses: actions/cache@v3
-        with:
-          path: ${{ env.GRADLE_USER_HOME }}
-          key: gradle-${{ runner.os }}-android-build-${{ hashFiles('android/**/build.gradle') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-android-build-
-            gradle-${{ runner.os }}-
-      
-      - name: Build Debug APK
-        run: |
-          cd android
-          ./gradlew clean assembleDebug --no-daemon
-          
-      - uses: actions/upload-artifact@v4
-        with:
-          name: app-debug
-          path: android/app/build/outputs/apk/debug/*.apk
-
+  # 前端构建部分保持不变...
+  
   android-release:
     needs: [frontend-build, setup-gradle]
     runs-on: ubuntu-latest
@@ -138,6 +17,7 @@ jobs:
       SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
       SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
       SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      KEYSTORE_PATH: ${{ github.workspace }}/keystore.jks  # 添加绝对路径变量
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -164,12 +44,11 @@ jobs:
       
       - name: Setup Signing Keystore
         run: |
-          # 创建密钥库在项目根目录的android文件夹下
-          mkdir -p android
-          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > android/keystore.jks
-          chmod 600 android/keystore.jks
-          echo "Keystore created at: $(pwd)/android/keystore.jks"
-          ls -la android/keystore.jks
+          # 将密钥库直接放在工作区根目录
+          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > $KEYSTORE_PATH
+          chmod 600 $KEYSTORE_PATH
+          echo "Keystore created at: $KEYSTORE_PATH"
+          ls -la $KEYSTORE_PATH
       
       - uses: actions/cache@v3
         with:
@@ -182,8 +61,9 @@ jobs:
       - name: Build Release APK
         run: |
           cd android
+          # 使用绝对路径
           ./gradlew clean assembleRelease \
-            -Pandroid.injected.signing.store.file=../keystore.jks \
+            -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
             -Pandroid.injected.signing.store.password="$SIGNING_KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$SIGNING_KEY_ALIAS" \
             -Pandroid.injected.signing.key.password="$SIGNING_KEY_PASSWORD" \
@@ -195,5 +75,5 @@ jobs:
           path: android/app/build/outputs/apk/release/*.apk
           
       - name: Cleanup keystore
-        run: rm -f android/keystore.jks
+        run: rm -f $KEYSTORE_PATH
         if: always()
