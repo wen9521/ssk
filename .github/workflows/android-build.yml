@@ -45,6 +45,16 @@ jobs:
         rm -rf android/app/src/main/assets/*
         cp -r frontend/build/* android/app/src/main/assets/
 
+    - name: ** Force Restore Gradle Wrapper Files **
+      run: |
+        echo "==> Restoring official gradlew script..."
+        curl -o android/gradlew https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradlew
+        echo "==> Restoring official gradle-wrapper.jar..."
+        curl -o android/gradle/wrapper/gradle-wrapper.jar https://repo.gradle.org/gradle/8.7/wrapper/gradle-wrapper.jar
+        echo "==> Files restored. Verifying..."
+        ls -l android/gradlew
+        ls -l android/gradle/wrapper/gradle-wrapper.jar
+
     - name: Build APK
       run: |
         chmod +x android/gradlew
