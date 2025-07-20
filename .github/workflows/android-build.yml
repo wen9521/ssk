@@ -7,62 +7,146 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+
+  frontend-build:
+    name: 构建前端
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout 仓库
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: gradle
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
+      - name: 缓存 npm 依赖
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
 
-    - name: Build Frontend
-      run: |
-        cd frontend
-        npm install
-        npm run build
+      - name: 安装并构建前端
+        run: |
+          cd frontend
+          npm ci
+          npm run build
 
-    - name: Correct Asset Paths for Android
-      run: |
-        INDEX_FILE="frontend/build/index.html"
-        sed -i 's|href="./static/|href="/android_asset/static/|g' $INDEX_FILE
-        sed -i 's|src="./static/|src="/android_asset/static/|g' $INDEX_FILE
+  android-build:
+    name: 构建 Android
+    needs: frontend-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 仓库
+        uses: actions/checkout@v4
 
-    - name: Sync Frontend to Android Assets
-      run: |
-        rm -rf android/app/src/main/assets/*
-        cp -r frontend/build/* android/app/src/main/assets/
+      - name: 设置 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-    - name: Force Restore Gradle Wrapper Files
-      run: |
-        echo "==> Restoring official gradlew script..."
-        curl -o android/gradlew https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradlew
-        echo "==> Restoring official gradle-wrapper.jar..."
-        curl -o android/gradle/wrapper/gradle-wrapper.jar https://repo.gradle.org/gradle/8.7/wrapper/gradle-wrapper.jar
-        echo "==> Files restored. Verifying..."
-        ls -l android/gradlew
-        ls -l android/gradle/wrapper/gradle-wrapper.jar
+      - name: 缓存 Gradle
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/gradle.properties') }}
 
-    - name: Build APK
-      run: |
-        chmod +x android/gradlew
-        cd android
-        ./gradlew assembleDebug
+      - name: 同步前端产物到 Android
+        run: |
+          rm -rf android/app/src/main/assets/*
+          cp -r frontend/build/* android/app/src/main/assets/
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-debug
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: 构建 Debug APK 并运行单元测试
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew clean assembleDebug test
+
+  android-emulator-test:
+    name: 仿真器 UI 测试
+    needs: android-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 仓库
+        uses: actions/checkout@v4
+
+      - name: 设置 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: 安装 Android SDK & AVD
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lib32z1 lib32stdc++6
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-33" "system-images;android-33;google_apis;x86_64" "emulator"
+          echo "no" | avdmanager create avd -n test-emu -k "system-images;android-33;google_apis;x86_64" --force
+
+      - name: 启动模拟器
+        run: |
+          emulator -avd test-emu -no-window -no-snapshot -gpu swiftshader_indirect &
+          adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done;'
+
+      - name: 执行 Instrumentation 测试
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew connectedDebugAndroidTest
+
+      - name: 收集测试报告
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-report
+          path: android/app/build/reports/androidTests/connected/
+
+  fastlane-deploy:
+    name: Fastlane 发布
+    needs: android-emulator-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+      SIGNING_KEY_ALIAS:       ${{ secrets.SIGNING_KEY_ALIAS }}
+      SIGNING_KEY_PASSWORD:    ${{ secrets.SIGNING_KEY_PASSWORD }}
+      GOOGLE_PLAY_JSON:        ${{ secrets.GOOGLE_PLAY_JSON }}
+    steps:
+      - name: Checkout 仓库
+        uses: actions/checkout@v4
+
+      - name: 设置 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: 设置 Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+
+      - name: 缓存 Ruby Gems
+        uses: actions/cache@v3
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gems-${{ hashFiles('android/Gemfile.lock') }}
+
+      - name: 安装 Bundler & Fastlane
+        run: |
+          gem install bundler
+          bundle install --path vendor/bundle
+
+      - name: 解密 Keystore
+        run: |
+          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > android/fastlane/keystore.jks
+
+      - name: 准备 Google Play 凭据
+        run: |
+          echo "$GOOGLE_PLAY_JSON" > android/fastlane/google_play.json
+
+      - name: 执行 Fastlane beta 发布
+        working-directory: android/fastlane
+        run: |
+          bundle exec fastlane beta
