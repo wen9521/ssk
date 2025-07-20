@@ -1,247 +1,47 @@
 /* frontend/src/components/Play.css */
-
-/* 沿用 App.css 的变量 */
-:root {
-  --card-width: 60px;
-  --card-height: 84px;
-  --card-overlap: calc(var(--card-width) / 2);
-  --card-border-radius: 6px;
-  --selected-shadow: 0 0 15px 3px rgba(255, 215, 0, 0.7);
-}
-
-.game-container {
-  width: 100%;
-  max-width: 800px;
-  margin: auto;
-  padding: 20px;
-}
-
 .game-board {
-  background-color: var(--secondary-bg);
-  border-radius: 15px;
+  margin: 0 auto;
   padding: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-.game-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  color: var(--primary-text);
-}
-
-.game-score {
-  background: rgba(0,0,0,0.2);
-  padding: 8px 15px;
-  border-radius: 20px;
-  font-weight: bold;
-}
-
-.players-section {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 25px;
-}
-
-.player-seat {
-  padding: 10px;
+  background-color: #f0f0f0;
   border-radius: 8px;
-  text-align: center;
-  transition: background-color 0.3s;
-  width: 100px;
-}
-
-.player-name {
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-.player-status {
-  font-size: 12px;
-  color: var(--primary-text);
-}
-
-.player-waiting {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-.player-ready {
-  background-color: rgba(255, 215, 0, 0.2);
-  color: var(--accent-color);
-}
-.player-me {
-  border: 2px solid var(--accent-color);
-}
-
-.pai-dun-section {
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   display: flex;
-  justify-content: space-around;
-  margin-bottom: 25px;
-  gap: 15px;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .pai-dun {
-  background: rgba(0,0,0,0.2);
-  border: 2px dashed var(--border-color);
-  border-radius: 10px;
-  padding: 15px;
-  flex: 1;
-  min-height: 120px;
+  background-color: #ddd;
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  min-height: 80px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.3s, border-color 0.3s;
-}
-
-.pai-dun:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: var(--accent-color);
-}
-
-.pai-dun-content {
-  margin-bottom: 10px;
-  position: relative;
-  height: var(--card-height);
-  display: flex;
-  align-items: center;
-}
-
-.pai-dun-placeholder {
-  color: var(--primary-text);
-  font-size: 14px;
+  gap: 10px;
 }
 
 .pai-dun-label {
   font-weight: bold;
-  font-size: 14px;
 }
 
 .card-container {
-  position: relative;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  min-width: 150px;
+  gap: 5px;
 }
 
 .card-img {
-  width: var(--card-width);
-  height: var(--card-height);
-  border-radius: var(--card-border-radius);
-  position: absolute;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  width: 50px;
+  height: 70px;
 }
 
 .card-img.selected {
-  transform: translateY(-10px);
-  box-shadow: var(--selected-shadow);
+  border: 2px solid blue;
 }
 
-.game-footer {
+.game-actions {
   display: flex;
   justify-content: center;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-.btn-action {
-  flex-grow: 1;
-}
-
-.btn-smart {
-  background-color: #27ae60; /* 保留一个功能色 */
-}
-.btn-smart:hover {
-  background-color: #2ecc71;
-}
-.btn-compare {
-  background-color: #e74c3c;
-}
-.btn-compare:hover {
-  background-color: #f1c40f;
-}
-
-.message-area {
-  margin-top: 20px;
-  min-height: 24px;
-  color: var(--accent-color);
-  font-weight: bold;
-}
-
-/* 结果弹窗 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: var(--secondary-bg);
-  padding: 30px;
-  border-radius: 15px;
-  width: 90%;
-  max-width: 700px;
-  position: relative;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-}
-
-.modal-close-btn {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: none;
-  border: none;
-  color: var(--primary-text);
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.result-grid {
-  display: grid;
-  gap: 20px;
-}
-
-.result-player-summary {
-  background: rgba(0,0,0,0.2);
-  padding: 15px;
-  border-radius: 10px;
-}
-
-.result-player-name {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 15px;
-}
-.result-player-name.me {
-  color: var(--accent-color);
-}
-.foul-tag {
-  color: #e74c3c;
-  font-size: 14px;
-  margin-left: 10px;
-}
-.score-tag {
-  color: #f1c40f;
-  margin-left: 10px;
-}
-
-.result-hands {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-}
-
-.result-card-container .card-img {
-  position: static;
-  margin: 0 -15px; /* 让牌部分重叠 */
+  gap: 10px;
 }
