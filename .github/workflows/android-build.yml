@@ -15,6 +15,25 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
+    # 构建前端并拷贝到 Android assets
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Build Frontend
+      run: |
+        cd frontend
+        npm ci
+        npm run build
+
+    - name: Copy Frontend Build to Android Assets
+      run: |
+        rm -rf android/app/src/main/assets/*
+        mkdir -p android/app/src/main/assets
+        cp -r frontend/build/* android/app/src/main/assets/
+
+    # Android 打包
     - name: Set up JDK 17
       uses: actions/setup-java@v3
       with:
