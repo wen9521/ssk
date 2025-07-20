@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { aiSmartSplit, getPlayerSmartSplits } from '../game-logic/thirteen-water-rules';
-import { calcSSSAllScores, isFoul } from '../game-logic/thirteen-water-rules';
-import { getShuffledDeck, dealHands } from '../game-logic/deck';
-import GameBoard from './GameBoard';
+import { aiSmartSplit, getPlayerSmartSplits } from './SmartSplit';
+import { calcSSSAllScores, isFoul } from './sssScore';
+import { getShuffledDeck, dealHands } from './DealCards';
 import './Play.css';
 
 const AI_NAMES = ['小明', '小红', '小刚'];
 
-export default function Play() {
+export default function TryPlay() {
   const navigate = useNavigate();
   const [head, setHead] = useState([]);
   const [middle, setMiddle] = useState([]);
@@ -21,7 +20,7 @@ export default function Play() {
     { name: AI_NAMES[2], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
   ]);
   const [showResult, setShowResult] = useState(false);
-  const [scores, setScores] = useState([0,0,0,0]);
+  const [scores, setScores] = useState([0, 0, 0, 0]);
   const [isReady, setIsReady] = useState(false);
   const [hasCompared, setHasCompared] = useState(false);
   const [foulStates, setFoulStates] = useState([false, false, false, false]);
@@ -40,15 +39,15 @@ export default function Play() {
       setHasCompared(false);
       setMsg('');
       setShowResult(false);
-      setScores([0,0,0,0]);
+      setScores([0, 0, 0, 0]);
       setSelected({ area: '', cards: [] });
       setFoulStates([false, false, false, false]);
       setMySplits([]); setSplitIndex(0);
       setAiProcessed([false, false, false]);
       setAiPlayers([
-        { name: AI_NAMES[0], isAI: true, cards13: aiHands[0], head: aiHands[0].slice(0,3), middle: aiHands[0].slice(3,8), tail: aiHands[0].slice(8,13), processed: false },
-        { name: AI_NAMES[1], isAI: true, cards13: aiHands[1], head: aiHands[1].slice(0,3), middle: aiHands[1].slice(3,8), tail: aiHands[1].slice(8,13), processed: false },
-        { name: AI_NAMES[2], isAI: true, cards13: aiHands[2], head: aiHands[2].slice(0,3), middle: aiHands[2].slice(3,8), tail: aiHands[2].slice(8,13), processed: false },
+        { name: AI_NAMES[0], isAI: true, cards13: aiHands[0], head: aiHands[0].slice(0, 3), middle: aiHands[0].slice(3, 8), tail: aiHands[0].slice(8, 13), processed: false },
+        { name: AI_NAMES[1], isAI: true, cards13: aiHands[1], head: aiHands[1].slice(0, 3), middle: aiHands[1].slice(3, 8), tail: aiHands[1].slice(8, 13), processed: false },
+        { name: AI_NAMES[2], isAI: true, cards13: aiHands[2], head: aiHands[2].slice(0, 3), middle: aiHands[2].slice(3, 8), tail: aiHands[2].slice(8, 13), processed: false },
       ]);
       setTimeout(() => {
         const splits = getPlayerSmartSplits(myHand);
@@ -81,7 +80,7 @@ export default function Play() {
       setHasCompared(false);
       setMsg('');
       setShowResult(false);
-      setScores([0,0,0,0]);
+      setScores([0, 0, 0, 0]);
       setSelected({ area: '', cards: [] });
       setFoulStates([false, false, false, false]);
       setMySplits([]); setSplitIndex(0);
@@ -156,31 +155,151 @@ export default function Play() {
     setIsReady(false);
   }
 
+  const renderPlayerSeat = (name, idx, isMe) => {
+    const aiDone = idx > 0 ? aiProcessed[idx - 1] : false;
+    const playerClasses = ['player-seat'];
+    if (isMe) playerClasses.push('player-me');
+    if (aiDone) playerClasses.push('player-ready');
+
+    return (
+      <div key={name} className={playerClasses.join(' ')}>
+        <div>{name}</div>
+        <div className="player-status">
+          {isMe ? '你' : (aiDone ? '已理牌' : '理牌中…')}
+        </div>
+      </div>
+    );
+  };
+  
+  const renderPaiDunCards = (arr, area) => {
+    // This logic remains in JS as it's dynamic based on props
+    const cardSize = { width: 87, height: 125 };
+    const paddingX = 16;
+    const maxWidth = 420 - 2 * paddingX - 70;
+    let overlap = Math.floor(cardSize.width / 3);
+    if (arr.length > 1) {
+      const totalWidth = cardSize.width + (arr.length - 1) * overlap;
+      if (totalWidth > maxWidth) {
+        overlap = Math.floor((maxWidth - cardSize.width) / (arr.length - 1));
+      }
+    }
+    
+    return (
+      <div className="card-area">
+        {arr.map((card, idx) => {
+          const isSelected = selected.area === area && selected.cards.includes(card);
+          const cardClasses = ['card-img'];
+          if (isReady) cardClasses.push('clickable');
+          if (isSelected) cardClasses.push('selected');
+          
+          return (
+            <img
+              key={card}
+              src={`/cards/${card}.svg`}
+              alt={card}
+              className={cardClasses.join(' ')}
+              style={{ left: `${idx * overlap}px`, zIndex: idx }}
+              onClick={isReady ? (e) => handleCardClick(card, area, e) : undefined}
+              draggable={false}
+            />
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderPaiDun = (arr, label, area) => (
+    <div className="pai-dun" onClick={() => isReady && moveTo(area)}>
+      <div className="pai-dun-content">
+        {arr.length === 0 ? (
+          <div className="pai-dun-placeholder">请放置</div>
+        ) : (
+          renderPaiDunCards(arr, area)
+        )}
+      </div>
+      <div className="pai-dun-label">{label}（{arr.length}）</div>
+    </div>
+  );
+
+  const renderResultModal = () => {
+    if (!showResult) return null;
+    return (
+      <div className="modal-overlay">
+        <div className="modal-content">
+          <button className="modal-close-btn" onClick={() => setShowResult(false)}>×</button>
+          {[0, 1, 2, 3].map(i => {
+            const player = i === 0 ? { name: '你', ...{head, middle, tail} } : aiPlayers[i - 1];
+            const headerClasses = ['result-player-header'];
+            if (i === 0) headerClasses.push('me');
+
+            return (
+              <div key={i} className="result-player">
+                <div className={headerClasses.join(' ')}>
+                  {player.name}
+                  {foulStates[i] && <span className="foul-tag">（倒水）</span>}
+                  （{scores[i]}分）
+                </div>
+                <div className="result-hand">{renderPaiDunCards(player.head, 'none')}</div>
+                <div className="result-hand">{renderPaiDunCards(player.middle, 'none')}</div>
+                <div className="result-hand">{renderPaiDunCards(player.tail, 'none')}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div>
-        <GameBoard
-          head={head}
-          middle={middle}
-          tail={tail}
-          selected={selected}
-          msg={msg}
-          aiPlayers={aiPlayers}
-          showResult={showResult}
-          scores={scores}
-          isReady={isReady}
-          hasCompared={hasCompared}
-          foulStates={foulStates}
-          aiProcessed={aiProcessed}
-          handleReady={handleReady}
-          handleCardClick={handleCardClick}
-          moveTo={moveTo}
-          handleSmartSplit={handleSmartSplit}
-          handleStartCompare={handleStartCompare}
-          setShowResult={setShowResult}
-        />
-        <button className="btn btn-back" onClick={() => navigate(-1)} style={{marginTop: '20px'}}>返回菜单</button>
+    <div className="play-container">
+      <div className="game-wrapper">
+        <div className="game-header">
+          <button className="btn-quit" onClick={() => navigate('/')}>
+            &lt; 退出房间
+          </button>
+          <div className="score-display">
+            <span role="img" aria-label="coin" className="coin-icon">🪙</span>
+            积分：100
+          </div>
+        </div>
+        <div className="players-area">
+          {renderPlayerSeat('你', 0, true)}
+          {aiPlayers.map((ai, idx) => renderPlayerSeat(ai.name, idx + 1, false))}
+        </div>
+        
+        {renderPaiDun(head, '头道', 'head')}
+        {renderPaiDun(middle, '中道', 'middle')}
+        {renderPaiDun(tail, '尾道', 'tail')}
+        
+        <div className="actions-area">
+          <button
+            className={`btn-action btn-ready ${isReady ? 'cancel' : ''}`}
+            onClick={handleReady}
+          >
+            {isReady ? '取消准备' : '准备'}
+          </button>
+          <button
+            className="btn-action btn-smart-split"
+            onClick={handleSmartSplit}
+            disabled={!isReady}
+          >
+            智能分牌
+          </button>
+          <button
+            className="btn-action btn-compare"
+            onClick={handleStartCompare}
+            disabled={!isReady || aiProcessed.some(p => !p)}
+          >
+            开始比牌
+          </button>
+        </div>
+        
+        <div className="message-area">{msg}</div>
+        
+        {renderResultModal()}
+      </div>
     </div>
   );
 }
 
-export { isFoul } from '../game-logic/thirteen-water-rules';
+export { isFoul };

@@ -1,40 +1,74 @@
 /* frontend/src/App.css */
+
+:root {
+  --app-bg: #1a1a2d; /* 更换为深蓝紫色 */
+  --surface-bg: #2a2a3d; /* 稍亮的表面背景 */
+  --primary-text: #e0e0e0;
+  --accent-color: #00e5ff; /* 明亮的青色作为强调色 */
+  --gradient-start: #4e54c8;
+  --gradient-end: #8f94fb;
+}
+
 body {
-  background-color: #f0f0f0;
-  font-family: sans-serif;
+  background-color: var(--app-bg);
+  color: var(--primary-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   margin: 0;
   padding: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: calc(100vh - 40px);
-}
-
-.app {
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 400px;
   text-align: center;
 }
 
+.app {
+  background-color: var(--surface-bg);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); /* 阴影保持，颜色自适应 */
+  width: 100%;
+  max-width: 400px;
+}
+
+h1, h2 {
+  color: var(--accent-color); /* 标题使用强调色 */
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
 .btn {
-  background-color: #4CAF50; /* Green */
+  /* 应用新的渐变色 */
+  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
   border: none;
   color: white;
-  padding: 15px 32px;
+  padding: 12px 28px;
   text-align: center;
   text-decoration: none;
   display: inline-block;
   font-size: 16px;
   margin: 4px 2px;
   cursor: pointer;
-  border-radius: 4px;
-  width: calc(100% - 64px);
+  border-radius: 5px;
+  transition: opacity 0.3s, transform 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .btn:hover {
-  background-color: #45a049;
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-back {
+  background: transparent;
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+}
+.btn-back:hover {
+  background-color: var(--accent-color);
+  color: var(--surface-bg);
 }

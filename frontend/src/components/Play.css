@@ -1,47 +1,216 @@
 /* frontend/src/components/Play.css */
-.game-board {
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #f0f0f0;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+
+/* 继承新的全局渐变色变量 */
+:root {
+  --outer-max-width: 420px;
+  --pai-dun-height: 133px;
+  --card-height: 125px;
+  --card-width: 87px;
+  --app-bg: #1a1a2d;
+  --surface-bg: #2a2a3d;
+  --accent-color: #00e5ff; /* 青色强调色 */
+  --gradient-start: #4e54c8; /* 渐变色 */
+  --gradient-end: #8f94fb;
+  --ready-color: #00ffab; /* 定义一个独立的“准备就绪”颜色 */
+  --quit-btn-bg: linear-gradient(90deg, #f0f0f0 60%, #e0e0e0 100%);
 }
 
-.pai-dun {
-  background-color: #ddd;
-  border: 2px dashed #ccc;
-  border-radius: 4px;
-  padding: 10px;
-  min-height: 80px;
+/* 根容器 */
+.play-container {
+  background: var(--app-bg);
+  min-height: 100vh;
+  font-family: inherit;
+  padding: 30px 0;
+}
+
+.game-wrapper {
+  max-width: var(--outer-max-width);
+  width: 90%;
+  margin: auto;
+  background: var(--surface-bg);
+  border-radius: 22px;
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.5);
+  padding: 16px;
+  border: none;
+  position: relative;
   display: flex;
   flex-direction: column;
+  min-height: 650px;
+  box-sizing: border-box;
+}
+
+/* 头部: 退出和积分 */
+.game-header {
+  display: flex;
   align-items: center;
-  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.btn-quit {
+  background: var(--quit-btn-bg);
+  color: #333; /* 深色文字以保证对比度 */
+  font-weight: bold;
+  border: none;
+  border-radius: 9px;
+  padding: 7px 22px;
+  cursor: pointer;
+  margin-right: 18px;
+  font-size: 17px;
+  box-shadow: 0 1.5px 6px rgba(0, 0, 0, 0.2);
+}
+
+.score-display {
+  flex: 1;
+  text-align: right;
+  color: var(--accent-color); /* 使用新的强调色 */
+  font-weight: 900;
+  font-size: 21px;
+  letter-spacing: 2px;
+  margin-right: 8px;
+  text-shadow: 0 2px 7px rgba(0, 229, 255, 0.3);
+}
+
+.score-display .coin-icon {
+  font-size: 18px;
+  margin-right: 4px;
+}
+
+/* 玩家区 */
+.players-area {
+  display: flex;
+  margin-bottom: 18px;
+  gap: 8px;
+}
+
+.player-seat {
+  border: none;
+  border-radius: 10px;
+  width: 22%;
+  min-width: 70px;
+  color: #fff;
+  background: #3c3c4d; /* 更换背景色 */
+  text-align: center;
+  padding: 12px 0;
+  font-weight: 700;
+  font-size: 17px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  box-sizing: border-box;
+  transition: color 0.28s, background 0.28s;
+}
+
+.player-seat.player-me {
+  color: #fff;
+  background: linear-gradient(45deg, var(--gradient-start), var(--gradient-end));
+}
+
+.player-seat.player-ready {
+  color: var(--ready-color); /* 已准备的玩家用独立的就绪色 */
+}
+
+.player-status {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* 牌墩区域 */
+.pai-dun {
+  width: 100%;
+  border-radius: 14px;
+  background: #3c3c4d; /* 牌墩背景 */
+  min-height: var(--pai-dun-height);
+  height: var(--pai-dun-height);
+  margin-bottom: 20px;
+  position: relative;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding-left: 16px;
+  padding-right: 70px;
 }
 
 .pai-dun-label {
-  font-weight: bold;
+  color: var(--accent-color); /* 标签也用强调色 */
+  /* ... 其余布局样式保持不变 */
+  position: absolute; right: 16px; top: 0; height: 100%; display: flex; align-items: center; font-size: 18px; font-weight: 600; pointer-events: none; background: transparent; white-space: nowrap;
 }
 
-.card-container {
-  display: flex;
-  gap: 5px;
-}
-
-.card-img {
-  width: 50px;
-  height: 70px;
-}
+/* ... card-area, card-img 等与布局相关的样式保持不变 ... */
 
 .card-img.selected {
-  border: 2px solid blue;
+  border: 2.5px solid #ff4444; /* 选中效果的红色保持，因为它是一个状态指示 */
+  box-shadow: 0 0 16px 2px #ff4444cc;
 }
 
-.game-actions {
+/* 底部按钮区 */
+.actions-area {
   display: flex;
-  justify-content: center;
-  gap: 10px;
+  gap: 12px;
+  margin-top: 14px;
 }
+
+.btn-action {
+  flex: 1;
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  padding: 13px 0;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.16s, opacity 0.2s;
+}
+
+.btn-ready {
+  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+  box-shadow: 0 2px 9px rgba(0, 0, 0, 0.3);
+}
+.btn-ready.cancel {
+  background: #6c757d; /* 取消状态用灰色 */
+  box-shadow: none;
+}
+
+.btn-smart-split {
+  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+  box-shadow: 0 2px 9px rgba(0, 0, 0, 0.3);
+}
+
+.btn-compare {
+  background: #ffb14d; /* 比牌按钮颜色保持，因为它是一个重要功能键 */
+  color: #222;
+  box-shadow: 0 2px 9px #ffb14d55;
+}
+
+/* 消息区 */
+.message-area {
+  color: #c3e1d1; /* 消息颜色保持柔和 */
+  /* ...其余布局样式保持不变... */
+  text-align: center; font-size: 16px; margin-top: 8px; min-height: 24px;
+}
+
+/* 结果弹窗 */
+.modal-content {
+  background: var(--surface-bg); /* 弹窗背景与wrapper一致 */
+  /* ...其余布局样式保持不变... */
+  border-radius: 15px; padding: 24px; min-width: 400px; min-height: 270px; box-shadow: 0 8px 40px #0002; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 16px; position: relative;
+}
+
+.result-player-header.me {
+  color: var(--accent-color); /* 弹窗中我的名字用强调色 */
+}
+
+/* ... 其余所有未列出的与布局、尺寸相关的样式，如 .pai-dun-content, .card-area, 弹窗内部等，均保持不变 ... */
+.pai-dun-content{flex:1;height:100%;position:relative;display:flex;align-items:center;min-width:0}
+.pai-dun-placeholder{width:100%;height:100%;display:flex;align-items:center;color:#9e9e9e;font-size:18px;font-weight:500;user-select:none}
+.card-area{position:relative;height:var(--pai-dun-height);width:100%;min-width:0;box-sizing:border-box;overflow:visible}
+.card-img{position:absolute;top:calc((var(--pai-dun-height) - var(--card-height)) / 2);width:var(--card-width);height:var(--card-height);border-radius:5px;border:2.5px solid transparent;box-shadow:none;background:#fff;transition:border .13s,box-shadow .13s,transform .2s;cursor:not-allowed}
+.card-img.clickable{cursor:pointer}
+.modal-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.37);z-index:1000;display:flex;align-items:center;justify-content:center}
+.modal-close-btn{position:absolute;right:18px;top:12px;background:transparent;border:none;font-size:22px;color:#888;cursor:pointer}
+.result-player{text-align:center;border-bottom:1px solid #444}
+.result-player-header{font-weight:700;margin-bottom:8px;color:#00bfff}
+.result-player-header .foul-tag{color:red;font-weight:800;margin-left:6px}
+.result-hand{display:flex;justify-content:center;gap:4px;margin-bottom:3px}
+@media (max-width:480px){.player-seat{margin-right:4px;width:24%;min-width:0}.card-img{transform:scale(.92);transform-origin:top left}}
+
