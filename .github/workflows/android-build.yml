@@ -12,11 +12,9 @@ jobs:
     name: 构建前端
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout 仓库
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 设置 Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
@@ -37,19 +35,19 @@ jobs:
     needs: frontend-build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout 仓库
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 设置 JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 缓存 Gradle
+      - name: 缓存 Gradle 依赖
         uses: actions/cache@v3
         with:
-          path: ~/.gradle/caches
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('android/gradle.properties') }}
 
       - name: 同步前端产物到 Android
@@ -57,20 +55,12 @@ jobs:
           rm -rf android/app/src/main/assets/*
           cp -r frontend/build/* android/app/src/main/assets/
 
-      - name: 确保 Gradle Wrapper
-        run: |
-          if [ ! -f android/gradle/wrapper/gradle-wrapper.jar ]; then
-            sudo apt-get update
-            sudo apt-get install -y gradle
-            cd android
-            gradle wrapper
-          fi
-
-      - name: 授权并打包 Debug APK
-        run: |
-          chmod +x android/gradlew
-          cd android
-          ./gradlew clean assembleDebug
+      - name: 用官方 Gradle Action 构建 Debug
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: clean assembleDebug
+          working-directory: android
+          cache-enabled: true
 
       - name: 上传 Debug APK
         uses: actions/upload-artifact@v4
@@ -87,11 +77,9 @@ jobs:
       SIGNING_KEY_ALIAS:       ${{ secrets.SIGNING_KEY_ALIAS }}
       SIGNING_KEY_PASSWORD:    ${{ secrets.SIGNING_KEY_PASSWORD }}
     steps:
-      - name: Checkout 仓库
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 设置 JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -100,24 +88,25 @@ jobs:
         run: |
           echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > android/keystore.jks
 
-      - name: 确保 Gradle Wrapper
-        run: |
-          if [ ! -f android/gradle/wrapper/gradle-wrapper.jar ]; then
-            sudo apt-get update
-            sudo apt-get install -y gradle
-            cd android
-            gradle wrapper
-          fi
+      - name: 缓存 Gradle 依赖
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/gradle.properties') }}-release
 
-      - name: 授权并打包 Release APK
-        run: |
-          chmod +x android/gradlew
-          cd android
-          ./gradlew assembleRelease \
-            -Pandroid.injected.signing.store.file=keystore.jks \
-            -Pandroid.injected.signing.store.password="$SIGNING_KEYSTORE_PASSWORD" \
-            -Pandroid.injected.signing.key.alias="$SIGNING_KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$SIGNING_KEY_PASSWORD"
+      - name: 用官方 Gradle Action 构建 Release 并签名
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: >-
+            assembleRelease
+            -Pandroid.injected.signing.store.file=keystore.jks
+            -Pandroid.injected.signing.store.password=$SIGNING_KEYSTORE_PASSWORD
+            -Pandroid.injected.signing.key.alias=$SIGNING_KEY_ALIAS
+            -Pandroid.injected.signing.key.password=$SIGNING_KEY_PASSWORD
+          working-directory: android
+          cache-enabled: true
 
       - name: 上传 Release APK
         uses: actions/upload-artifact@v4
