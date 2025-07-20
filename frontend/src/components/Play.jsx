@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { aiSmartSplit, getPlayerSmartSplits } from '../game-logic/thirteen-water-rules';
 import { calcSSSAllScores, isFoul } from '../game-logic/thirteen-water-rules';
 import { getShuffledDeck, dealHands } from '../game-logic/deck';
+import { toCardFilename } from '../utils/card-utils'; // 导入工具函数
 import './Play.css';
 
 const AI_NAMES = ['小明', '小红', '小刚'];
@@ -191,11 +192,12 @@ export default function TryPlay() {
           const cardClasses = ['card-img'];
           if (isReady) cardClasses.push('clickable');
           if (isSelected) cardClasses.push('selected');
+          const cardFilename = toCardFilename(card);
           
           return (
             <img
               key={card}
-              src={`/cards/${card}.svg`}
+              src={`/assets/cards/${cardFilename}.svg`}
               alt={card}
               className={cardClasses.join(' ')}
               style={{ left: `${idx * overlap}px`, zIndex: idx }}
