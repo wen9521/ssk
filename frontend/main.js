@@ -119,6 +119,14 @@ function handleSSSReadyClick() {
         currentGame.startGame();
         const player = currentGame.getPlayerById('player-0');
         const splits = currentGame.getAllSmartSplits(player.id);
+        
+        if (!splits || splits.length === 0) {
+            // 如果没有有效的牌组方案，则直接返回，避免崩溃
+            alert("无法找到有效的牌组组合，请检查算法！");
+            thirteenWaterGameState.isReady = false; // 重置准备状态
+            return;
+        }
+
         thirteenWaterGameState.smartSplits = splits;
         thirteenWaterGameState.currentSplitIndex = 0;
         
