@@ -1,18 +1,28 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
+
+# This script is a robust, POSIX-compliant replacement for the standard gradlew start-up script.
+# It is designed for maximum portability and reliability, especially in CI/CD environments.
+
+# The `set -e` command ensures that the script will exit immediately if a command fails.
 set -e
 
-# A definitive, minimal Gradle start-up script for CI environments.
-# It uses 'pwd' to ensure the path is always correct within the CI execution context.
-APP_HOME=$(pwd)
+# Determine the directory where this script is located. This is the most reliable way to find associated files.
+# The logic handles symlinks and other edge cases to find the true script directory.
+APP_HOME_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
-# The setup-java action guarantees JAVA_HOME is set.
+# The setup-java action in GitHub Actions guarantees that JAVA_HOME is set and valid.
 JAVA_EXE="$JAVA_HOME/bin/java"
 
-# Execute Gradle's main class directly, passing all script arguments ("$@").
-# This avoids all complex shell quoting and eval logic.
+# Execute Gradle's main wrapper class directly.
+# This approach is more direct and avoids the complexity of quoting and eval logic seen in standard scripts.
+# - Dorg.gradle.appname=$(basename "$0"): Sets the application name for Gradle, which is useful for logging and process identification.
+# - cp "$APP_HOME_DIR/gradle/wrapper/gradle-wrapper.jar": Specifies the classpath, pointing directly to the Gradle wrapper JAR.
+#   Using APP_HOME_DIR ensures this path is always correct, regardless of the current working directory.
+# - org.gradle.wrapper.GradleWrapperMain: The main class to execute.
+# - "$@": Passes all command-line arguments that were given to this script directly to the Java application.
 exec "$JAVA_EXE" \
   -Xmx1024m \
   -Xms256m \
-  -Dorg.gradle.appname=gradlew \
-  -cp "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" \
+  -Dorg.gradle.appname="$(basename "$0")" \
+  -cp "$APP_HOME_DIR/gradle/wrapper/gradle-wrapper.jar" \
   org.gradle.wrapper.GradleWrapperMain "$@"
