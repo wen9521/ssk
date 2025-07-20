@@ -2,12 +2,11 @@ name: Android CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-
   frontend-build:
     name: 构建前端
     runs-on: ubuntu-latest
@@ -55,12 +54,12 @@ jobs:
           rm -rf android/app/src/main/assets/*
           cp -r frontend/build/* android/app/src/main/assets/
 
-      - name: 用官方 Gradle Action 构建 Debug
+      - name: 用官方 Gradle Action 构建 Debug 包
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: clean assembleDebug
-          working-directory: android
-          cache-enabled: true
+          gradle-version: '7.6'             # 指定一个合适的 Gradle 版本
+          build-root-directory: 'android'   # 指向 Android 项目根目录
+          arguments: clean assembleDebug    # 执行的 Gradle 任务
 
       - name: 上传 Debug APK
         uses: actions/upload-artifact@v4
@@ -96,17 +95,17 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('android/gradle.properties') }}-release
 
-      - name: 用官方 Gradle Action 构建 Release 并签名
+      - name: 用官方 Gradle Action 构建并签名 Release 包
         uses: gradle/gradle-build-action@v2
         with:
+          gradle-version: '7.6'
+          build-root-directory: 'android'
           arguments: >-
             assembleRelease
             -Pandroid.injected.signing.store.file=keystore.jks
             -Pandroid.injected.signing.store.password=$SIGNING_KEYSTORE_PASSWORD
             -Pandroid.injected.signing.key.alias=$SIGNING_KEY_ALIAS
             -Pandroid.injected.signing.key.password=$SIGNING_KEY_PASSWORD
-          working-directory: android
-          cache-enabled: true
 
       - name: 上传 Release APK
         uses: actions/upload-artifact@v4
