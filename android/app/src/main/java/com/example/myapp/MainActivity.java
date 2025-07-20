@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebSettings; // 导入 WebSettings
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -20,8 +21,14 @@ public class MainActivity extends AppCompatActivity {
 
         myWebView = findViewById(R.id.webview);
 
+        // 获取 WebSettings 对象
+        WebSettings webSettings = myWebView.getSettings();
+
         // 启用 JavaScript
-        myWebView.getSettings().setJavaScriptEnabled(true);
+        webSettings.setJavaScriptEnabled(true);
+
+        // 启用 DOM Storage
+        webSettings.setDomStorageEnabled(true);
 
         // 保证跳转还在 WebView 内
         myWebView.setWebViewClient(new WebViewClient());
