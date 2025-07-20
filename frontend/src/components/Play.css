@@ -80,6 +80,8 @@
   display: flex;
   margin-bottom: 18px;
   gap: 8px;
+  transform: scale(0.9);
+  transform-origin: center;
 }
 
 .player-seat {
@@ -213,4 +215,3 @@
 .result-player-header .foul-tag{color:red;font-weight:800;margin-left:6px}
 .result-hand{display:flex;justify-content:center;gap:4px;margin-bottom:3px}
 @media (max-width:480px){.player-seat{margin-right:4px;width:24%;min-width:0}.card-img{transform:scale(.92);transform-origin:top left}}
-
