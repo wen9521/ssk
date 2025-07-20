@@ -1,86 +1,73 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import GameBoard from './components/GameBoard.jsx';
+import './App.css'; // 确保App.css被引入
 
-// 用于未来扩展八张游戏
-function EightCardsComingSoon() {
+// 游戏大厅（首页）
+function Lobby() {
   return (
     <div className="app">
-      <h2>八张游戏</h2>
-      <p>敬请期待！</p>
-      <button className="btn" onClick={() => window.location.reload()}>返回首页</button>
+      <h1>扑克王</h1>
+      <div className="menu">
+        <Link to="/thirteen" className="btn">十三水</Link>
+        <Link to="/eight" className="btn">八张</Link>
+      </div>
     </div>
   );
 }
 
-// 十三水子菜单（试玩、自动匹配、房间列表）
-function ThirteenWaterMenu({ onBack, onSelectMode }) {
+// 敬请期待页面
+function ComingSoon({ gameName }) {
+  const navigate = useNavigate();
+  return (
+    <div className="app">
+      <h2>{gameName}</h2>
+      <p>敬请期待！</p>
+      <button className="btn" onClick={() => navigate(-1)}>返回</button>
+    </div>
+  );
+}
+
+// 十三水子菜单
+function ThirteenWaterMenu() {
   return (
     <div className="app">
       <h2>十三水</h2>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18, margin: '40px 0 20px 0' }}>
-        <button className="btn" onClick={() => onSelectMode('offline')}>试玩（离线）</button>
-        <button className="btn" onClick={() => onSelectMode('auto')}>自动匹配</button>
-        <button className="btn" onClick={() => onSelectMode('rooms')}>房间列表</button>
+      <div className="menu">
+        {/* Play.jsx 现在是 GameBoard.jsx 的父组件，处理路由和返回逻辑 */}
+        <Link to="/play" className="btn">试玩（离线）</Link>
+        <Link to="/thirteen/auto" className="btn">自动匹配</Link>
+        <Link to="/thirteen/rooms" className="btn">房间列表</Link>
       </div>
-      <button className="btn" onClick={onBack} style={{ marginTop: 32 }}>返回首页</button>
+      <Link to="/" className="btn btn-back">返回首页</Link>
     </div>
   );
 }
 
-export default function App() {
-  const [mainMenu, setMainMenu] = useState(null); // 'thirteen', 'eight'
-  const [thirteenMode, setThirteenMode] = useState(null); // 'offline', 'auto', 'rooms'
-
-  // 首页
-  if (!mainMenu) {
+// 专门用于承载游戏板的组件，处理返回逻辑
+function Play() {
+    const navigate = useNavigate();
     return (
-      <div className="app">
-        <h1>扑克王</h1>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 22, marginTop: 60 }}>
-          <button className="btn" onClick={() => setMainMenu('thirteen')}>十三水</button>
-          <button className="btn" onClick={() => setMainMenu('eight')}>八张</button>
+        <div className="app">
+             {/* GameBoard 不再需要 navigate, 因为它的父组件处理了 */}
+            <GameBoard />
+            <button className="btn btn-back" onClick={() => navigate(-1)}>返回菜单</button>
         </div>
-      </div>
     );
-  }
+}
 
-  // 八张游戏
-  if (mainMenu === 'eight') {
-    return <EightCardsComingSoon />;
-  }
 
-  // 十三水游戏
-  if (mainMenu === 'thirteen' && !thirteenMode) {
-    return (
-      <ThirteenWaterMenu
-        onBack={() => setMainMenu(null)}
-        onSelectMode={setThirteenMode}
-      />
-    );
-  }
-
-  // 十三水 - 试玩模式（离线）
-  if (mainMenu === 'thirteen' && thirteenMode === 'offline') {
-    return (
-      <div className="app">
-        <h2>十三水试玩（离线）</h2>
-        <GameBoard offlineMode={true} />
-        <button className="btn" onClick={() => setThirteenMode(null)} style={{ marginTop: 32 }}>返回</button>
-      </div>
-    );
-  }
-
-  // 十三水 - 自动匹配/房间列表（预留，后续完善）
-  if (mainMenu === 'thirteen' && (thirteenMode === 'auto' || thirteenMode === 'rooms')) {
-    return (
-      <div className="app">
-        <h2>{thirteenMode === 'auto' ? '自动匹配' : '房间列表'}</h2>
-        <p>功能开发中，敬请期待！</p>
-        <button className="btn" onClick={() => setThirteenMode(null)} style={{ marginTop: 32 }}>返回</button>
-      </div>
-    );
-  }
-
-  // fallback
-  return <div className="app"><h1>加载中...</h1></div>;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Lobby />} />
+        <Route path="/thirteen" element={<ThirteenWaterMenu />} />
+        <Route path="/eight" element={<ComingSoon gameName="八张" />} />
+        <Route path="/thirteen/auto" element={<ComingSoon gameName="自动匹配" />} />
+        <Route path="/thirteen/rooms" element={<ComingSoon gameName="房间列表" />} />
+        <Route path="/play" element={<Play />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
