@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { aiSmartSplit, getPlayerSmartSplits } from './SmartSplit';
-import { calcSSSAllScores, isFoul } from './sssScore';
-import { getShuffledDeck, dealHands } from './DealCards';
+import { aiSmartSplit, getPlayerSmartSplits } from '../game-logic/thirteen-water-rules';
+import { calcSSSAllScores, isFoul } from '../game-logic/thirteen-water-rules';
+import { getShuffledDeck, dealHands } from '../game-logic/deck';
 import './Play.css';
 
 const AI_NAMES = ['小明', '小红', '小刚'];
