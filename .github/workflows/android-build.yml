@@ -5,207 +5,108 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+  workflow_dispatch:
 
 jobs:
-  # 添加一个独立的初始化作业
-  init:
-    runs-on: ubuntu-latest
-    outputs:
-      workspace: ${{ github.workspace }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup outputs
-        run: echo "workspace=${{ github.workspace }}" >> $GITHUB_OUTPUT
-
+  # 1. 前端编译并打包为 assets
   frontend-build:
-    needs: init  # 仅依赖init作业
     runs-on: ubuntu-latest
-    env:
-      WORKSPACE: ${{ needs.init.outputs.workspace }}
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Verify project structure
-        run: |
-          echo "Root directory: $(pwd)"
-          echo "Contents:"
-          ls -la
-          
-          if [ ! -d "frontend" ]; then
-            echo "::error::Frontend directory not found!"
-            exit 1
-          fi
-          
-          echo "Frontend directory contents:"
-          ls -la frontend
-          
-          if [ ! -f "frontend/package.json" ]; then
-            echo "::error::package.json not found in frontend directory!"
-            exit 1
-          fi
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      
-      - name: Cache node modules
-        uses: actions/cache@v3
-        with:
-          path: frontend/node_modules
-          key: npm-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
-          restore-keys: |
-            npm-${{ runner.os }}-
-      
-      - name: Install dependencies
+
+      - name: Verify & Build Frontend
         run: |
           cd frontend
-          echo "Installing dependencies in $(pwd)"
-          
-          if [ -f "package-lock.json" ]; then
-            echo "Using package-lock.json for installation"
-            npm ci
-          else
-            echo "No package-lock.json found, using npm install"
-            npm install
-          fi
-          
-          if [ ! -f "node_modules/.bin/react-scripts" ]; then
-            echo "::error::react-scripts not found after installation!"
-            echo "Installed packages:"
-            npm ls --depth=0
-            exit 1
-          fi
-      
-      - name: Build frontend
-        run: |
-          cd frontend
-          echo "Building in $(pwd)"
+          npm ci
           npm run build
-      
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload Frontend Assets
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-assets
           path: frontend/build
 
-  setup-gradle:
+  # 2. Android Debug 构建
+  android-debug:
+    needs: frontend-build
     runs-on: ubuntu-latest
-    outputs:
-      gradle-version: ${{ steps.setup.outputs.gradle-version }}
-    steps:
-      - id: setup
-        run: echo "gradle-version=8.2" >> $GITHUB_OUTPUT
-
-  android-build:
-    needs: [init, frontend-build, setup-gradle]
-    runs-on: ubuntu-latest
-    env:
-      GRADLE_USER_HOME: ${{ needs.init.outputs.workspace }}/.gradle/android-build
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+
+      - name: Download Frontend Assets
+        uses: actions/download-artifact@v4
         with:
           name: frontend-assets
           path: android/app/src/main/assets
-      
-      - name: Setup Gradle Wrapper
-        run: |
-          cd android
-          if [ ! -f "gradlew" ]; then
-            gradle_version=${{ needs.setup-gradle.outputs.gradle-version }}
-            curl -fsSL "https://services.gradle.org/distributions/gradle-$gradle_version-bin.zip" -o gradle.zip
-            unzip -q gradle.zip
-            rm gradle.zip
-            "./gradle-$gradle_version/bin/gradle" wrapper --gradle-version "$gradle_version"
-            rm -rf "gradle-$gradle_version"
-          fi
 
-      - uses: actions/setup-java@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
         with:
-          java-version: "17"
-          distribution: "temurin"
-      
-      - uses: actions/cache@v3
+          distribution: temurin
+          java-version: 17
+
+      - name: Cache Gradle
+        uses: actions/cache@v3
         with:
-          path: ${{ env.GRADLE_USER_HOME }}
-          key: gradle-${{ runner.os }}-android-build-${{ hashFiles('android/**/build.gradle') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-android-build-
-            gradle-${{ runner.os }}-
-      
+          path: ~/.gradle
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/android/**/build.gradle*','**/android/gradle-wrapper.properties') }}
+
       - name: Build Debug APK
         run: |
           cd android
           ./gradlew clean assembleDebug --no-daemon
-          
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/*.apk
 
+  # 3. Android Release 构建并签名
   android-release:
-    needs: [init, frontend-build, setup-gradle]
+    needs: frontend-build
     runs-on: ubuntu-latest
-    env:
-      GRADLE_USER_HOME: ${{ needs.init.outputs.workspace }}/.gradle/android-release
-      SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
-      SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-      SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-      KEYSTORE_PATH: ${{ needs.init.outputs.workspace }}/keystore.jks
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+
+      - name: Download Frontend Assets
+        uses: actions/download-artifact@v4
         with:
           name: frontend-assets
           path: android/app/src/main/assets
-      
-      - name: Setup Gradle Wrapper
-        run: |
-          cd android
-          if [ ! -f "gradlew" ]; then
-            gradle_version=${{ needs.setup-gradle.outputs.gradle-version }}
-            curl -fsSL "https://services.gradle.org/distributions/gradle-$gradle_version-bin.zip" -o gradle.zip
-            unzip -q gradle.zip
-            rm gradle.zip
-            "./gradle-$gradle_version/bin/gradle" wrapper --gradle-version "$gradle_version"
-            rm -rf "gradle-$gradle_version"
-          fi
 
-      - uses: actions/setup-java@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
         with:
-          java-version: "17"
-          distribution: "temurin"
-      
-      - name: Setup Signing Keystore
+          distribution: temurin
+          java-version: 17
+
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle
+          key: gradle-${{ runner.os }}-release-${{ hashFiles('**/android/**/build.gradle*','**/android/gradle-wrapper.properties') }}
+
+      - name: Decode & Set Up Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
         run: |
-          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > $KEYSTORE_PATH
-          chmod 600 $KEYSTORE_PATH
-          echo "Keystore created at: $KEYSTORE_PATH"
-          ls -la $KEYSTORE_PATH
-      
-      - uses: actions/cache@v3
-        with:
-          path: ${{ env.GRADLE_USER_HOME }}
-          key: gradle-${{ runner.os }}-android-release-${{ hashFiles('android/**/build.gradle') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-android-release-
-            gradle-${{ runner.os }}-
-      
-      - name: Build Release APK
+          echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+          cat <<EOF > android/keystore.properties
+          storeFile=../release.keystore
+          storePassword=${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.SIGNING_KEY_ALIAS }}
+          keyPassword=${{ secrets.SIGNING_KEY_PASSWORD }}
+          EOF
+
+      - name: Build & Sign Release APK
         run: |
           cd android
           ./gradlew clean assembleRelease \
-            -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
-            -Pandroid.injected.signing.store.password="$SIGNING_KEYSTORE_PASSWORD" \
-            -Pandroid.injected.signing.key.alias="$SIGNING_KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$SIGNING_KEY_PASSWORD" \
             --no-daemon
-            
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: android/app/build/outputs/apk/release/*.apk
-          
-      - name: Cleanup keystore
-        run: rm -f $KEYSTORE_PATH
-        if: always()
