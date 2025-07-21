@@ -9,11 +9,14 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
+
     private WebView webView;
 
     @Override
@@ -24,47 +27,45 @@ public class MainActivity extends AppCompatActivity {
         webView = findViewById(R.id.webview);
         setupWebView();
 
-        // 使用构建配置中定义的路径加载本地内容
+        // 从 BuildConfig 里拿到 base URL
         final String baseUrl = BuildConfig.WEB_ASSET_BASE;
         String url = baseUrl + "index.html";
+        Log.d(TAG, "加载 URL: " + url);
         webView.loadUrl(url);
 
-        // 调试日志
-        Log.d("MainActivity", "加载URL: " + url);
+        // 验证 assets 目录下的关键文件
         verifyAssets();
     }
 
     private void setupWebView() {
         WebSettings settings = webView.getSettings();
-
-        // 关键设置
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+
+        // 允许 file:// 协议访问本地资源
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
         settings.setAllowFileAccessFromFileURLs(true);
         settings.setAllowUniversalAccessFromFileURLs(true);
         settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
 
-        // 启用远程调试
         WebView.setWebContentsDebuggingEnabled(true);
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
-                Log.d("WebView", "页面加载完成: " + url);
+                Log.d(TAG, "页面加载完成: " + url);
             }
         });
-
         webView.setWebChromeClient(new WebChromeClient());
-        
-        // 添加 JS 接口
         webView.addJavascriptInterface(new WebAppInterface(this), "Android");
     }
 
     private void verifyAssets() {
+        // index.html
         checkAsset("www/index.html");
-        checkAsset("www/Assets/cards/ace_of_hearts.svg");
+        // 注意 assets 目录是小写 assets
+        checkAsset("www/assets/cards/ace_of_hearts.svg");
     }
 
     private void checkAsset(String assetPath) {
