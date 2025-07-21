@@ -6,6 +6,10 @@ android {
     namespace 'com.example.myapp'
     compileSdk 34
 
+    buildFeatures {
+        buildConfig true
+    }
+
     defaultConfig {
         applicationId "com.example.myapp"
         minSdk 21
@@ -15,7 +19,7 @@ android {
         multiDexEnabled true
 
         // WEB 资源加载根路径
-        buildConfigField "String", "WEB_ASSET_BASE", "\"file:///android_asset/www/\""
+        buildConfigField "String", "WEB_ASSET_BASE", ""file:///android_asset/www/""
     }
 
     signingConfigs {
