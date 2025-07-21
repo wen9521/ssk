@@ -2,26 +2,59 @@ plugins {
     id 'com.android.application'
 }
 
-// 自定义任务，用于在构建Android应用前，自动构建并集成React前端项目
-task buildAndCopyWebApp(type: Exec) {
-    workingDir '../../frontend' // 指向frontend目录
-    // 在Windows和Linux/Mac上执行不同的命令
+// 确保前端构建使用正确的环境变量
+task buildWebApp(type: Exec) {
+    workingDir '../../frontend'
+    
+    // 设置环境变量
+    environment "PUBLIC_URL", "./"
+    environment "REACT_APP_ASSET_PATH", "./"
+    
+    // 跨平台命令
     if (org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS)) {
         commandLine 'cmd', '/c', 'npm', 'install', '&&', 'npm', 'run', 'build'
     } else {
         commandLine 'sh', '-c', 'npm install && npm run build'
     }
+}
 
+// 复制资源任务（在正确阶段执行）
+task copyWebAppAssets(type: Copy) {
+    dependsOn buildWebApp
+    
+    // 删除旧资源（确保清理）
+    doFirst {
+        delete fileTree(dir: 'src/main/assets', include: 'www/**')
+    }
+    
+    // 复制资源并修复路径大小写问题
+    from '../../frontend/build'
+    into 'src/main/assets/www'
+    
+    // 重命名路径解决大小写问题
+    rename 'assets', 'Assets'
+    rename { filename ->
+        filename.replace('assets', 'Assets')
+    }
+    
+    // 验证复制结果
     doLast {
-        copy {
-            from '../../frontend/build'
-            into 'src/main/assets/www' // <-- 关键修改：复制到 www 子目录
+        def indexFile = file('src/main/assets/www/index.html')
+        if (!indexFile.exists()) {
+            throw new GradleException("index.html 复制失败！")
+        }
+        
+        def cardsDir = file('src/main/assets/www/Assets/cards')
+        if (!cardsDir.exists()) {
+            throw new GradleException("卡片目录不存在: ${cardsDir.path}")
+        }
+        
+        def svgFiles = fileTree(dir: cardsDir, include: '**/*.svg').files
+        if (svgFiles.size() < 52) {
+            throw new GradleException("卡片资源缺失! 找到 ${svgFiles.size()} 个SVG文件，预期52个")
         }
     }
 }
-
-// 在 preBuild 阶段执行我们的自定义任务
-preBuild.dependsOn buildAndCopyWebApp
 
 android {
     namespace 'com.example.myapp'
@@ -34,6 +67,9 @@ android {
         versionCode 1
         versionName "1.0"
         multiDexEnabled true
+        
+        // 添加构建配置字段（用于Java代码）
+        buildConfigField "String", "WEB_ASSET_BASE", ""file:///android_asset/www/""
     }
 
     signingConfigs {
@@ -51,23 +87,33 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        
+        debug {
+            // 启用调试功能
+            debuggable true
+        }
     }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
-        // Enable core library desugaring
         coreLibraryDesugaringEnabled true
     }
-
-    // 清理任务，在每次构建前删除旧的前端资源
+    
+    // 在正确阶段依赖资源复制任务
     applicationVariants.all { variant ->
-        variant.mergeAssets.dependsOn(buildAndCopyWebApp)
-        def cleanTask = tasks.findByName("clean${variant.name.capitalize()}")
-        if (cleanTask != null) {
-            cleanTask.doFirst {
-                delete(fileTree(dir: 'src/main/assets', include: '**/*'))
-            }
+        variant.mergeAssetsProvider.get().dependsOn(copyWebAppAssets)
+        
+        // 清理任务
+        variant.assembleProvider.get().dependsOn("clean${variant.name.capitalize()}")
+    }
+}
+
+// 确保清理任务删除资源
+tasks.whenTaskAdded { task ->
+    if (task.name.startsWith('clean')) {
+        task.doFirst {
+            delete fileTree(dir: 'src/main/assets', include: 'www/**')
         }
     }
 }
@@ -77,6 +123,8 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'com.google.android.material:material:1.11.0'
-    // Add the desugaring library
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+    
+    // 添加 WebView 增强库
+    implementation 'androidx.webkit:webkit:1.10.0'
 }

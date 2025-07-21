@@ -3,65 +3,88 @@ package com.example.myapp;
 import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.util.Log;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.webkit.WebSettings; // 导入 WebSettings
-import android.webkit.WebChromeClient; // 导入 WebChromeClient
-
 import androidx.appcompat.app.AppCompatActivity;
 
-public class MainActivity extends AppCompatActivity {
+import java.io.IOException;
 
-    private WebView myWebView;
+public class MainActivity extends AppCompatActivity {
+    private WebView webView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        myWebView = findViewById(R.id.webview);
+        webView = findViewById(R.id.webview);
+        setupWebView();
 
-        // 获取 WebSettings 对象
-        WebSettings webSettings = myWebView.getSettings();
+        // 使用构建配置中定义的路径加载本地内容
+        final String baseUrl = BuildConfig.WEB_ASSET_BASE;
+        String url = baseUrl + "index.html";
+        webView.loadUrl(url);
 
-        // 启用 JavaScript
-        webSettings.setJavaScriptEnabled(true);
-
-        // 启用 DOM Storage
-        webSettings.setDomStorageEnabled(true);
-
-        // 允许通过 file:// 协议访问文件
-        webSettings.setAllowFileAccess(true);
-        webSettings.setAllowFileAccessFromFileURLs(true);
-        webSettings.setAllowUniversalAccessFromFileURLs(true);
-
-        // 设置 WebChromeClient 用于处理JS的对话框、网站图标、进度条等
-        myWebView.setWebChromeClient(new WebChromeClient());
-        // 保证跳转还在 WebView 内
-        myWebView.setWebViewClient(new WebViewClient());
-
-        // 添加 JS 接口
-        myWebView.addJavascriptInterface(new WebAppInterface(this), "Android");
-        
-        // 启用 WebView 调试
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-            WebView.setWebContentsDebuggingEnabled(true);
-        }
-
-        // 加载本地 assets 目录下的 index.html
-        myWebView.loadUrl("file:///android_asset/www/index.html");
+        // 调试日志
+        Log.d("MainActivity", "Loading URL: " + url);
+        verifyAssets();
     }
 
+    private void setupWebView() {
+        WebSettings settings = webView.getSettings();
+
+        // 关键设置
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
+        settings.setAllowFileAccessFromFileURLs(true);
+        settings.setAllowUniversalAccessFromFileURLs(true);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+
+        // 启用远程调试
+        WebView.setWebContentsDebuggingEnabled(true);
+
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                Log.d("WebView", "Page loading finished: " + url);
+            }
+        });
+
+        webView.setWebChromeClient(new WebChromeClient());
+        
+        // 添加 JS 接口
+        webView.addJavascriptInterface(new WebAppInterface(this), "Android");
+    }
+    
     @Override
     public void onBackPressed() {
-        if (myWebView.canGoBack()) {
-            myWebView.goBack();
+        if (webView.canGoBack()) {
+            webView.goBack();
         } else {
             super.onBackPressed();
         }
     }
 
+    private void verifyAssets() {
+        checkAsset("www/index.html");
+        checkAsset("www/Assets/cards/ace_of_hearts.svg");
+    }
+
+    private void checkAsset(String assetPath) {
+        try {
+            getAssets().open(assetPath).close();
+            Log.i("AssetCheck", "资源存在: " + assetPath);
+        } catch (IOException e) {
+            Log.e("AssetCheck", "资源缺失: " + assetPath, e);
+        }
+    }
+    
     public class WebAppInterface {
         Activity activity;
 
