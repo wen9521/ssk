@@ -19,7 +19,7 @@ android {
         multiDexEnabled true
 
         // WEB 资源加载根路径
-        buildConfigField "String", "WEB_ASSET_BASE", ""file:///android_asset/www/""
+        buildConfigField "String", "WEB_ASSET_BASE", '"file:///android_asset/www/"'
     }
 
     signingConfigs {
@@ -51,8 +51,6 @@ android {
     // 在合并资源前执行 copyWebAppAssets
     applicationVariants.all { variant ->
         variant.mergeAssetsProvider.get().dependsOn(copyWebAppAssets)
-        // 确保每次 assemble 之前清理旧资源
-        variant.assembleProvider.get().dependsOn("clean${variant.name.capitalize()}")
     }
 }
 
@@ -65,23 +63,8 @@ dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
 }
 
-// 构建前端资源：生成 build/ 目录
-task buildWebApp(type: Exec) {
-    workingDir file("$rootDir/frontend")
-    environment "PUBLIC_URL", "./"
-    environment "REACT_APP_ASSET_PATH", "./"
-
-    if (org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS)) {
-        commandLine 'cmd', '/c', 'npm install && npm run build'
-    } else {
-        commandLine 'sh', '-c', 'npm install && npm run build'
-    }
-}
-
 // 复制前端静态资源到 android assets
 task copyWebAppAssets(type: Copy) {
-    dependsOn buildWebApp
-
     // 删除旧资源
     doFirst {
         delete fileTree(dir: 'src/main/assets/www', include: '**')
