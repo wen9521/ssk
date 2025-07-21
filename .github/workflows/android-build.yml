@@ -1,3 +1,4 @@
+# 文件：.github/workflows/android-build.yml
 name: Android CI/CD Optimized
 
 on:
@@ -10,37 +11,37 @@ on:
   workflow_dispatch:
 
 jobs:
+  # 1. 前端编译 & 上传
   frontend-build:
     runs-on: ubuntu-latest
-    outputs:
-      build_hash: ${{ steps.hash_frontend.outputs.hash }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Generate frontend hash
-        id: hash_frontend
-        run: echo "hash=$(sha256sum frontend/package-lock.json | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
 
-      - name: Install & build frontend
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: frontend/node_modules
+          key: npm-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Install & Build Frontend
         run: |
           cd frontend
-          npm ci --prefer-offline
+          npm ci
           npm run build
 
-      - name: Upload frontend build artifacts
+      - name: Upload Frontend Build
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-build-${{ steps.hash_frontend.outputs.hash }}
+          name: frontend-build
           path: frontend/build/**
 
+  # 2. Android Debug 构建
   android-debug:
     needs: frontend-build
     runs-on: ubuntu-latest
@@ -48,103 +49,110 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download frontend build artifacts
+      - name: Prepare assets/www
+        run: mkdir -p android/app/src/main/assets/www
+
+      - name: Download Frontend Build
         uses: actions/download-artifact@v4
         with:
-          name: frontend-build-${{ needs.frontend-build.outputs.build_hash }}
+          name: frontend-build
+          path: android/app/src/main/assets/www
 
-      - name: Setup Android environment
-        uses: android-actions/setup-android@v3
-
-      - name: Setup Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Build debug APK
-        run: |
-          mkdir -p android/app/src/main/assets/www
-          cp -R frontend-build-${{ needs.frontend-build.outputs.build_hash }}/* android/app/src/main/assets/www/
-          cd android
-          ./gradlew clean assembleDebug --no-daemon --stacktrace
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle
+          key: "gradle-${{ runner.os }}-debug-${{ hashFiles('android/**/*.gradle*','android/gradle-wrapper.properties') }}"
 
-      - name: Upload debug APK
+      - name: Build Debug APK
+        run: |
+          cd android
+          ./gradlew clean assembleDebug --no-daemon
+
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/*.apk
 
+  # 3. Android Release 构建 & 签名
   android-release:
     needs: frontend-build
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     env:
       KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
-      STORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
-      KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-      KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      STORE_PASSWORD:   ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+      KEY_ALIAS:        ${{ secrets.SIGNING_KEY_ALIAS }}
+      KEY_PASSWORD:     ${{ secrets.SIGNING_KEY_PASSWORD }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download frontend build artifacts
+      - name: Prepare assets/www
+        run: mkdir -p android/app/src/main/assets/www
+
+      - name: Download Frontend Build
         uses: actions/download-artifact@v4
         with:
-          name: frontend-build-${{ needs.frontend-build.outputs.build_hash }}
+          name: frontend-build
+          path: android/app/src/main/assets/www
 
-      - name: Setup Android environment
-        uses: android-actions/setup-android@v3
-
-      - name: Setup Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Configure signing
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle
+          key: "gradle-${{ runner.os }}-release-${{ hashFiles('android/**/*.gradle*','android/gradle-wrapper.properties') }}"
+
+      - name: Decode Keystore
         run: |
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release-key.jks
-          echo "RELEASE_STORE_FILE=release-key.jks" >> android/gradle.properties
-          echo "RELEASE_STORE_PASSWORD=$STORE_PASSWORD" >> android/gradle.properties
-          echo "RELEASE_KEY_ALIAS=$KEY_ALIAS" >> android/gradle.properties
-          echo "RELEASE_KEY_PASSWORD=$KEY_PASSWORD" >> android/gradle.properties
           chmod 600 android/app/release-key.jks
 
-      - name: Build release APK
+      - name: Build & Sign Release APK
         run: |
-          mkdir -p android/app/src/main/assets/www
-          cp -R frontend-build-${{ needs.frontend-build.outputs.build_hash }}/* android/app/src/main/assets/www/
           cd android
-          ./gradlew clean assembleRelease --no-daemon --stacktrace
+          ./gradlew clean assembleRelease \
+            -Pandroid.injected.signing.store.file="$PWD/app/release-key.jks" \
+            -Pandroid.injected.signing.store.password="$STORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
+            --no-daemon
 
-      - name: Upload release APK
+      - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: android/app/build/outputs/apk/release/*.apk
 
+  # 4. 自动发布到 GitHub Releases
   publish-release:
     needs: android-release
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: Download release APK
+      - name: Download Release APK
         uses: actions/download-artifact@v4
         with:
           name: app-release
-
-      - name: Extract version name
-        id: version
-        run: |
-          VERSION=$(aapt dump badging *.apk | grep "versionName" | cut -d\' -f6)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          path: release-artifacts
 
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "*.apk"
-          tag: v${{ steps.version.outputs.version }}
-          name: Release v${{ steps.version.outputs.version }}
+          artifacts: release-artifacts/*.apk
+          tag: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
           draft: false
           prerelease: false
