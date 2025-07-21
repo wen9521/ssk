@@ -10,37 +10,37 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1. 前端编译：生成 React 静态资源到 frontend/build
   frontend-build:
     runs-on: ubuntu-latest
+    outputs:
+      build_hash: ${{ steps.hash_frontend.outputs.hash }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Generate frontend hash
+        id: hash_frontend
+        run: echo "hash=$(sha256sum frontend/package-lock.json | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Cache node_modules
-        uses: actions/cache@v3
-        with:
-          path: frontend/node_modules
-          key: npm-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install & build frontend
         run: |
           cd frontend
-          npm ci
+          npm ci --prefer-offline
           npm run build
 
       - name: Upload frontend build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-build
+          name: frontend-build-${{ steps.hash_frontend.outputs.hash }}
           path: frontend/build/**
 
-  # 2. Android Debug：合并前端资源并打包调试 APK
   android-debug:
     needs: frontend-build
     runs-on: ubuntu-latest
@@ -51,25 +51,23 @@ jobs:
       - name: Download frontend build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: frontend-build
-          path: android/app/src/main/assets/www
+          name: frontend-build-${{ needs.frontend-build.outputs.build_hash }}
 
-      - name: Set up Java 17
+      - name: Setup Android environment
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Cache Gradle
-        uses: actions/cache@v3
-        with:
-          path: ~/.gradle
-          key: gradle-debug-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*','android/gradle-wrapper.properties') }}
-
       - name: Build debug APK
         run: |
+          mkdir -p android/app/src/main/assets/www
+          cp -R frontend-build-${{ needs.frontend-build.outputs.build_hash }}/* android/app/src/main/assets/www/
           cd android
-          ./gradlew clean assembleDebug --no-daemon
+          ./gradlew clean assembleDebug --no-daemon --stacktrace
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
@@ -77,15 +75,15 @@ jobs:
           name: app-debug
           path: android/app/build/outputs/apk/debug/*.apk
 
-  # 3. Android Release：签名打包 Release APK
   android-release:
     needs: frontend-build
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     env:
       KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
-      STORE_PASSWORD:   ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
-      KEY_ALIAS:        ${{ secrets.SIGNING_KEY_ALIAS }}
-      KEY_PASSWORD:     ${{ secrets.SIGNING_KEY_PASSWORD }}
+      STORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -93,35 +91,32 @@ jobs:
       - name: Download frontend build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: frontend-build
-          path: android/app/src/main/assets/www
+          name: frontend-build-${{ needs.frontend-build.outputs.build_hash }}
 
-      - name: Set up Java 17
+      - name: Setup Android environment
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Cache Gradle
-        uses: actions/cache@v3
-        with:
-          path: ~/.gradle
-          key: gradle-release-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*','android/gradle-wrapper.properties') }}
-
-      - name: Decode keystore
+      - name: Configure signing
         run: |
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release-key.jks
+          echo "RELEASE_STORE_FILE=release-key.jks" >> android/gradle.properties
+          echo "RELEASE_STORE_PASSWORD=$STORE_PASSWORD" >> android/gradle.properties
+          echo "RELEASE_KEY_ALIAS=$KEY_ALIAS" >> android/gradle.properties
+          echo "RELEASE_KEY_PASSWORD=$KEY_PASSWORD" >> android/gradle.properties
           chmod 600 android/app/release-key.jks
 
-      - name: Build & sign release APK
+      - name: Build release APK
         run: |
+          mkdir -p android/app/src/main/assets/www
+          cp -R frontend-build-${{ needs.frontend-build.outputs.build_hash }}/* android/app/src/main/assets/www/
           cd android
-          ./gradlew clean assembleRelease \
-            -Pandroid.injected.signing.store.file="$PWD/app/release-key.jks" \
-            -Pandroid.injected.signing.store.password="$STORE_PASSWORD" \
-            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
-            --no-daemon
+          ./gradlew clean assembleRelease --no-daemon --stacktrace
 
       - name: Upload release APK
         uses: actions/upload-artifact@v4
@@ -129,22 +124,27 @@ jobs:
           name: app-release
           path: android/app/build/outputs/apk/release/*.apk
 
-  # 4. 自动发布到 GitHub Releases
   publish-release:
     needs: android-release
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Download release APK
         uses: actions/download-artifact@v4
         with:
           name: app-release
-          path: release-artifacts
+
+      - name: Extract version name
+        id: version
+        run: |
+          VERSION=$(aapt dump badging *.apk | grep "versionName" | cut -d\' -f6)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: release-artifacts/*.apk
-          tag: v${{ github.run_number }}
-          name: Release v${{ github.run_number }}
+          artifacts: "*.apk"
+          tag: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
