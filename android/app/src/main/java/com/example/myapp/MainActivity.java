@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
         webView.loadUrl(url);
 
         // 调试日志
-        Log.d("MainActivity", "Loading URL: " + url);
+        Log.d("MainActivity", "加载URL: " + url);
         verifyAssets();
     }
 
@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
-                Log.d("WebView", "Page loading finished: " + url);
+                Log.d("WebView", "页面加载完成: " + url);
             }
         });
 
@@ -60,15 +60,6 @@ public class MainActivity extends AppCompatActivity {
         
         // 添加 JS 接口
         webView.addJavascriptInterface(new WebAppInterface(this), "Android");
-    }
-    
-    @Override
-    public void onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
     }
 
     private void verifyAssets() {
@@ -84,7 +75,16 @@ public class MainActivity extends AppCompatActivity {
             Log.e("AssetCheck", "资源缺失: " + assetPath, e);
         }
     }
-    
+
+    @Override
+    public void onBackPressed() {
+        if (webView.canGoBack()) {
+            webView.goBack();
+        } else {
+            super.onBackPressed();
+        }
+    }
+
     public class WebAppInterface {
         Activity activity;
 

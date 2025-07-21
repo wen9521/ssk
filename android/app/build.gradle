@@ -2,60 +2,6 @@ plugins {
     id 'com.android.application'
 }
 
-// 确保前端构建使用正确的环境变量
-task buildWebApp(type: Exec) {
-    workingDir '../../frontend'
-    
-    // 设置环境变量
-    environment "PUBLIC_URL", "./"
-    environment "REACT_APP_ASSET_PATH", "./"
-    
-    // 跨平台命令
-    if (org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS)) {
-        commandLine 'cmd', '/c', 'npm', 'install', '&&', 'npm', 'run', 'build'
-    } else {
-        commandLine 'sh', '-c', 'npm install && npm run build'
-    }
-}
-
-// 复制资源任务（在正确阶段执行）
-task copyWebAppAssets(type: Copy) {
-    dependsOn buildWebApp
-    
-    // 删除旧资源（确保清理）
-    doFirst {
-        delete fileTree(dir: 'src/main/assets', include: 'www/**')
-    }
-    
-    // 复制资源并修复路径大小写问题
-    from '../../frontend/build'
-    into 'src/main/assets/www'
-    
-    // 重命名路径解决大小写问题
-    rename 'assets', 'Assets'
-    rename { filename ->
-        filename.replace('assets', 'Assets')
-    }
-    
-    // 验证复制结果
-    doLast {
-        def indexFile = file('src/main/assets/www/index.html')
-        if (!indexFile.exists()) {
-            throw new GradleException("index.html 复制失败！")
-        }
-        
-        def cardsDir = file('src/main/assets/www/Assets/cards')
-        if (!cardsDir.exists()) {
-            throw new GradleException("卡片目录不存在: ${cardsDir.path}")
-        }
-        
-        def svgFiles = fileTree(dir: cardsDir, include: '**/*.svg').files
-        if (svgFiles.size() < 52) {
-            throw new GradleException("卡片资源缺失! 找到 ${svgFiles.size()} 个SVG文件，预期52个")
-        }
-    }
-}
-
 android {
     namespace 'com.example.myapp'
     compileSdk 34
@@ -67,9 +13,9 @@ android {
         versionCode 1
         versionName "1.0"
         multiDexEnabled true
-        
-        // 添加构建配置字段（用于Java代码）
-        buildConfigField "String", "WEB_ASSET_BASE", ""file:///android_asset/www/""
+
+        // WEB 资源加载根路径
+        buildConfigField "String", "WEB_ASSET_BASE", "\"file:///android_asset/www/\""
     }
 
     signingConfigs {
@@ -87,9 +33,7 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
-        
         debug {
-            // 启用调试功能
             debuggable true
         }
     }
@@ -99,22 +43,12 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
         coreLibraryDesugaringEnabled true
     }
-    
-    // 在正确阶段依赖资源复制任务
+
+    // 在合并资源前执行 copyWebAppAssets
     applicationVariants.all { variant ->
         variant.mergeAssetsProvider.get().dependsOn(copyWebAppAssets)
-        
-        // 清理任务
+        // 确保每次 assemble 之前清理旧资源
         variant.assembleProvider.get().dependsOn("clean${variant.name.capitalize()}")
-    }
-}
-
-// 确保清理任务删除资源
-tasks.whenTaskAdded { task ->
-    if (task.name.startsWith('clean')) {
-        task.doFirst {
-            delete fileTree(dir: 'src/main/assets', include: 'www/**')
-        }
     }
 }
 
@@ -123,8 +57,53 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'com.google.android.material:material:1.11.0'
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
-    
-    // 添加 WebView 增强库
     implementation 'androidx.webkit:webkit:1.10.0'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+}
+
+// 构建前端资源：生成 build/ 目录
+task buildWebApp(type: Exec) {
+    workingDir file("$rootDir/frontend")
+    environment "PUBLIC_URL", "./"
+    environment "REACT_APP_ASSET_PATH", "./"
+
+    if (org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS)) {
+        commandLine 'cmd', '/c', 'npm install && npm run build'
+    } else {
+        commandLine 'sh', '-c', 'npm install && npm run build'
+    }
+}
+
+// 复制前端静态资源到 android assets
+task copyWebAppAssets(type: Copy) {
+    dependsOn buildWebApp
+
+    // 删除旧资源
+    doFirst {
+        delete fileTree(dir: 'src/main/assets/www', include: '**')
+    }
+
+    // 确保是绝对路径，避免相对路径问题
+    from file("$rootDir/frontend/build")
+    into file("$projectDir/src/main/assets/www")
+
+    // 验证关键文件存在
+    doLast {
+        def wwwDir = file('src/main/assets/www')
+        if (!file("$wwwDir/index.html").exists()) {
+            throw new GradleException("index.html 未复制到 assets/www！")
+        }
+        if (!fileTree(dir: "$wwwDir/static/js", include: '*.js').files) {
+            throw new GradleException("static/js 目录为空，前端构建或复制失败！")
+        }
+    }
+}
+
+// 清理任务前先删除 assets/www
+tasks.whenTaskAdded { task ->
+    if (task.name.startsWith('clean')) {
+        task.doFirst {
+            delete fileTree(dir: 'src/main/assets/www', include: '**')
+        }
+    }
 }
