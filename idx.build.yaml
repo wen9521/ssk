@@ -1,22 +1,51 @@
-steps:
-  - checkout
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: ${{ runner.tool_cache }}/android-sdk
+      ANDROID_HOME:      ${{ runner.tool_cache }}/android-sdk
+      PATH: |
+        ${{ env.ANDROID_SDK_ROOT }}/cmdline-tools/latest/bin:
+        ${{ env.ANDROID_SDK_ROOT }}/platform-tools:
+        ${{ env.PATH }}
+    steps:
+      - uses: actions/checkout@v4
 
-  - name: Install JDK
-    run: sudo apt-get update && sudo apt-get install -y openjdk-11-jdk
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
 
-  - name: Install Android SDK tools
-    run: |
-      export ANDROID_SDK_ROOT=$HOME/android-sdk
-      mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-      curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o cmdline.zip
-      unzip -q cmdline.zip -d $ANDROID_SDK_ROOT/cmdline-tools
-      mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
-      yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
-      sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "build-tools;33.0.0" "platforms;android-33"
+      - name: Install Android SDK
+        run: |
+          sdkmanager --sdk_root=$ANDROID_SDK_ROOT --update
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
+          sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+            "platform-tools" \
+            "platforms;android-33" \
+            "build-tools;33.0.2"
 
-  - name: Generate local.properties
-    run: echo "sdk.dir=$HOME/android-sdk" > android/local.properties
+      - name: Generate local.properties
+        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
 
-  - name: Build APK
-    working-directory: android
-    run: ./gradlew clean assembleDebug --no-daemon
+      - name: Verify SDK setup
+        run: |
+          echo "local.properties:"
+          cat android/local.properties
+          echo "SDK content:"
+          ls -R $ANDROID_SDK_ROOT
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Disable Daemon & Parallel
+        run: |
+          echo "org.gradle.daemon=false" >> android/gradle.properties
+          echo "org.gradle.parallel=false" >> android/gradle.properties
+          echo "org.gradle.configureondemand=false" >> android/gradle.properties
+
+      - name: Build Debug APK
+        working-directory: android
+        run: ./gradlew clean assembleDebug \
+          --no-daemon --no-parallel --info --stacktrace
