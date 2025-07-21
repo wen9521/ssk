@@ -2,9 +2,11 @@ name: Android CI/CD Optimized
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
   pull_request:
-    branches: ["main"]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -18,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
 
       - name: Cache node_modules
         uses: actions/cache@v3
@@ -26,13 +28,13 @@ jobs:
           path: frontend/node_modules
           key: npm-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
 
-      - name: Install & Build Frontend
+      - name: Install & build frontend
         run: |
           cd frontend
           npm ci
           npm run build
 
-      - name: Upload Frontend Build
+      - name: Upload frontend build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
@@ -46,7 +48,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download Frontend Build to assets/www
+      - name: Download frontend build artifacts
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
@@ -56,42 +58,39 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
 
       - name: Cache Gradle
         uses: actions/cache@v3
         with:
           path: ~/.gradle
-          key: gradle-debug-${{ runner.os }}-${{ hashFiles(
-            'android/**/build.gradle*',
-            'android/gradle-wrapper.properties'
-          ) }}
+          key: gradle-debug-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*','android/gradle-wrapper.properties') }}
 
-      - name: Build Debug APK
+      - name: Build debug APK
         run: |
           cd android
           ./gradlew clean assembleDebug --no-daemon
 
-      - name: Upload Debug APK
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/*.apk
 
-  # 3. Android Release：解码 keystore 并签名打包 Release APK
+  # 3. Android Release：签名打包 Release APK
   android-release:
     needs: frontend-build
     runs-on: ubuntu-latest
     env:
-      KEYSTORE_PATH: android/app/release-key.jks
-      STORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
-      KEY_ALIAS:      ${{ secrets.SIGNING_KEY_ALIAS }}
-      KEY_PASSWORD:   ${{ secrets.SIGNING_KEY_PASSWORD }}
+      KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+      STORE_PASSWORD:   ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+      KEY_ALIAS:        ${{ secrets.SIGNING_KEY_ALIAS }}
+      KEY_PASSWORD:     ${{ secrets.SIGNING_KEY_PASSWORD }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download Frontend Build to assets/www
+      - name: Download frontend build artifacts
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
@@ -101,34 +100,30 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
 
       - name: Cache Gradle
         uses: actions/cache@v3
         with:
           path: ~/.gradle
-          key: gradle-release-${{ runner.os }}-${{ hashFiles(
-            'android/**/build.gradle*',
-            'android/gradle-wrapper.properties'
-          ) }}
+          key: gradle-release-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*','android/gradle-wrapper.properties') }}
 
-      - name: Decode & Install Keystore
+      - name: Decode keystore
         run: |
-          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" \
-            | base64 -d > $KEYSTORE_PATH
-          chmod 600 $KEYSTORE_PATH
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release-key.jks
+          chmod 600 android/app/release-key.jks
 
-      - name: Build & Sign Release APK
+      - name: Build & sign release APK
         run: |
           cd android
           ./gradlew clean assembleRelease \
-            -Pandroid.injected.signing.store.file="$PWD/$KEYSTORE_PATH" \
+            -Pandroid.injected.signing.store.file="$PWD/app/release-key.jks" \
             -Pandroid.injected.signing.store.password="$STORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
             -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
             --no-daemon
 
-      - name: Upload Release APK
+      - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
@@ -139,7 +134,7 @@ jobs:
     needs: android-release
     runs-on: ubuntu-latest
     steps:
-      - name: Download Release APK
+      - name: Download release APK
         uses: actions/download-artifact@v4
         with:
           name: app-release
