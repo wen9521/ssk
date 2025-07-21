@@ -71,7 +71,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          # 关键修复：指定缓存依赖路径
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
       
@@ -196,11 +195,29 @@ jobs:
       
       - name: Setup Signing Keystore
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > keystore.jks
-          echo "Keystore created with size: $(wc -c < keystore.jks) bytes"
-          echo "Current directory: $(pwd)"
-          ls -la
-      
+          # 使用正确的base64解码方式
+          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d -i > keystore.jks
+          
+          # 验证密钥库文件
+          if [ ! -f "keystore.jks" ]; then
+            echo "::error::Keystore file not created!"
+            exit 1
+          fi
+          
+          file_size=$(wc -c < keystore.jks)
+          if [ "$file_size" -lt 1000 ]; then
+            echo "::error::Keystore file is too small ($file_size bytes), likely invalid"
+            exit 1
+          fi
+          
+          # 尝试列出密钥库信息（验证密码正确性）
+          if ! keytool -list -v -keystore keystore.jks -storepass "${{ secrets.SIGNING_STORE_PASSWORD }}" -alias "${{ secrets.SIGNING_KEY_ALIAS }}"; then
+            echo "::error::Keystore verification failed! Check alias and passwords"
+            exit 1
+          fi
+          
+          echo "✅ Keystore verified successfully"
+    
       - name: Cache Gradle dependencies
         uses: actions/cache@v3
         with:
@@ -218,12 +235,22 @@ jobs:
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
         run: |
+          # 打印诊断信息
+          echo "Using keystore: ${{ github.workspace }}/keystore.jks"
+          echo "Keystore size: $(wc -c < ${{ github.workspace }}/keystore.jks) bytes"
+          
+          # 使用Gradle属性文件传递签名配置（更可靠的方式）
+          cat > gradle.properties <<EOF
+          android.injected.signing.store.file=${{ github.workspace }}/keystore.jks
+          android.injected.signing.store.password=$SIGNING_STORE_PASSWORD
+          android.injected.signing.key.alias=$SIGNING_KEY_ALIAS
+          android.injected.signing.key.password=$SIGNING_KEY_PASSWORD
+          EOF
+          
+          # 运行构建
           ./gradlew clean assembleRelease \
-            -Pandroid.injected.signing.store.file="${{ github.workspace }}/keystore.jks" \
-            -Pandroid.injected.signing.store.password="$SIGNING_STORE_PASSWORD" \
-            -Pandroid.injected.signing.key.alias="$SIGNING_KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$SIGNING_KEY_PASSWORD" \
-            --no-daemon
+            --no-daemon \
+            --stacktrace
             
       - name: Verify Release APK
         run: |
@@ -233,6 +260,13 @@ jobs:
             ls -la android/app/build/outputs/apk/release/
             exit 1
           fi
+          
+          # 验证APK是否已签名
+          if ! apksigner verify --verbose android/app/build/outputs/apk/release/*.apk; then
+            echo "::error::APK not properly signed!"
+            exit 1
+          fi
+          echo "✅ APK verified and signed"
       
       - uses: actions/upload-artifact@v4
         with:
