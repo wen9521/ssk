@@ -1,3 +1,4 @@
+# 文件路径：.github/workflows/android-cicd.yml
 name: Android CI/CD Optimized
 
 on:
@@ -8,64 +9,103 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1. 前端编译
+  # 1. 前端编译：生成 React 静态资源到 frontend/build
   frontend-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Build Frontend
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: frontend/node_modules
+          key: npm-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: npm-${{ runner.os }}-
+
+      - name: Install & Build Frontend
         run: |
           cd frontend
           npm ci
           npm run build
-      - name: Upload Frontend Assets
+
+      - name: Upload Frontend Build
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-assets
+          name: frontend-build
           path: frontend/build
 
-  # 2. Debug 构建
+  # 2. Android Debug：合并前端资源并打包调试 APK
   android-debug:
     needs: frontend-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Frontend Build
+        uses: actions/download-artifact@v4
         with:
-          name: frontend-assets
+          name: frontend-build
           path: android/app/src/main/assets
-      - uses: actions/setup-java@v4
+
+      - name: Flatten assets folder
+        run: |
+          cd android/app/src/main/assets
+          # 将 build/* 下的文件搬到 assets 根目录
+          mv build/* .
+          rm -rf build
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
+
       - name: Cache Gradle
         uses: actions/cache@v3
         with:
           path: ~/.gradle
-          key: gradle-${{ runner.os }}-debug-${{ hashFiles('**/android/**/build.gradle*','**/android/gradle-wrapper.properties') }}
+          key: gradle-debug-${{ runner.os }}-${{ hashFiles('android/**/build.gradle*','android/gradle-wrapper.properties') }}
+
       - name: Build Debug APK
         run: |
           cd android
           ./gradlew clean assembleDebug --no-daemon
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/*.apk
 
-  # 3. Release 构建并签名
+  # 3. Android Release：签名打包 Release APK
   android-release:
     needs: frontend-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Download Frontend Assets
+      - name: Download Frontend Build
         uses: actions/download-artifact@v4
         with:
-          name: frontend-assets
+          name: frontend-build
           path: android/app/src/main/assets
 
-      - uses: actions/setup-java@v4
+      - name: Flatten assets folder
+        run: |
+          cd android/app/src/main/assets
+          mv build/* .
+          rm -rf build
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
@@ -74,15 +114,12 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.gradle
-          key: gradle-${{ runner.os }}-release-${{ hashFiles('**/android/**/build.gradle*','**/android/gradle-wrapper.properties') }}
+          key: gradle-release-${{ runner.os }}-${{ hashFiles('android/**/build.gradle*','android/gradle-wrapper.properties') }}
 
-      - name: Decode & Place Keystore into Android App
+      - name: Decode & Place Keystore
         run: |
-          # 解码 keystore 并放到 android/app 目录
           echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > android/app/release-key.jks
           chmod 600 android/app/release-key.jks
-
-          # 在 android/ 下生成 keystore.properties，storeFile 指向 app/release-key.jks
           cat <<EOF > android/keystore.properties
           storeFile=app/release-key.jks
           storePassword=${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
@@ -95,7 +132,8 @@ jobs:
           cd android
           ./gradlew clean assembleRelease --no-daemon
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: android/app/build/outputs/apk/release/*.apk
