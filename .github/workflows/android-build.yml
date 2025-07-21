@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify & Build Frontend
+      - name: Build Frontend
         run: |
           cd frontend
           npm ci
@@ -88,10 +88,8 @@ jobs:
           key: gradle-${{ runner.os }}-release-${{ hashFiles('**/android/**/build.gradle*','**/android/gradle-wrapper.properties') }}
 
       - name: Decode & Set Up Keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
           cat <<EOF > android/keystore.properties
           storeFile=../release.keystore
           storePassword=${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
@@ -102,11 +100,30 @@ jobs:
       - name: Build & Sign Release APK
         run: |
           cd android
-          ./gradlew clean assembleRelease \
-            --no-daemon
+          ./gradlew clean assembleRelease --no-daemon
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: android/app/build/outputs/apk/release/*.apk
+
+  # 4. 自动创建 GitHub Release 并附带 APK
+  publish-release:
+    needs: android-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: app-release
+          path: release-artifacts
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: release-artifacts/*.apk
+          tag: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          draft: false
+          prerelease: false
