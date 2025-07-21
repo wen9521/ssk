@@ -8,61 +8,51 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1. 前端编译并打包为 assets
+  # 1. 前端编译
   frontend-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Build Frontend
         run: |
           cd frontend
           npm ci
           npm run build
-
       - name: Upload Frontend Assets
         uses: actions/upload-artifact@v4
         with:
           name: frontend-assets
           path: frontend/build
 
-  # 2. Android Debug 构建
+  # 2. Debug 构建
   android-debug:
     needs: frontend-build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Download Frontend Assets
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: frontend-assets
           path: android/app/src/main/assets
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-
       - name: Cache Gradle
         uses: actions/cache@v3
         with:
           path: ~/.gradle
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/android/**/build.gradle*','**/android/gradle-wrapper.properties') }}
-
+          key: gradle-${{ runner.os }}-debug-${{ hashFiles('**/android/**/build.gradle*','**/android/gradle-wrapper.properties') }}
       - name: Build Debug APK
         run: |
           cd android
           ./gradlew clean assembleDebug --no-daemon
-
-      - name: Upload Debug APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/*.apk
 
-  # 3. Android Release 构建并签名
+  # 3. Release 构建并签名
   android-release:
     needs: frontend-build
     runs-on: ubuntu-latest
@@ -75,8 +65,7 @@ jobs:
           name: frontend-assets
           path: android/app/src/main/assets
 
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
@@ -87,11 +76,15 @@ jobs:
           path: ~/.gradle
           key: gradle-${{ runner.os }}-release-${{ hashFiles('**/android/**/build.gradle*','**/android/gradle-wrapper.properties') }}
 
-      - name: Decode & Set Up Keystore
+      - name: Decode & Place Keystore into Android App
         run: |
-          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+          # 解码 keystore 并放到 android/app 目录
+          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > android/app/release-key.jks
+          chmod 600 android/app/release-key.jks
+
+          # 在 android/ 下生成 keystore.properties，storeFile 指向 app/release-key.jks
           cat <<EOF > android/keystore.properties
-          storeFile=../release.keystore
+          storeFile=app/release-key.jks
           storePassword=${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
           keyAlias=${{ secrets.SIGNING_KEY_ALIAS }}
           keyPassword=${{ secrets.SIGNING_KEY_PASSWORD }}
@@ -102,13 +95,12 @@ jobs:
           cd android
           ./gradlew clean assembleRelease --no-daemon
 
-      - name: Upload Release APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: android/app/build/outputs/apk/release/*.apk
 
-  # 4. 自动创建 GitHub Release 并附带 APK
+  # 4. 自动发布到 GitHub Releases
   publish-release:
     needs: android-release
     runs-on: ubuntu-latest
