@@ -1,4 +1,4 @@
-# 文件路径：.github/workflows/android-cicd.yml
+# 文件：.github/workflows/android-cicd.yml
 name: Android CI/CD Optimized
 
 on:
@@ -37,7 +37,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          # 上传 build/ 下所有文件，不包含顶层 build 目录
           path: frontend/build/**
 
   # 2. Android Debug：合并前端资源并打包调试 APK
@@ -81,6 +80,11 @@ jobs:
   android-release:
     needs: frontend-build
     runs-on: ubuntu-latest
+    env:
+      KEYSTORE_PATH: android/app/release-key.jks
+      KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+      KEY_ALIAS:        ${{ secrets.SIGNING_KEY_ALIAS }}
+      KEY_PASSWORD:     ${{ secrets.SIGNING_KEY_PASSWORD }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -105,23 +109,19 @@ jobs:
 
       - name: Decode & Place Keystore
         run: |
-          # 解码 Base64 keystore 并放到 android/app 中
           echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" \
-            | base64 -d > android/app/release-key.jks
-          chmod 600 android/app/release-key.jks
-
-          # 在 android/ 目录下生成 keystore.properties
-          cat <<EOF > android/keystore.properties
-          storeFile=app/release-key.jks
-          storePassword=${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
-          keyAlias=${{ secrets.SIGNING_KEY_ALIAS }}
-          keyPassword=${{ secrets.SIGNING_KEY_PASSWORD }}
-          EOF
+            | base64 -d > $KEYSTORE_PATH
+          chmod 600 $KEYSTORE_PATH
 
       - name: Build & Sign Release APK
         run: |
           cd android
-          ./gradlew clean assembleRelease --no-daemon
+          ./gradlew clean assembleRelease \
+            -Pandroid.injected.signing.store.file="$PWD/$KEYSTORE_PATH" \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
+            --no-daemon
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
