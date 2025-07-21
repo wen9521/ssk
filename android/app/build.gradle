@@ -15,7 +15,7 @@ task buildAndCopyWebApp(type: Exec) {
     doLast {
         copy {
             from '../../frontend/build'
-            into 'src/main/assets'
+            into 'src/main/assets/www' // <-- 关键修改：复制到 www 子目录
         }
     }
 }
