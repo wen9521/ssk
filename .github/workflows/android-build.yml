@@ -22,28 +22,38 @@ jobs:
     runs-on: ubuntu-latest
     env:
       WORKSPACE: ${{ needs.init.outputs.workspace }}
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
       
       - name: Verify project structure
         run: |
-          echo "Project structure verification:"
+          echo "Workspace: ${{ github.workspace }}"
+          echo "Root contents:"
+          ls -la
+          
+          # 确保前端目录存在
           if [ ! -d "frontend" ]; then
             echo "::error::Frontend directory missing!"
+            echo "Current directory contents:"
+            ls -la
             exit 1
           fi
+          
+          echo "Frontend contents:"
+          ls -la frontend
+          
+          # 确保package.json存在
           if [ ! -f "frontend/package.json" ]; then
-            echo "::error::package.json missing in frontend!"
+            echo "::error::package.json not found in frontend!"
             exit 1
           fi
-          echo "Card assets verification:"
+          
+          # 验证扑克牌资源
           if [ ! -d "frontend/public/assets/cards" ]; then
             echo "::error::Card assets directory missing!"
             exit 1
           fi
+          
           card_count=$(find frontend/public/assets/cards -name "*.svg" | wc -l)
           if [ "$card_count" -lt 54 ]; then
             echo "::error::Missing card assets! Found $card_count, expected at least 54"
@@ -59,20 +69,26 @@ jobs:
       
       - name: Install dependencies
         run: npm ci
+        working-directory: frontend
       
       - name: Build frontend
         run: npm run build
+        working-directory: frontend
         
       - name: Verify build output
         run: |
-          if [ ! -d "build" ]; then
+          if [ ! -d "frontend/build" ]; then
             echo "::error::Build output directory missing!"
             exit 1
           fi
-          if [ ! -f "build/index.html" ]; then
+          
+          if [ ! -f "frontend/build/index.html" ]; then
             echo "::error::index.html missing in build output!"
             exit 1
           fi
+          
+          echo "Build output contents:"
+          ls -la frontend/build
       
       - uses: actions/upload-artifact@v4
         with:
@@ -94,12 +110,16 @@ jobs:
       
       - name: Verify Android assets
         run: |
+          echo "Android assets path: android/app/src/main/assets"
           if [ ! -d "android/app/src/main/assets" ]; then
             echo "::error::Android assets directory not created!"
             exit 1
           fi
+          
           if [ ! -f "android/app/src/main/assets/index.html" ]; then
             echo "::error::Frontend assets not copied to Android!"
+            echo "Assets directory contents:"
+            ls -la android/app/src/main/assets
             exit 1
           fi
 
@@ -132,6 +152,8 @@ jobs:
         run: |
           if [ ! -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
             echo "::error::Debug APK not generated!"
+            echo "APK directory contents:"
+            ls -la android/app/build/outputs/apk/debug/
             exit 1
           fi
       
@@ -168,6 +190,8 @@ jobs:
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > keystore.jks
           echo "Keystore created with size: $(wc -c < keystore.jks) bytes"
+          echo "Current directory: $(pwd)"
+          ls -la
       
       - name: Cache Gradle dependencies
         uses: actions/cache@v3
@@ -197,6 +221,8 @@ jobs:
         run: |
           if [ ! -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
             echo "::error::Release APK not generated!"
+            echo "APK directory contents:"
+            ls -la android/app/build/outputs/apk/release/
             exit 1
           fi
       
