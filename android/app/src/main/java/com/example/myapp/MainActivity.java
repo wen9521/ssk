@@ -7,6 +7,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebSettings; // 导入 WebSettings
+import android.webkit.WebChromeClient; // 导入 WebChromeClient
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -35,7 +36,13 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setAllowFileAccessFromFileURLs(true);
         webSettings.setAllowUniversalAccessFromFileURLs(true);
 
+        // 启用数据库存储
+        webSettings.setDatabaseEnabled(true);
+        // 启用应用缓存
+        webSettings.setAppCacheEnabled(true);
 
+        // 设置 WebChromeClient 用于处理JS的对话框、网站图标、进度条等
+        myWebView.setWebChromeClient(new WebChromeClient());
         // 保证跳转还在 WebView 内
         myWebView.setWebViewClient(new WebViewClient());
 
