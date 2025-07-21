@@ -11,8 +11,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1. 前端编译 & 上传
+  # 1. 编译并打包前端资源
   frontend-build:
+    name: Build Frontend
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -29,13 +30,17 @@ jobs:
           path: frontend/node_modules
           key: npm-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
 
-      - name: Install & Build Frontend
+      - name: Install & build frontend
         run: |
           cd frontend
           npm ci
           npm run build
 
-      - name: Upload Frontend Build
+      - name: Patch index.html base href
+        run: |
+          sed -i 's|<base href="./"|<base href="file:///android_asset/www/"|' frontend/build/index.html
+
+      - name: Upload frontend build
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
@@ -43,16 +48,17 @@ jobs:
 
   # 2. Android Debug 构建
   android-debug:
+    name: Android Debug Build
     needs: frontend-build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Prepare assets/www
+      - name: Prepare assets/www directory
         run: mkdir -p android/app/src/main/assets/www
 
-      - name: Download Frontend Build
+      - name: Download frontend build
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
@@ -68,7 +74,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.gradle
-          key: "gradle-${{ runner.os }}-debug-${{ hashFiles('android/**/*.gradle*','android/gradle-wrapper.properties') }}"
+          key: gradle-debug-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*','android/gradle-wrapper.properties') }}
 
       - name: Build Debug APK
         run: |
@@ -83,6 +89,7 @@ jobs:
 
   # 3. Android Release 构建 & 签名
   android-release:
+    name: Android Release Build
     needs: frontend-build
     runs-on: ubuntu-latest
     env:
@@ -94,10 +101,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Prepare assets/www
+      - name: Prepare assets/www directory
         run: mkdir -p android/app/src/main/assets/www
 
-      - name: Download Frontend Build
+      - name: Download frontend build
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
@@ -113,14 +120,14 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.gradle
-          key: "gradle-${{ runner.os }}-release-${{ hashFiles('android/**/*.gradle*','android/gradle-wrapper.properties') }}"
+          key: gradle-release-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*','android/gradle-wrapper.properties') }}
 
-      - name: Decode Keystore
+      - name: Decode keystore
         run: |
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release-key.jks
           chmod 600 android/app/release-key.jks
 
-      - name: Build & Sign Release APK
+      - name: Build & sign Release APK
         run: |
           cd android
           ./gradlew clean assembleRelease \
@@ -138,8 +145,9 @@ jobs:
 
   # 4. 自动发布到 GitHub Releases
   publish-release:
+    name: Publish to GitHub Releases
     needs: android-release
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Download Release APK
