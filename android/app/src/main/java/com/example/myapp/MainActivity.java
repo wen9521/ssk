@@ -19,10 +19,12 @@ public class MainActivity extends AppCompatActivity {
     WebSettings settings = webView.getSettings();
     settings.setJavaScriptEnabled(true);
     settings.setDomStorageEnabled(true);
+    settings.setAllowFileAccess(true);
+    settings.setAllowFileAccessFromFileURLs(true);
+    settings.setAllowUniversalAccessFromFileURLs(true);
 
     WebView.setWebContentsDebuggingEnabled(true);
 
-    // 保证所有链接在 WebView 内打开
     webView.setWebViewClient(new WebViewClient());
 
     // 直接加载 assets/www/index.html
