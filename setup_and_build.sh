@@ -26,6 +26,24 @@ echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
 echo "org.gradle.daemon=false" >> android/gradle.properties
 echo "org.gradle.parallel=false" >> android/gradle.properties
 
+# Add frontend build, validation and cleaning steps
+cd frontend
+npm install # Ensure dependencies are installed
+npm run build # Build the frontend
+cd -
+
+# Validate frontend build output
+cd frontend/build
+if [ ! -f index.html ]; then echo "❌ index.html missing"; exit 1; fi
+if [ ! -d static/js ] || [ -z "$(ls static/js)" ]; then echo "❌ static/js missing"; exit 1; fi
+if [ ! -d static/css ] || [ -z "$(ls static/css)" ]; then echo "❌ static/css missing"; exit 1; fi
+cd -
+
+# Prepare assets/www
+rm -rf android/app/src/main/assets/www && mkdir -p android/app/src/main/assets/www
+cp -R frontend/build/* android/app/src/main/assets/www/
+
+
 # Build
 cd android
 chmod +x gradlew
