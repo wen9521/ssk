@@ -1,3 +1,4 @@
+# .github/workflows/build.yml
 name: Android CI + Emulator Test
 
 on:
@@ -7,69 +8,109 @@ on:
     branches: [ main ]
 
 jobs:
-  # … 你的 frontend-build、android-debug、android-release jobs …
-
-  # 新增：在 GitHub Runner 上启动 Android 模拟器，安装 APK，并抓 logcat
-  emulator-test:
-    name: Run Emulator & Capture Logcat
-    needs: android-debug     # 或需要 app-debug 构建成功
+  # ← 这个 job 没有 needs，作为整个图的根
+  prepare:
+    name: Prepare & Build Frontend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .  # 仓库根
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install & build frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Patch index.html base href
+        run: |
+          sed -E 's|<base href="[^"]*"|<base href="file:///android_asset/www/"|' \
+            frontend/build/index.html \
+            > android/app/src/main/assets/www/index.html
+
+      - name: Copy static assets
+        run: |
+          mkdir -p android/app/src/main/assets/www/static
+          cp -r frontend/build/static/* android/app/src/main/assets/www/static/
+
+  build-debug:
+    name: Android Debug Build
+    needs: prepare              # 依赖上一步
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle
+          key: gradle-debug-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*','android/gradle-wrapper.properties') }}
+
+      - name: Assemble Debug APK
+        run: |
+          cd android
+          ./gradlew clean assembleDebug --no-daemon
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+
+  emulator-test:
+    name: Run Emulator & Capture Logcat
+    needs: build-debug          # 依赖 Debug 打包完成
+    runs-on: ubuntu-latest
+    steps:
       - name: Download Debug APK
         uses: actions/download-artifact@v4
         with:
           name: app-debug
           path: ./apk
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
       - name: Install Android SDK & Emulator
         uses: android-actions/setup-android@v2
         with:
-          api-level: 31                    # 你想要的 Android API
-          target: google_apis              # 带 Google APIs 的模拟器
+          api-level: 31
+          target: google_apis
           arch: x86_64
           emulator-options: "-no-window -no-audio"
 
-      - name: Start emulator
+      - name: Create & Start emulator
         run: |
-          # 启动 headless 模拟器
           echo "no" | avdmanager create avd -n ci -k "system-images;android-31;google_apis;x86_64" --force
           nohup emulator -avd ci -no-window -no-audio -gpu swiftshader_indirect &
 
-      - name: Wait for device
+      - name: Wait for emulator boot
         run: |
           adb wait-for-device
-          # 等待系统启动完成
-          until adb shell getprop sys.boot_completed | grep -m 1 "1"; do
-            echo "Waiting for emulator to boot..."
-            sleep 5
-          done
+          until adb shell getprop sys.boot_completed | grep -m 1 "1"; do sleep 5; done
 
       - name: Install APK on emulator
         run: adb install -r ./apk/*.apk
 
-      - name: Give it time to render
+      - name: Wait for page to render
         run: sleep 10
 
-      - name: Capture logcat filtered
+      - name: Capture logcat
         run: |
           adb logcat -d \
             | grep -E "MainActivity|Page start|Page finish|Load error|HTTP error|JS Console" \
             > emulator-logcat.txt
 
-      - name: Upload Logcat Artifact
+      - name: Upload logcat artifact
         uses: actions/upload-artifact@v4
         with:
           name: emulator-logcat
