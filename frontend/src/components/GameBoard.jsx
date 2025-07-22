@@ -1,97 +1,43 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toCardFilename } from '../utils/card-utils'; // 导入工具函数
-import './Play.css';
+import './GameBoard.css';
 
-const GameBoard = ({
-  head,
-  middle,
-  tail,
-  selected,
-  msg,
-  aiPlayers,
-  showResult,
-  scores,
-  isReady,
-  hasCompared,
-  foulStates,
-  aiProcessed,
-  handleReady,
-  handleCardClick,
-  moveTo,
-  handleSmartSplit,
-  handleStartCompare,
-  setShowResult,
-}) => {
-  const navigate = useNavigate();
+function GameBoard({ players, status }) {
 
-  const renderPlayerSeat = (name, idx, isMe) => {
-    const aiDone = idx > 0 ? aiProcessed[idx - 1] : false;
-    const playerClass = isMe ? 'player-me' : (aiDone ? 'player-ready' : 'player-waiting');
-    const statusText = isMe ? '你' : (aiDone ? '已理牌' : '理牌中…');
+  const renderPlayerSeat = (player, index) => {
+    // In the future, we can distinguish the local player via a unique ID
+    const isMe = index === 0; 
+    const playerClass = `player-seat ${isMe ? 'player-me' : ''} ${player.isReady ? 'player-ready' : ''}`;
+    
     return (
-      <div key={name} className={`player-seat ${playerClass}`}>
-        <div className="player-name">{name}</div>
-        <div className="player-status">{statusText}</div>
-      </div>
-    );
-  };
-
-  const renderPaiDunCards = (cards, area, isResult = false) => {
-    return (
-      <div className={`card-container ${isResult ? 'result-card-container' : ''}`}>
-        {cards.map((card, idx) => {
-          const isSelected = selected.area === area && selected.cards.includes(card);
-          const cardFilename = toCardFilename(card); // 使用工具函数转换卡牌名称
-          return (
-            <img
-              key={card}
-              src={`/assets/cards/${cardFilename}.svg`} // 更新图片路径
-              alt={card}
-              className={`card-img ${isSelected ? 'selected' : ''}`}
-              style={{ zIndex: idx, left: `calc(var(--card-overlap) * ${idx})` }}
-              onClick={(e) => { if (isReady && !isResult) handleCardClick(card, area, e); }}
-              draggable={false}
-            />
-          );
-        })}
-      </div>
-    );
-  };
-
-  const renderPaiDun = (cards, label, area) => {
-    return (
-      <div className="pai-dun" onClick={() => { if (isReady) moveTo(area); }}>
-        <div className="pai-dun-content">
-          {cards.length === 0 ? <div className="pai-dun-placeholder">请放置</div> : renderPaiDunCards(cards, area)}
+      <div key={player.id || index} className={playerClass}>
+        <div className="player-avatar"></div>
+        <div className="player-name">{player.name || `玩家 ${player.id}`}</div>
+        <div className="player-status">
+          {status === 'playing' && (player.hasSubmitted ? '已出牌' : '思考中...')}
+          {status === 'waiting' && '等待中...'}
+          {status === 'finished' && `得分: ${player.score}`}
         </div>
-        <div className="pai-dun-label">{label} ({cards.length})</div>
       </div>
     );
   };
 
-  const renderResultModal = () => {
-    if (!showResult) return null;
+  const renderFinalHands = () => {
+    if (status !== 'finished') return null;
+
     return (
-      <div className="modal-overlay" onClick={() => setShowResult(false)}>
-        <div className="modal-content" onClick={e => e.stopPropagation()}>
-          <button className="modal-close-btn" onClick={() => setShowResult(false)}>×</button>
+      <div className="modal-overlay">
+        <div className="modal-content">
+          <h2>本局结果</h2>
           <div className="result-grid">
-            {[
-              { name: '你', head, middle, tail, score: scores[0], foul: foulStates[0] },
-              ...aiPlayers.map((p, i) => ({ ...p, score: scores[i+1], foul: foulStates[i+1] }))
-            ].map((p, i) => (
-              <div key={i} className="result-player-summary">
-                <div className={`result-player-name ${i === 0 ? 'me' : ''}`}>
-                  {p.name}
-                  {p.foul && <span className="foul-tag">（倒水）</span>}
-                  <span className="score-tag">（{p.score}分）</span>
+            {players.map((player, index) => (
+              <div key={player.id || index} className="result-player-summary">
+                <div className="result-player-name">
+                    {player.name || `Player ${player.id}`}
+                    {player.isFoul && <span className="foul-tag">(倒水)</span>}
+                    <span className="score-tag">({player.score}分)</span>
                 </div>
-                <div className="result-hands">
-                  {renderPaiDunCards(p.head, 'none', true)}
-                  {renderPaiDunCards(p.middle, 'none', true)}
-                  {renderPaiDunCards(p.tail, 'none', true)}
-                </div>
+                {/* We will need to render the 3 sets of cards here */}
+                {/* This requires the server to send the final hands in the 'finished' state */}
               </div>
             ))}
           </div>
@@ -101,46 +47,16 @@ const GameBoard = ({
   };
 
   return (
-    <div className="game-container">
-      <div className="game-board">
-        <header className="game-header">
-          <button className="btn btn-quit" onClick={() => navigate('/')}>
-            &lt; 退出房间
-          </button>
-          <div className="game-score">
-            <span role="img" aria-label="coin">🪙</span>
-            积分：100
-          </div>
-        </header>
-
-        <section className="players-section">
-          {renderPlayerSeat('你', 0, true)}
-          {aiPlayers.map((ai, idx) => renderPlayerSeat(ai.name, idx + 1, false))}
-        </section>
-
-        <section className="pai-dun-section">
-          {renderPaiDun(head, '头道', 'head')}
-          {renderPaiDun(middle, '中道', 'middle')}
-          {renderPaiDun(tail, '尾道', 'tail')}
-        </section>
-
-        <footer className="game-footer">
-          <button className="btn btn-action" onClick={handleReady} disabled={hasCompared}>
-            {isReady ? '取消准备' : '准备'}
-          </button>
-          <button className="btn btn-action btn-smart" onClick={handleSmartSplit} disabled={!isReady}>
-            智能分牌
-          </button>
-          <button className="btn btn-action btn-compare" onClick={handleStartCompare} disabled={!isReady || aiProcessed.some(p => !p)}>
-            开始比牌
-          </button>
-        </footer>
-
-        <div className="message-area">{msg}</div>
-      </div>
-      {renderResultModal()}
+    <div className="game-board-container">
+        <div className="players-area">
+            {players.map(renderPlayerSeat)}
+        </div>
+        {renderFinalHands()}
+        <div className="game-status-display">
+            状态: {status}
+        </div>
     </div>
   );
-};
+}
 
 export default GameBoard;

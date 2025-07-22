@@ -1,74 +1,92 @@
 /* frontend/src/App.css */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
 :root {
-  --app-bg: #1a1a2d; /* 更换为深蓝紫色 */
-  --surface-bg: #2a2a3d; /* 稍亮的表面背景 */
-  --primary-text: #e0e0e0;
-  --accent-color: #00e5ff; /* 明亮的青色作为强调色 */
-  --gradient-start: #4e54c8;
-  --gradient-end: #8f94fb;
+  --primary-bg-color: #0d1117;
+  --secondary-bg-color: #161b22;
+  --border-color: #30363d;
+  --primary-text-color: #c9d1d9;
+  --secondary-text-color: #8b949e;
+  --accent-color: #58a6ff;
+  --accent-color-hover: #79c0ff;
+  --success-color: #3fb950;
+  --danger-color: #f85149;
+  --font-family: 'Roboto', sans-serif;
+  --card-bg-color: #21262d;
+  --container-padding: 20px;
 }
 
-body {
-  background-color: var(--app-bg);
-  color: var(--primary-text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+body, html {
   margin: 0;
-  padding: 20px;
+  padding: 0;
+  height: 100%;
+  background-color: var(--primary-bg-color);
+  color: var(--primary-text-color);
+  font-family: var(--font-family);
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: calc(100vh - 40px);
+}
+
+.app-container {
+  width: 100%;
+  max-width: 500px;
+  padding: var(--container-padding);
+  background-color: var(--secondary-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   text-align: center;
 }
 
-.app {
-  background-color: var(--surface-bg);
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); /* 阴影保持，颜色自适应 */
-  width: 100%;
-  max-width: 400px;
-}
-
-h1, h2 {
-  color: var(--accent-color); /* 标题使用强调色 */
+h1, h2, h3 {
+  color: var(--accent-color);
+  margin-top: 0;
 }
 
 .menu {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 1rem;
+  margin-top: 2rem;
 }
 
 .btn {
-  /* 应用新的渐变色 */
-  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
-  border: none;
-  color: white;
-  padding: 12px 28px;
-  text-align: center;
-  text-decoration: none;
   display: inline-block;
-  font-size: 16px;
-  margin: 4px 2px;
+  padding: 12px 24px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--secondary-bg-color);
+  color: var(--accent-color);
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
   cursor: pointer;
-  border-radius: 5px;
-  transition: opacity 0.3s, transform 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease-in-out;
 }
 
 .btn:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
+  background-color: var(--accent-color);
+  color: var(--secondary-bg-color);
+  border-color: var(--accent-color);
+}
+
+.btn-primary {
+  background-color: var(--accent-color);
+  color: var(--secondary-bg-color);
+  border-color: var(--accent-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-color-hover);
 }
 
 .btn-back {
   background: transparent;
-  border: 1px solid var(--accent-color);
-  color: var(--accent-color);
+  color: var(--secondary-text-color);
+  border: 1px solid transparent;
 }
 .btn-back:hover {
-  background-color: var(--accent-color);
-  color: var(--surface-bg);
+  color: var(--primary-text-color);
+  background-color: var(--border-color);
 }
