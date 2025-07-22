@@ -1,17 +1,13 @@
-# 文件：.github/workflows/android-build.yml
 name: Android CI/CD Optimized
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  # 1. 编译并打包前端资源
   frontend-build:
     name: Build Frontend
     runs-on: ubuntu-latest
@@ -44,9 +40,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: frontend/build/**
+          path: frontend/build/
 
-  # 2. Android Debug 构建
   android-debug:
     name: Android Debug Build
     needs: frontend-build
@@ -62,7 +57,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
-          path: android/app/src/main/assets/www
+          path: android/app/src/main/assets/
+
+      - name: Move frontend files into www
+        run: |
+          rm -rf android/app/src/main/assets/www
+          mkdir -p android/app/src/main/assets/www
+          mv android/app/src/main/assets/build/* android/app/src/main/assets/www/
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -87,7 +88,6 @@ jobs:
           name: app-debug
           path: android/app/build/outputs/apk/debug/*.apk
 
-  # 3. Android Release 构建 & 签名
   android-release:
     name: Android Release Build
     needs: frontend-build
@@ -108,7 +108,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
-          path: android/app/src/main/assets/www
+          path: android/app/src/main/assets/
+
+      - name: Move frontend files into www
+        run: |
+          rm -rf android/app/src/main/assets/www
+          mkdir -p android/app/src/main/assets/www
+          mv android/app/src/main/assets/build/* android/app/src/main/assets/www/
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -143,7 +149,6 @@ jobs:
           name: app-release
           path: android/app/build/outputs/apk/release/*.apk
 
-  # 4. 自动发布到 GitHub Releases
   publish-release:
     name: Publish to GitHub Releases
     needs: android-release
