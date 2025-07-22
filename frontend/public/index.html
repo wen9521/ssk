@@ -2,15 +2,23 @@
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <!-- 改为绝对路径，指向 Android assets 下的 www 目录 -->
     <base href="file:///android_asset/www/" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>扑克游戏</title>
-    <!-- 其他 meta 或 icon 按需添加 -->
+    <title>WebView 测试页面</title>
+    <style>
+      body {
+        background-color: #f0f8ff;
+        font-family: sans-serif;
+        text-align: center;
+        padding-top: 40vh;
+      }
+      h1 {
+        color: #333;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <!-- React 会挂载到这里 -->
+    <h1>✅ WebView 加载成功！</h1>
+    <p>如果你看到这个页面，说明前端资源已正确嵌入 APK。</p>
   </body>
 </html>
