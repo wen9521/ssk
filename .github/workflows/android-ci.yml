@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   # 1. 前端构建
@@ -74,11 +75,11 @@ jobs:
           name: app-debug
           path: ./app-debug
 
-      # 安装 SDK 工具
+      # 安装 SDK 工具，去掉 32 位库
       - name: Install SDK tools
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y unzip libgl1-mesa-dev libpulse0 libstdc++6 libstdc++6:i386
+          sudo apt-get install -y unzip libgl1-mesa-dev libpulse0
           mkdir -p $ANDROID_SDK_ROOT
           curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9123335_latest.zip \
             -o cmdline-tools.zip
@@ -100,19 +101,22 @@ jobs:
             -avd ci -no-window -no-audio -accel off \
             -gpu swiftshader_indirect -partition-size 2048 &
 
-      # 重启 adb server 并等待启动完成
+      # 重启 adb 并等待启动完成
       - name: Wait for emulator
         run: |
           adb kill-server
           adb start-server
           for i in {1..60}; do
             echo "Waiting for emulator ($i/60)..."
-            adb shell getprop sys.boot_completed | tr -d '\r\n' | grep -q '1' && break
+            if adb shell getprop sys.boot_completed | tr -d '\r\n' | grep -q '1'; then
+              echo "Emulator booted"
+              break
+            fi
             sleep 5
           done
           adb devices
 
-      # 安装并测试
+      # 安装并抓 logcat
       - name: Install APK & capture logcat
         run: |
           adb install -r app-debug/*.apk
