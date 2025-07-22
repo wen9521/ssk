@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1. 构建前端产物（根 Job，无 needs）
+  # 1. 构建前端
   frontend-build:
     name: 构建前端
     runs-on: ubuntu-latest
@@ -33,9 +33,13 @@ jobs:
           npm ci
           npm run build
 
-      - name: 修补 index.html 的 base href
+      - name: 修补 index.html：修改 base href 并去除 "./" 前缀
         run: |
-          sed -i 's|<base href="[^"]*"|<base href="file:///android_asset/www/"|' frontend/build/index.html
+          sed -i -E '
+            s|<base href="[^"]*"|<base href="file:///android_asset/www/"|;
+            s|src="\./|src="|g;
+            s|href="\./|href="|g
+          ' frontend/build/index.html
 
       - name: 上传前端产物
         uses: actions/upload-artifact@v4
@@ -43,7 +47,7 @@ jobs:
           name: frontend-build
           path: frontend/build/
 
-  # 2. Android Debug 构建
+  # 2. 构建 Debug APK
   android-debug:
     name: 构建 Debug APK
     needs: frontend-build
@@ -106,7 +110,7 @@ jobs:
       - name: 安装 unzip
         run: sudo apt-get update -y && sudo apt-get install -y unzip
 
-      - name: 列出 APK 中的 assets 目录
+      - name: 列出 assets 目录结构
         run: |
           echo "=== 检查 assets/www/index.html ==="
           unzip -l apk/*.apk | grep "assets/www/index.html" || (echo "❌ 找不到 index.html" && exit 1)
@@ -114,7 +118,7 @@ jobs:
           unzip -l apk/*.apk | grep "assets/www/static/js" || (echo "❌ 找不到 static/js 目录" && exit 1)
           echo "✅ APK 中的前端资源校验通过"
 
-  # 4. Android Release 构建 & 签名
+  # 4. 构建并签名 Release APK
   android-release:
     name: 构建并签名 Release APK
     needs: validate-assets
@@ -179,7 +183,7 @@ jobs:
 
   # 5. 发布到 GitHub Releases
   publish-release:
-    name: 发布 GitHub Releases
+    name: 发布 GitHub Release
     needs: android-release
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
