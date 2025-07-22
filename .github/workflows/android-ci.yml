@@ -1,5 +1,3 @@
-# .github/workflows/android-ci.yml
-
 name: Android CI + Emulator Test
 
 on:
@@ -15,8 +13,7 @@ jobs:
     name: Build Frontend
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -51,8 +48,7 @@ jobs:
     needs: frontend-build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Prepare assets/www
         run: mkdir -p android/app/src/main/assets/www
@@ -104,8 +100,7 @@ jobs:
       KEY_ALIAS:        ${{ secrets.SIGNING_KEY_ALIAS }}
       KEY_PASSWORD:     ${{ secrets.SIGNING_KEY_PASSWORD }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Prepare assets/www
         run: mkdir -p android/app/src/main/assets/www
@@ -163,8 +158,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Download Release APK
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: app-release
           path: release-artifacts
@@ -185,8 +179,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Download Debug APK
         uses: actions/download-artifact@v4
@@ -201,6 +194,7 @@ jobs:
           arch: x86_64
           target: google_apis_playstore
           emulator-options: "-no-window -no-audio"
+          emulator-boot-timeout: 180000
           script: |
             adb install -r ./apk/*.apk
             sleep 10
