@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1. 构建前端产物（根 job，无 needs）
+  # 1. 构建前端产物
   frontend-build:
     name: Build Frontend
     runs-on: ubuntu-latest
@@ -32,7 +32,7 @@ jobs:
           npm ci
           npm run build
 
-      - name: Patch index.html base href
+      - name: Patch base href
         run: |
           sed -i 's|<base href="[^"]*"|<base href="file:///android_asset/www/"|' frontend/build/index.html
 
@@ -59,7 +59,7 @@ jobs:
           name: frontend-build
           path: android/app/src/main/assets/
 
-      - name: Move frontend files into www
+      - name: Move files into www
         run: |
           rm -rf android/app/src/main/assets/www
           mkdir -p android/app/src/main/assets/www
@@ -111,7 +111,7 @@ jobs:
           name: frontend-build
           path: android/app/src/main/assets/
 
-      - name: Move frontend files into www
+      - name: Move files into www
         run: |
           rm -rf android/app/src/main/assets/www
           mkdir -p android/app/src/main/assets/www
@@ -172,12 +172,11 @@ jobs:
           draft: false
           prerelease: false
 
-  # 5. 在 GitHub Runner 上启动 Emulator 并抓取 logcat
+  # 5. 启动模拟器并抓取 WebView 日志
   emulator-test:
     name: Run Emulator & Capture Logcat
     needs: android-debug
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
