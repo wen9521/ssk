@@ -1,17 +1,21 @@
 package com.example.myapp;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.io.IOException;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
@@ -25,7 +29,6 @@ public class MainActivity extends AppCompatActivity {
 
     webView = findViewById(R.id.webview);
     setupWebView();
-
     loadLocalPage();
   }
 
@@ -40,37 +43,64 @@ public class MainActivity extends AppCompatActivity {
 
     webView.setWebChromeClient(new WebChromeClient() {
       @Override
-      public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-        Log.d(TAG, consoleMessage.message() 
-          + " -- From line " + consoleMessage.lineNumber() 
-          + " of " + consoleMessage.sourceId());
+      public boolean onConsoleMessage(ConsoleMessage msg) {
+        Log.d(TAG, "JS Console: " + msg.message()
+            + " @ line " + msg.lineNumber()
+            + " of " + msg.sourceId());
         return true;
       }
     });
+
     webView.setWebViewClient(new WebViewClient() {
       @Override
+      public void onPageStarted(WebView view, String url, Bitmap favicon) {
+        Log.d(TAG, "Page start: " + url);
+      }
+
+      @Override
       public void onPageFinished(WebView view, String url) {
-        Log.d(TAG, "Page loaded: " + url);
+        Log.d(TAG, "Page finish: " + url);
+      }
+
+      @Override
+      public void onReceivedError(WebView view, WebResourceRequest req, WebResourceError err) {
+        Log.e(TAG, "Load error: " + req.getUrl() + " → " + err.getDescription());
+      }
+
+      @Override
+      public void onReceivedHttpError(WebView view, WebResourceRequest req, WebResourceResponse resp) {
+        Log.e(TAG, "HTTP error: " + req.getUrl() + " → status " + resp.getStatusCode());
       }
     });
   }
 
   private void loadLocalPage() {
-    try {
-      InputStream is = getAssets().open("www/index.html");
-      ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      byte[] buffer = new byte[1024];
-      int read;
-      while ((read = is.read(buffer)) != -1) {
-        baos.write(buffer, 0, read);
+    try (InputStream is = getAssets().open("www/index.html");
+         ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+      byte[] buf = new byte[1024];
+      int len;
+      while ((len = is.read(buf)) > 0) {
+        baos.write(buf, 0, len);
       }
-      is.close();
       String html = baos.toString("UTF-8");
 
+      // ✅ 修复 HTML 内容
+      html = html
+        .replaceAll("<base href=\".*?\"", "<base href=\"file:///android_asset/www/\"")
+        .replace("width=evice-width", "width=device-width")
+        .replace("</scrip>", "</script>");
+
       webView.loadDataWithBaseURL(
-        "file:///android_asset/www/", html, "text/html", "utf-8", null);
+        "file:///android_asset/www/",
+        html,
+        "text/html",
+        "UTF-8",
+        null
+      );
 
       Log.d(TAG, "loadDataWithBaseURL done");
+
     } catch (IOException e) {
       Log.e(TAG, "Failed to load assets/www/index.html", e);
     }
