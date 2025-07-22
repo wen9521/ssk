@@ -63,7 +63,8 @@ jobs:
         run: |
           rm -rf android/app/src/main/assets/www
           mkdir -p android/app/src/main/assets/www
-          mv android/app/src/main/assets/build/* android/app/src/main/assets/www/
+          mv android/app/src/main/assets/index.html android/app/src/main/assets/www/
+          mv android/app/src/main/assets/static android/app/src/main/assets/www/
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -114,7 +115,8 @@ jobs:
         run: |
           rm -rf android/app/src/main/assets/www
           mkdir -p android/app/src/main/assets/www
-          mv android/app/src/main/assets/build/* android/app/src/main/assets/www/
+          mv android/app/src/main/assets/index.html android/app/src/main/assets/www/
+          mv android/app/src/main/assets/static android/app/src/main/assets/www/
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
