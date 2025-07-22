@@ -80,15 +80,15 @@ public class MainActivity extends AppCompatActivity {
 
       byte[] buf = new byte[1024];
       int len;
-      while ((len = is.read(buf)) > 0) {
+      while ((len = is.read(buf)) != -1) {
         baos.write(buf, 0, len);
       }
       String html = baos.toString("UTF-8");
 
-      // 打印原始 HTML
+      // 打印原始 HTML 到 logcat，便于调试
       Log.d(TAG, "原始 HTML:\n" + html);
 
-      // 修补 HTML：替换 base href 并去除 "./" 前缀
+      // 修补 HTML：确保 base href 正确，并去掉 "./" 前缀
       html = html
         .replaceAll("<base href=\".*?\"", "<base href=\"file:///android_asset/www/\"")
         .replace("src=\"./", "src=\"")
@@ -113,4 +113,3 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 }
-```
