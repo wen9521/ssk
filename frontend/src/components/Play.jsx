@@ -5,7 +5,8 @@ import Hand from './Hand';
 import { toCardFilename } from '../utils/card-utils';
 import './Play.css';
 
-const WS_URL = 'ws://127.0.0.1:8080'; // 在本地开发时，请确保后端服务已启动
+// 优先使用环境变量中的WebSocket地址，并提供一个本地开发的备用地址
+const WS_URL = process.env.REACT_APP_WS_URL || 'ws://127.0.0.1:8080';
 
 // Reducer to manage complex game state
 function gameReducer(state, action) {
@@ -41,10 +42,11 @@ export default function Play() {
   const { socket, message, players, status, myHand, submittedHands, scores } = state;
 
   useEffect(() => {
+    console.log(`正在连接到 WebSocket 服务器: ${WS_URL}`); // 添加日志方便调试
     const ws = new WebSocket(WS_URL);
 
     ws.onopen = () => {
-      console.log('Connected to WebSocket server');
+      console.log('已连接到 WebSocket 服务器');
       dispatch({ type: 'SET_SOCKET', payload: ws });
       dispatch({ type: 'GAME_STATE_UPDATE', payload: { status: 'waiting' } });
       dispatch({ type: 'SET_MESSAGE', payload: '已连接到服务器' });
@@ -52,7 +54,7 @@ export default function Play() {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('Received message:', data);
+      console.log('收到消息:', data);
 
       switch (data.type) {
         case 'game_state':
@@ -70,13 +72,13 @@ export default function Play() {
     };
 
     ws.onclose = () => {
-      console.log('Disconnected from WebSocket server');
+      console.log('与 WebSocket 服务器断开连接');
       dispatch({ type: 'SET_MESSAGE', payload: '与服务器断开连接' });
       dispatch({ type: 'RESET' });
     };
 
     ws.onerror = (error) => {
-        console.error('WebSocket Error:', error);
+        console.error('WebSocket 错误:', error);
         dispatch({ type: 'SET_MESSAGE', payload: 'WebSocket 连接出错' });
     };
 
