@@ -2,17 +2,19 @@
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <base href="file:///android_asset/www/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>扑克游戏</title>
-    <link rel="icon" href="favicon.ico" />
-    <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="一个使用 React 构建的扑克游戏应用" />
-    <link rel="apple-touch-icon" href="logo192.png" />
+    <!-- PWA 引用暂时移除 -->
+    <!-- <link rel="icon" href="favicon.ico" /> -->
+    <!-- <link rel="manifest" href="manifest.json" /> -->
   </head>
   <body>
-    <noscript>你需要启用 JavaScript 才能运行此应用。</noscript>
+    <noscript>需要启用 JavaScript</noscript>
     <div id="root"></div>
+    <!-- React build 会在这里自动注入： -->
+    <!--
+      <script src="static/js/main.[hash].js"></script>
+      <link href="static/css/main.[hash].css" rel="stylesheet">
+    -->
   </body>
 </html>
