@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  # 1. 构建前端产物（根 Job）
+  # 1. 构建前端产物
   frontend-build:
     name: 构建前端
     runs-on: ubuntu-latest
@@ -32,7 +32,7 @@ jobs:
           npm ci
           npm run build
 
-      - name: 修补 index.html：修改 base href 并去除 "./" 前缀
+      - name: 修补 index.html
         run: |
           sed -i -E '
             s|<base href="[^"]*"|<base href="file:///android_asset/www/"|;
@@ -52,10 +52,9 @@ jobs:
     needs: frontend-build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout 代码
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 准备 assets/www 目录
+      - name: 准备 assets/www
         run: mkdir -p android/app/src/main/assets/www
 
       - name: 下载前端产物
@@ -71,7 +70,7 @@ jobs:
           mv android/app/src/main/assets/index.html android/app/src/main/assets/www/
           mv android/app/src/main/assets/static android/app/src/main/assets/www/
 
-      - name: 设置 Java 17
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -100,28 +99,25 @@ jobs:
     needs: android-debug
     runs-on: ubuntu-latest
     steps:
-      - name: 下载 Debug APK
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: app-debug
           path: ./apk
 
-      - name: 安装 unzip
-        run: sudo apt-get update -y && sudo apt-get install -y unzip
+      - run: sudo apt-get update -y && sudo apt-get install -y unzip
 
       - name: 列出 assets 目录
         run: |
           unzip -l apk/*.apk | grep "assets/www/index.html" || exit 1
           unzip -l apk/*.apk | grep "assets/www/static/js" || exit 1
 
-  # 4. 启动 Emulator 并抓取 MainActivity 日志
+  # 4. 启动 Emulator 并抓取 Logcat
   emulator-test:
     name: 模拟器抓取 Logcat
     needs: android-debug
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout 代码
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: 下载 Debug APK
         uses: actions/download-artifact@v4
@@ -129,22 +125,27 @@ jobs:
           name: app-debug
           path: ./app-debug
 
-      - name: 启动 Emulator 并执行脚本
+      - name: 启动 Emulator & 抓取日志
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 31
           arch: x86_64
           target: google_apis_playstore
+          avd-name: test
+          force-avd-creation: true
+          disable-linux-hw-accel: true
           emulator-options: "-no-window -no-audio"
           emulator-boot-timeout: 180000
           script: |
-            adb install -r app-debug/*.apk
+            adb devices
+            adb wait-for-device
+            adb install -r ./app-debug/*.apk
             sleep 10
             adb logcat -d \
               | grep -E "MainActivity|原始 HTML|修补后 HTML" \
               > emulator-logcat.txt
 
-      - name: 上传 Emulator 日志
+      - name: 上传 Logcat
         uses: actions/upload-artifact@v4
         with:
           name: emulator-logcat
