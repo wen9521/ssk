@@ -183,6 +183,7 @@ jobs:
     name: Run Emulator & Capture Logcat
     needs: android-debug
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -193,30 +194,21 @@ jobs:
           name: app-debug
           path: ./apk
 
-      - name: Setup Emulator
+      - name: Run emulator, install APK & capture logcat
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 31
           arch: x86_64
           target: google_apis_playstore
           emulator-options: "-no-window -no-audio"
+          script: |
+            adb install -r ./apk/*.apk
+            sleep 10
+            adb logcat -d \
+              | grep -E "MainActivity|Page start|Page finish|Load error|HTTP error|JS Console" \
+              > emulator-logcat.txt
 
-      - name: Wait for emulator
-        run: adb wait-for-device
-
-      - name: Install APK on emulator
-        run: adb install -r ./apk/*.apk
-
-      - name: Wait for page to render
-        run: sleep 10
-
-      - name: Capture filtered logcat
-        run: |
-          adb logcat -d \
-            | grep -E "MainActivity|Page start|Page finish|Load error|HTTP error|JS Console" \
-            > emulator-logcat.txt
-
-      - name: Upload logcat artifact
+      - name: Upload emulator logcat
         uses: actions/upload-artifact@v4
         with:
           name: emulator-logcat
