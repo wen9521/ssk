@@ -85,11 +85,18 @@ public class MainActivity extends AppCompatActivity {
       }
       String html = baos.toString("UTF-8");
 
-      // ✅ 修复 HTML 内容
+      // 打印原始 HTML
+      Log.d(TAG, "原始 HTML:\n" + html);
+
+      // 修补 HTML：替换 base href 并去除 "./" 前缀
       html = html
         .replaceAll("<base href=\".*?\"", "<base href=\"file:///android_asset/www/\"")
-        .replace("width=evice-width", "width=device-width")
+        .replace("src=\"./", "src=\"")
+        .replace("href=\"./", "href=\"")
         .replace("</scrip>", "</script>");
+
+      // 打印修补后 HTML
+      Log.d(TAG, "修补后 HTML:\n" + html);
 
       webView.loadDataWithBaseURL(
         "file:///android_asset/www/",
@@ -106,3 +113,4 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 }
+```
