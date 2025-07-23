@@ -28,14 +28,17 @@ jobs:
         run: |
           cd frontend
           npm ci
-          npm run build
+          # 关键修复：设置公共路径为相对路径
+          PUBLIC_URL='./' npm run build
 
       - name: 修补 build/index.html 路径
         run: |
           sed -i -E '
             s|<base href="[^"]*"|<base href="file:///android_asset/www/"|;
             s|src="\./|src="|g;
-            s|href="\./|href="|g
+            s|href="\./|href="|g;
+            # 关键修复：添加CSP策略允许加载本地资源
+            s|(<head>)|\\1<meta http-equiv="Content-Security-Policy" content="default-src \'self\' file: data: gap: https://ssl.gstatic.com \'unsafe-eval\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\'; media-src *; img-src \'self\' data: content:;">|
           ' frontend/build/index.html
 
       - name: 上传前端构建产物
