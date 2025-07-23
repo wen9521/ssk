@@ -1,7 +1,6 @@
 package com.example.myapp;
 
 import android.annotation.SuppressLint;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,9 +16,7 @@ import android.webkit.WebViewClient;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebViewAssetLoader;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -66,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
+
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onConsoleMessage(ConsoleMessage msg) {
@@ -99,8 +97,8 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onReceivedError(WebView view, WebResourceRequest req, WebResourceResponse errorResponse) {
-                Log.e(TAG, "加载失败: " + req.getUrl() + " — " + errorResponse.getStatusCode());
+            public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
+                Log.e(TAG, "HTTP 错误: " + request.getUrl() + " — " + errorResponse.getStatusCode());
                 showErrorPage();
             }
 
