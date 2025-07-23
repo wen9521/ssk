@@ -4,19 +4,18 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
+  # 1. 构建 React 前端
   frontend-build:
-    name: 构建前端
     runs-on: ubuntu-latest
+    outputs:
+      artifact-path: frontend-build
     steps:
       - name: Checkout 代码
         uses: actions/checkout@v4
 
-      - name: 设置 Node.js 环境
+      - name: 设置 Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -33,7 +32,7 @@ jobs:
           npm ci
           npm run build
 
-      - name: 修补 build/index.html 中的路径
+      - name: 修补 build/index.html 中 base 和相对路径
         run: |
           sed -i -E '
             s|<base href="[^"]*"|<base href="https://appassets.androidplatform.net/www/"|;
@@ -47,91 +46,74 @@ jobs:
           name: frontend-build
           path: frontend/build/
 
-  android-debug:
-    name: 构建 Debug APK
+  # 2. 构建 Release APK 并自动发布
+  android-release:
     needs: frontend-build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 代码
         uses: actions/checkout@v4
 
-      - name: 准备 assets 目录
+      # 恢复 Keystore
+      - name: 恢复 Keystore 文件
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          mkdir -p android/app/src/main/assets/frontend-build
-          mkdir -p android/app/src/main/assets/www
+          mkdir -p android/app
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
 
-      - name: 下载前端构建产物
+      # 下载前端产物到 assets/www
+      - name: 下载并复制前端资源
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
-          path: android/app/src/main/assets/frontend-build
+          path: android/app/src/main/assets/www
 
-      - name: 拷贝前端静态文件到 assets/www
-        run: |
-          rm -rf android/app/src/main/assets/www/*
-          cp -R android/app/src/main/assets/frontend-build/* android/app/src/main/assets/www/
-
-      - name: 列出打包进 APK 的前端资源
-        run: ls -R android/app/src/main/assets/www
-
-      - name: 设置 Java 环境
+      - name: 设置 Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: 缓存 Gradle 构建
+      - name: 缓存 Gradle
         uses: actions/cache@v3
         with:
           path: ~/.gradle
-          key: gradle-debug-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*','android/gradle-wrapper.properties') }}
+          key: gradle-${{ runner.os }}-release-${{ hashFiles('android/**/*.gradle*','android/gradle-wrapper.properties') }}
 
-      - name: 构建 Debug APK
+      - name: 构建签名的 Release APK
+        env:
+          KEYSTORE_PATH: android/app/release.keystore
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           cd android
-          ./gradlew clean assembleDebug --no-daemon
-
-      - name: 验证 APK 是否包含前端资源
-        run: unzip -l android/app/build/outputs/apk/debug/app-debug.apk | grep "assets/www/"
-
-      - name: 上传 Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-debug
-          path: android/app/build/outputs/apk/debug/*.apk
-
-  release:
-    name: 自动发布 Release
-    needs: android-debug
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout 代码
-        uses: actions/checkout@v4
-
-      - name: 下载 Debug APK
-        uses: actions/download-artifact@v4
-        with:
-          name: app-debug
-          path: ./release
+          ./gradlew clean assembleRelease \
+            -Pandroid.injected.signing.store.file=$KEYSTORE_PATH \
+            -Pandroid.injected.signing.store.password=$STORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
+            -Pandroid.injected.signing.key.password=$KEY_PASSWORD \
+            --no-daemon
 
       - name: 创建 GitHub Release
         id: create_release
         uses: actions/create-release@v1
         with:
           tag_name: v${{ github.run_number }}
-          release_name: Release ${{ github.run_number }}
-          body: 自动发布 Debug 版本
+          release_name: Release-${{ github.run_number }}
+          body: 自动发布签名版 Release APK
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 上传 APK 到 Release
+      - name: 上传 Release APK 到 Release
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release/app-debug.apk
-          asset_name: app-debug.apk
+          asset_path: android/app/build/outputs/apk/release/app-release.apk
+          asset_name: app-release.apk
           asset_content_type: application/vnd.android.package-archive
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
