@@ -44,8 +44,8 @@ jobs:
         id: hash-output
         run: |
           BUILD_HASH=$(
-            find frontend/build -type f -exec sha256sum {} + \
-            | sort | sha256sum | cut -d' ' -f1
+            find frontend/build -type f -exec sha256sum {} + |
+            sort | sha256sum | cut -d' ' -f1
           )
           echo "build-hash=$BUILD_HASH" >> $GITHUB_OUTPUT
 
@@ -230,9 +230,4 @@ jobs:
           echo "**Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}" >> beta_notes.md
           echo "**Debug SHA256**: `${{ steps.checksum-beta.outputs.sha256 }}`" >> beta_notes.md
 
-      - name: Create GitHub Prerelease
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ env.versionName }}-debug.${{ github.run_number }}
-          name: Prerelease v${{ env.versionName }}-debug
-          body_path: beta_notes
+      - name: Create
