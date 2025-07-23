@@ -2,6 +2,7 @@
   "name": "thirteen-water-frontend",
   "version": "1.0.0",
   "private": true,
+  "homepage": ".",
   "description": "十三水前端，适用于 Cloudflare Pages 部署与安卓 WebView 集成",
   "scripts": {
     "start": "react-scripts start",
