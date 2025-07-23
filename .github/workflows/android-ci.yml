@@ -18,6 +18,7 @@ jobs:
   frontend-build:
     name: Build Frontend Assets
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     outputs:
       build-hash: ${{ steps.hash-output.outputs.build-hash }}
     steps:
@@ -60,10 +61,11 @@ jobs:
     name: Build Android APKs
     needs: frontend-build
     runs-on: ubuntu-22.04
-    outputs:
-      versionName: ${{ steps.versioning.outputs.versionName }}
+    timeout-minutes: 30
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
+    outputs:
+      versionName: ${{ steps.versioning.outputs.versionName }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -74,7 +76,7 @@ jobs:
           VERSION_NAME=1.0.${{ github.run_number }}
           echo "versionCode=${{ github.run_number }}" >> $GITHUB_ENV
           echo "versionName=${VERSION_NAME}" >> $GITHUB_ENV
-          echo "::set-output name=versionName::${VERSION_NAME}"
+          echo "versionName=${VERSION_NAME}" >> $GITHUB_OUTPUT
 
       - name: Download frontend assets
         uses: actions/download-artifact@v4
@@ -163,12 +165,12 @@ jobs:
 
       - name: Prepare Release Notes
         run: |
-          cat <<EOF > release_notes.md
+          cat << 'EOF' > release_notes.md
           ### Android App v${{ needs.android-build.outputs.versionName }}
           **Build Number**: ${{ github.run_number }}
           **Build Date**: ${{ steps.get-date.outputs.date }}
           **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}
-          **Release SHA256**: \`${{ steps.checksum.outputs.sha256 }}`
+          **Release SHA256**: `${{ steps.checksum.outputs.sha256 }}`
           EOF
 
       - name: Create GitHub Release
@@ -205,12 +207,12 @@ jobs:
 
       - name: Prepare Prerelease Notes
         run: |
-          cat <<EOF > beta_notes.md
+          cat << 'EOF' > beta_notes.md
           ### Android App v${{ needs.android-build.outputs.versionName }}-beta
           **Build Number**: ${{ github.run_number }}
           **Build Date**: ${{ steps.get-date-beta.outputs.date }}
           **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}
-          **Debug SHA256**: \`${{ steps.checksum-beta.outputs.sha256 }}`
+          **Debug SHA256**: `${{ steps.checksum-beta.outputs.sha256 }}`
           EOF
 
       - name: Create GitHub Prerelease
