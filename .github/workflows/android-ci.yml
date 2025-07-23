@@ -42,21 +42,21 @@ jobs:
             REACT_APP_BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
             npm run build
 
+      # 修复点1：确保哈希计算包含所有文件元数据
       - name: Generate frontend hash
         id: hash-output
         run: |
-          BUILD_HASH=$(
-            find frontend/build -type f -exec sha256sum {} + |
-            sort | sha256sum | cut -d' ' -f1
-          )
+          # 使用更稳健的哈希计算方式
+          BUILD_HASH=$(tar cf - frontend/build | sha256sum | cut -d' ' -f1)
           echo "build-hash=$BUILD_HASH" >> $GITHUB_OUTPUT
+          echo "Calculated hash: $BUILD_HASH"
 
       - name: Upload frontend artifacts
         uses: actions/upload-artifact@v4
         with:
           name: frontend-assets
           path: frontend/build/
-          retention-days: 1  # 减少存储占用
+          retention-days: 1
 
   android-build:
     name: Build Android APKs
@@ -93,15 +93,21 @@ jobs:
           fi
           echo "Found $(find android/app/src/main/assets/www -type f | wc -l) files"
 
+      # 修复点2：使用与前端构建相同的哈希计算方法
       - name: Verify assets hash
         run: |
-          CURRENT_HASH=$(
-            find android/app/src/main/assets/www -type f -exec sha256sum {} + |
-            sort | sha256sum | cut -d' ' -f1
-          )
+          # 使用tar创建一致的归档文件进行哈希计算
+          CURRENT_HASH=$(tar cf - android/app/src/main/assets/www | sha256sum | cut -d' ' -f1)
           EXPECTED_HASH="${{ needs.frontend-build.outputs.build-hash }}"
+          
+          echo "Expected hash: $EXPECTED_HASH"
+          echo "Current hash: $CURRENT_HASH"
+          
           if [ "$CURRENT_HASH" != "$EXPECTED_HASH" ]; then
             echo "::error::Frontend assets hash mismatch: expected $EXPECTED_HASH, got $CURRENT_HASH"
+            # 添加调试信息
+            echo "File list in www directory:"
+            find android/app/src/main/assets/www -type f -exec ls -l {} \;
             exit 1
           fi
 
@@ -160,7 +166,7 @@ jobs:
     name: Create GitHub Release
     needs: android-build
     runs-on: ubuntu-22.04
-    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'release' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     steps:
       - name: Download Release APK
         uses: actions/download-artifact@v4
@@ -203,7 +209,7 @@ jobs:
     name: Create GitHub Prerelease
     needs: android-build
     runs-on: ubuntu-22.04
-    if: ${{ github.ref == 'refs/heads/develop' || contains(github.ref, 'release/') }}
+    if: ${{ github.ref == 'refs/heads/develop' }}
     steps:
       - name: Download Debug APK
         uses: actions/download-artifact@v4
