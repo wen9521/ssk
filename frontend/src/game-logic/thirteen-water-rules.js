@@ -5,12 +5,19 @@ import { rankToScore, cardToRankAndSuit } from './utils';
 // (这里需要从 sssScore.js 移植 calcSSSScore, isFoul, compareHands等核心逻辑)
 // 为了简化，我们只定义接口和桩函数
 
-export function aiSmartSplit(cards) {
+export function autoArrangeCards(cards) {
   // AI的智能分牌逻辑 (桩函数)
+  // For now, it's a simple naive split.
+  // In a real game, this would involve complex logic to find the best arrangement.
+  
+  // Sort cards first for consistent naive splitting (e.g., by rank then suit)
+  // This is a placeholder sort, real sort would be more complex based on game rules.
+  const sortedCards = [...cards].sort(); 
+
   return {
-    head: cards.slice(0, 3),
-    middle: cards.slice(3, 8),
-    tail: cards.slice(8, 13),
+    head: sortedCards.slice(0, 3),
+    middle: sortedCards.slice(3, 8),
+    tail: sortedCards.slice(8, 13),
   };
 }
 

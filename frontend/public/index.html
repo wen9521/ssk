@@ -1,24 +1,37 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <!-- 1. base 指向伪 HTTPS 根路径 -->
-    <base href="https://appassets.androidplatform.net/www/" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>扑克游戏</title>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  
+  <!-- Viewport Meta Tag for Responsive Design (Crucial for Mobile & WebView) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no" />
+  
+  <!-- PWA & Mobile Experience Enhancements -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000" />
 
-    <!-- 2. 相对资源引用 -->
-    <link rel="icon" href="favicon.ico" />
-    <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="一个使用 React 构建的扑克游戏应用" />
-    <link rel="apple-touch-icon" href="logo192.png" />
-  </head>
-  <body>
-    <noscript>你需要启用 JavaScript 才能运行此应用。</noscript>
-    <div id="root"></div>
-    <!-- React 构建时会自动注入： -->
-    <!-- <link href="static/css/main.[hash].css" rel="stylesheet" /> -->
-    <!-- <script defer src="static/js/main.[hash].js"></script> -->
-  </body>
+  <!-- SEO & Sharing -->
+  <title>扑克王 - 十三水</title>
+  <meta name="description" content="一个基于React的在线十三水纸牌游戏，专为 Web 和 Android WebView 设计。" />
+
+  <!-- Icons and Manifest -->
+  <!-- %PUBLIC_URL% will be replaced by the public URL during the build. -->
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+  
+</head>
+<body>
+  <!-- Fallback for users with JavaScript disabled -->
+  <noscript>您需要启用 JavaScript 才能运行此应用。</noscript>
+  
+  <!--
+    This is the root DOM node where the React application will be mounted.
+    The content of this div is managed entirely by React.
+  -->
+  <div id="root"></div>
+
+</body>
 </html>
