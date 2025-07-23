@@ -17,14 +17,18 @@ public class MainActivity extends AppCompatActivity {
 
         WebView myWebView = (WebView) findViewById(R.id.webview);
 
-        // Enable Javascript
         WebSettings webSettings = myWebView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
         
-        // Enable DOM Storage
+        // Enable essential settings
+        webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
+        
+        // Allow file access and cross-origin requests from file URLs
+        // This is crucial for fixing the CORS issue with file:/// protocol
+        webSettings.setAllowFileAccess(true);
+        webSettings.setAllowFileAccessFromFileURLs(true);
+        webSettings.setAllowUniversalAccessFromFileURLs(true);
 
-        // Set a custom WebChromeClient to catch console messages
         myWebView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onConsoleMessage(android.webkit.ConsoleMessage consoleMessage) {

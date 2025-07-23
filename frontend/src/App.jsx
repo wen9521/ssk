@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import Play from './components/Play.jsx'; // 导入真正的 Play 组件
 import './App.css'; 
 
@@ -45,7 +45,7 @@ function ThirteenWaterMenu() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<Lobby />} />
         <Route path="/thirteen" element={<ThirteenWaterMenu />} />
@@ -54,6 +54,6 @@ export default function App() {
         <Route path="/thirteen/rooms" element={<ComingSoon gameName="房间列表" />} />
         <Route path="/play" element={<Play />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
