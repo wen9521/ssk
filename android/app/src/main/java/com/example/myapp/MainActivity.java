@@ -17,9 +17,6 @@ import android.webkit.WebViewClient;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebViewAssetLoader;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final String APP_DOMAIN = "appassets.androidplatform.net";
@@ -60,23 +57,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // 2. WebViewClient：使用旧版 onReceivedError 捕获错误
+        // 修复点：移除了修改响应头的代码
         webView.setWebViewClient(new WebViewClient() {
-            // 资源拦截
+            // 资源拦截 - 不再修改响应头
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view,
                                                              WebResourceRequest request) {
-                WebResourceResponse resp = assetLoader.shouldInterceptRequest(request.getUrl());
-                if (resp != null && Build.VERSION.SDK_INT >= 21) {
-                    Map<String, String> headers = resp.getResponseHeaders();
-                    if (headers != null) {
-                        headers = new HashMap<>(headers);
-                        headers.remove("Content-Security-Policy");
-                        headers.remove("Permissions-Policy");
-                        resp.setResponseHeaders(headers);
-                    }
-                }
-                return resp;
+                return assetLoader.shouldInterceptRequest(request.getUrl());
             }
 
             // 页面加载完成
@@ -85,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG, "✅ 页面加载完成: " + url);
             }
 
-            // 旧版网络或资源错误回调（API <23 & 全局）
+            // 旧版网络或资源错误回调
             @Override
             public void onReceivedError(WebView view,
                                         int errorCode,
@@ -99,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
                 );
             }
 
-            // HTTP 层面的错误（404/500 等）
+            // HTTP 层面的错误
             @Override
             public void onReceivedHttpError(WebView view,
                                             WebResourceRequest request,
@@ -110,13 +97,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            // 可选：SSL 错误处理，避免因证书失败导致空白
+            // SSL 错误处理
             @Override
             public void onReceivedSslError(WebView view,
                                            android.webkit.SslErrorHandler handler,
                                            android.net.http.SslError error) {
                 Log.e(TAG, "❌ SSL 错误: " + error.toString());
-                handler.proceed(); // 如需严格校验，可改为 handler.cancel()
+                handler.proceed();
             }
         });
 
