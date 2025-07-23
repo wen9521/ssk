@@ -197,7 +197,10 @@ jobs:
     runs-on: ubuntu-22.04
     if: >
       github.ref == 'refs/heads/develop' ||
-      (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'develop')
+      github.ref == 'refs/heads/main' ||
+      (github.event_name == 'pull_request' &&
+        (github.event.pull_request.base.ref == 'develop' ||
+         github.event.pull_request.base.ref == 'main'))
     steps:
       - uses: actions/checkout@v4
 
@@ -232,7 +235,7 @@ jobs:
         run: |
           cat <<EOF > beta_notes.md
           ### Android App v${{ steps.version-beta.outputs.version }}-beta
-          **Branch**: develop  
+          **Branch**: develop/main  
           **Build Date**: ${{ steps.date-beta.outputs.date }}  
           **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}  
           **APK SHA256**: \`${{ steps.checksum-beta.outputs.sha256 }}\`
