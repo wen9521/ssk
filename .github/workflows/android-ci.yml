@@ -149,7 +149,8 @@ jobs:
       github.ref == 'refs/heads/main' ||
       (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main')
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Download Release APK
         uses: actions/download-artifact@v4
@@ -201,7 +202,8 @@ jobs:
         (github.event.pull_request.base.ref == 'develop' ||
          github.event.pull_request.base.ref == 'main'))
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Download Debug APK
         uses: actions/download-artifact@v4
@@ -227,7 +229,4 @@ jobs:
           echo "### Android App v${{ env.versionName }}-debug" > beta_notes.md
           echo "**Branch**: develop/main" >> beta_notes.md
           echo "**Build Date**: ${{ steps.date-beta.outputs.date }}" >> beta_notes.md
-          echo "**Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}" >> beta_notes.md
-          echo "**Debug SHA256**: `${{ steps.checksum-beta.outputs.sha256 }}`" >> beta_notes.md
-
-      - name: Create
+          echo "**Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}" >>
