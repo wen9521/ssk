@@ -6,14 +6,15 @@ import android.os.Bundle;
 import android.util.Log;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebViewAssetLoader;
+import androidx.webkit.WebViewClientCompat;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,8 +23,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final String APP_DOMAIN = "appassets.androidplatform.net";
     private static final String START_URL = "https://" + APP_DOMAIN + "/www/index.html";
-
-    private WebView webView;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -36,8 +35,7 @@ public class MainActivity extends AppCompatActivity {
             .addPathHandler("/www/", new WebViewAssetLoader.AssetsPathHandler(this))
             .build();
 
-        webView = findViewById(R.id.webview);
-
+        WebView webView = findViewById(R.id.webview);
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -45,11 +43,9 @@ public class MainActivity extends AppCompatActivity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         }
-
         WebView.setWebContentsDebuggingEnabled(true);
 
         webView.setWebChromeClient(new WebChromeClient() {
@@ -60,9 +56,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        webView.setWebViewClient(new WebViewClient() {
+        webView.setWebViewClient(new WebViewClientCompat() {
             @Override
-            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+            public WebResourceResponse shouldInterceptRequest(WebView view,
+                                                             WebResourceRequest request) {
                 WebResourceResponse resp = assetLoader.shouldInterceptRequest(request.getUrl());
                 if (resp != null && Build.VERSION.SDK_INT >= 21) {
                     Map<String, String> headers = resp.getResponseHeaders();
@@ -82,17 +79,28 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
-                Log.e(TAG, "❌ 页面加载错误: " + request.getUrl() + " — " + errorResponse.getStatusCode());
-                view.loadData(
-                    "<html><body><h2 style='color:red;'>❌ 页面加载失败</h2><p>请检查资源路径或构建结果。</p></body></html>",
-                    "text/html", "UTF-8"
-                );
+            public void onReceivedError(WebView view,
+                                        WebResourceRequest request,
+                                        WebResourceError error) {
+                if (request.isForMainFrame()) {
+                    Log.e(TAG, "❌ 页面加载错误: " + request.getUrl() +
+                               " — " + error.getDescription());
+                    view.loadData(
+                        "<html><body><h2 style='color:red;'>❌ 页面加载失败</h2>" +
+                        "<p>请检查资源路径或构建结果。</p></body></html>",
+                        "text/html", "UTF-8"
+                    );
+                }
             }
 
             @Override
-            public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
-                Log.e(TAG, "❌ HTTP 错误: " + request.getUrl() + " — " + errorResponse.getStatusCode());
+            public void onReceivedHttpError(WebView view,
+                                            WebResourceRequest request,
+                                            WebResourceResponse errorResponse) {
+                if (request.isForMainFrame()) {
+                    Log.e(TAG, "❌ HTTP 错误: " + request.getUrl() +
+                               " — " + errorResponse.getStatusCode());
+                }
             }
         });
 
