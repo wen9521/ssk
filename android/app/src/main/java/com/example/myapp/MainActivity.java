@@ -3,24 +3,28 @@ package com.example.myapp;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.webkit.WebResourceError;
+import android.webkit.ConsoleMessage;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
-import android.webkit.WebView;
 import android.webkit.WebSettings;
-import android.webkit.WebChromeClient;
-import android.widget.Toast;
-import java.io.File;
+import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewClientCompat;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     private static final String APP_DOMAIN = "appassets.androidplatform.net";
     private static final String START_URL = "https://" + APP_DOMAIN + "/www/index.html";
 
@@ -33,157 +37,124 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // 初始化 Assets Loader
         assetLoader = new WebViewAssetLoader.Builder()
-                .setDomain(APP_DOMAIN)
-                .addPathHandler("/www/", new WebViewAssetLoader.AssetsPathHandler(this))
-                .addPathHandler("/media/", new WebViewAssetLoader.InternalStoragePathHandler(
-                        this, new File(getFilesDir(), "media")))
-                .build();
+            .setDomain(APP_DOMAIN)
+            .addPathHandler("/www/", new WebViewAssetLoader.AssetsPathHandler(this))
+            .addPathHandler("/media/",
+                new WebViewAssetLoader.InternalStoragePathHandler(
+                    this, new File(getFilesDir(), "media")))
+            .build();
 
         webView = findViewById(R.id.webview);
         configureWebView();
-
         webView.loadUrl(START_URL);
     }
 
+    @SuppressLint("NewApi")
     private void configureWebView() {
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.getSettings().setDomStorageEnabled(true);
-        webView.getSettings().setDatabaseEnabled(true);
-        webView.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
+        WebSettings settings = webView.getSettings();
+        // 启用 JS、DOMStorage
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setDatabaseEnabled(true);
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        webView.getSettings().setAllowFileAccess(false);
-        webView.getSettings().setAllowContentAccess(true);
-        webView.getSettings().setAllowFileAccessFromFileURLs(false);
-        webView.getSettings().setAllowUniversalAccessFromFileURLs(false);
+        // 只允许 http/https 访问，关闭 file://
+        settings.setAllowFileAccess(false);
+        settings.setAllowContentAccess(true);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
 
-        // ✅ 修复：确保调试启用（建议放在最前）
+        // 混合内容模式，允许 HTTPS 页面加载 HTTP 资源（遇到跨协议时可开启）
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            settings.setMixedContentMode(
+                WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            );
+        }
+
+        // 仅 DEBUG 构建启用调试
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
 
-        // ✅ 修复：添加 WebChromeClient 以确保 Chrome DevTools 能识别
-        webView.setWebChromeClient(new WebChromeClient());
+        // 捕获 console.log / 错误
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+                Log.d(TAG + ":JS", consoleMessage.message()
+                    + " — line " + consoleMessage.lineNumber()
+                    + " of " + consoleMessage.sourceId());
+                return true;
+            }
+        });
 
-        webView.setWebViewClient(new LocalContentWebViewClient());
+        // 拦截本地资源 & 日志 page load
+        webView.setWebViewClient(new WebViewClientCompat() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(
+                    WebView view, WebResourceRequest request) {
+                Uri uri = request.getUrl();
+                String host = uri.getHost();
+                // 本地资源走 AssetLoader
+                if (APP_DOMAIN.equals(host)) {
+                    WebResourceResponse resp = assetLoader.shouldInterceptRequest(uri);
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    // 移除可能干扰的 Permissions-Policy 头
+                    if (resp != null && Build.VERSION.SDK_INT >= 21) {
+                        Map<String, String> headers = resp.getResponseHeaders();
+                        if (headers != null) {
+                            headers.remove("Permissions-Policy");
+                            resp.setResponseHeaders(headers);
+                        }
+                    }
+                    return resp;
+                }
+
+                // 其他域名正常走外部
+                return super.shouldInterceptRequest(view, request);
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                Log.i(TAG, "页面加载完成: " + url);
+            }
+        });
+
+        // 硬件加速
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
         } else {
             webView.setLayerType(WebView.LAYER_TYPE_SOFTWARE, null);
         }
     }
 
-    private class LocalContentWebViewClient extends WebViewClientCompat {
-        @Override
-        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-            return assetLoader.shouldInterceptRequest(request.getUrl());
-        }
-
-        @Override
-        public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-            return assetLoader.shouldInterceptRequest(Uri.parse(url));
-        }
-
-        @Override
-        public void onReceivedError(WebView view, int errorCode,
-                                   String description, String failingUrl) {
-            MainActivity.this.handleLoadError(failingUrl, "Error: " + description);
-        }
-
-        @Override
-        public void onReceivedHttpError(WebView view, WebResourceRequest request,
-                                       WebResourceResponse errorResponse) {
-            String errorMsg = "HTTP " + errorResponse.getStatusCode();
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                errorMsg += " - " + errorResponse.getReasonPhrase();
-            }
-            MainActivity.this.handleLoadError(request.getUrl().toString(), errorMsg);
-        }
-
-        @Override
-        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-            Uri uri = request.getUrl();
-            String host = uri.getHost();
-
-            if (APP_DOMAIN.equals(host)) {
-                return false;
-            }
-
-            if ("tel".equals(uri.getScheme()) || "mailto".equals(uri.getScheme())) {
-                try {
-                    startActivity(new Intent(Intent.ACTION_VIEW, uri));
-                    return true;
-                } catch (Exception e) {
-                    Log.w("URL Handling", "No app to handle " + uri.getScheme() + " link");
-                }
-            }
-
-            try {
-                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(intent);
-                return true;
-            } catch (Exception e) {
-                Toast.makeText(MainActivity.this, "无法打开链接", Toast.LENGTH_SHORT).show();
-            }
-            return false;
-        }
-    }
-
-    private void handleLoadError(String url, String error) {
-        Log.e("WebViewError", "Failed to load: " + url + " | Error: " + error);
-
-        if (url.equals(START_URL)) {
-            runOnUiThread(() -> {
-                String errorHtml = "<!DOCTYPE html><html><head><meta charset='UTF-8'>" +
-                        "<title>应用加载错误</title><style>" +
-                        "body{font-family:sans-serif;text-align:center;padding:20% 20px;}" +
-                        "h1{color:#d32f2f;}.btn{margin-top:20px;padding:10px 20px;" +
-                        "background:#1976d2;color:white;border:none;border-radius:4px;}" +
-                        "</style></head><body>" +
-                        "<h1>应用加载失败</h1>" +
-                        "<p>无法加载应用程序，请检查网络连接或重启应用。</p>" +
-                        "<button class='btn' onclick='location.reload()'>重试</button>" +
-                        "</body></html>";
-
-                webView.loadDataWithBaseURL(
-                    "https://" + APP_DOMAIN,
-                    errorHtml,
-                    "text/html",
-                    "UTF-8",
-                    null
-                );
-            });
-        }
-    }
-
     @Override
     public void onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
+        if (webView.canGoBack()) webView.goBack();
+        else super.onBackPressed();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         webView.onResume();
-        webView.evaluateJavascript("if (typeof appResume === 'function') appResume();", null);
+        webView.evaluateJavascript(
+            "if(window.appResume) appResume();", null
+        );
     }
 
     @Override
     protected void onPause() {
         webView.onPause();
-        webView.evaluateJavascript("if (typeof appPause === 'function') appPause();", null);
+        webView.evaluateJavascript(
+            "if(window.appPause) appPause();", null
+        );
         super.onPause();
     }
 
     @Override
     protected void onDestroy() {
-        if (webView != null) {
-            webView.destroy();
-        }
+        if (webView != null) webView.destroy();
         super.onDestroy();
     }
 }
