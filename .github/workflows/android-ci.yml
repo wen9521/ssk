@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - develop
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,9 +19,8 @@ jobs:
   frontend-build:
     name: Build Frontend Assets
     runs-on: ubuntu-22.04
-    timeout-minutes: 15
     outputs:
-      build-hash: ${{ steps.hash-output.outputs.build-hash }}
+      build-hash: ${{ steps.hash.outputs.build-hash }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,121 +36,98 @@ jobs:
 
       - name: Install & build frontend
         run: |
-          npm ci --prefix frontend --prefer-offline
           cd frontend
-          PUBLIC_URL='https://appassets.androidplatform.net/www' \
-            REACT_APP_BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-            npm run build
+          npm ci
+          PUBLIC_URL='./' npm run build
 
       - name: Generate frontend hash
-        id: hash-output
+        id: hash
         run: |
-          BUILD_HASH=$(
-            find frontend/build -type f -exec sha256sum {} + |
-            sort | sha256sum | cut -d' ' -f1
-          )
-          echo "build-hash=$BUILD_HASH" >> $GITHUB_OUTPUT
+          HASH=$(find frontend/build -type f -exec sha256sum {} + \
+            | sort | sha256sum | cut -d' ' -f1)
+          echo "build-hash=$HASH" >> $GITHUB_OUTPUT
 
       - name: Upload frontend artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-assets
+          name: frontend-build
           path: frontend/build/
 
   android-build:
     name: Build Android APKs
     needs: frontend-build
     runs-on: ubuntu-22.04
-    timeout-minutes: 30
+    outputs:
+      versionName: ${{ steps.ver.outputs.versionName }}
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
-    outputs:
-      versionName: ${{ steps.versioning.outputs.versionName }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Generate version info
-        id: versioning
+        id: ver
         run: |
-          VERSION_NAME=1.0.${{ github.run_number }}
-          echo "versionCode=${{ github.run_number }}" >> $GITHUB_ENV
-          echo "versionName=${VERSION_NAME}" >> $GITHUB_ENV
-          echo "versionName=${VERSION_NAME}" >> $GITHUB_OUTPUT
+          VN="1.0.${GITHUB_RUN_NUMBER}"
+          echo "versionCode=${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+          echo "versionName=${VN}" >> $GITHUB_ENV
+          echo "versionName=${VN}" >> $GITHUB_OUTPUT
 
-      - name: Download frontend assets
+      - name: Download frontend artifacts
         uses: actions/download-artifact@v4
         with:
-          name: frontend-assets
+          name: frontend-build
           path: android/app/src/main/assets/www
 
-      - name: Verify assets directory
-        run: |
-          if [ ! -d android/app/src/main/assets/www ]; then
-            echo "::error::Frontend assets missing"
-            exit 1
-          fi
-          echo "Found $(find android/app/src/main/assets/www -type f | wc -l) files"
-
-      - name: Setup JDK 17
+      - name: Setup Java JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
 
-      - name: Restore keystore & validate
+      - name: Restore keystore
         run: |
           mkdir -p android/app
           echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d \
             > android/app/release-key.jks
-          keytool -list -v \
-            -keystore android/app/release-key.jks \
-            -storepass "${{ secrets.SIGNING_KEYSTORE_PASSWORD }}" \
-            -alias "${{ secrets.SIGNING_KEY_ALIAS }}"
 
       - name: Build Release APK
         run: |
           cd android
           ./gradlew clean assembleRelease \
-            -PversionCode=${{ env.versionCode }} \
-            -PversionName=${{ env.versionName }} \
-            -Pandroid.injected.signing.store.file=$PWD/app/release-key.jks \
+            -Pandroid.injected.signing.store.file=app/release-key.jks \
             -Pandroid.injected.signing.store.password=${{ secrets.SIGNING_KEYSTORE_PASSWORD }} \
             -Pandroid.injected.signing.key.alias=${{ secrets.SIGNING_KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.SIGNING_KEY_PASSWORD }} \
-            --no-daemon --stacktrace
+            -Pandroid.injected.signing.key.password=${{ secrets.SIGNING_KEY_PASSWORD }}
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-release-apk
+          name: release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
 
       - name: Build Debug APK
         run: |
           cd android
-          ./gradlew assembleDebug \
-            -PversionCode=${{ env.versionCode }} \
-            -PversionName=${{ env.versionName }} \
-            --no-daemon --stacktrace
+          ./gradlew assembleDebug
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-debug-apk
+          name: debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
   release:
-    name: Create GitHub Release
+    name: Publish Release
     needs: android-build
     runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Download Release APK
         uses: actions/download-artifact@v4
         with:
-          name: android-release-apk
+          name: release-apk
           path: .
 
       - name: Generate Release SHA256
@@ -159,16 +136,11 @@ jobs:
           S=$(sha256sum app-release.apk | cut -d' ' -f1)
           echo "sha256=$S" >> $GITHUB_OUTPUT
 
-      - name: Get Build Date
-        id: get-date
-        run: echo "date=$(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
-
       - name: Prepare Release Notes
         run: |
           cat << 'EOF' > release_notes.md
           ### Android App v${{ needs.android-build.outputs.versionName }}
           **Build Number**: ${{ github.run_number }}
-          **Build Date**: ${{ steps.get-date.outputs.date }}
           **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}
           **Release SHA256**: `${{ steps.checksum.outputs.sha256 }}`
           EOF
@@ -183,16 +155,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  beta:
-    name: Create GitHub Prerelease
+  prerelease:
+    name: Publish Prerelease
     needs: android-build
     runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/develop'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     steps:
       - name: Download Debug APK
         uses: actions/download-artifact@v4
         with:
-          name: android-debug-apk
+          name: debug-apk
           path: .
 
       - name: Generate Debug SHA256
@@ -201,16 +173,11 @@ jobs:
           S=$(sha256sum app-debug.apk | cut -d' ' -f1)
           echo "sha256=$S" >> $GITHUB_OUTPUT
 
-      - name: Get Build Date
-        id: get-date-beta
-        run: echo "date=$(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
-
       - name: Prepare Prerelease Notes
         run: |
-          cat << 'EOF' > beta_notes.md
+          cat << 'EOF' > prerelease_notes.md
           ### Android App v${{ needs.android-build.outputs.versionName }}-beta
           **Build Number**: ${{ github.run_number }}
-          **Build Date**: ${{ steps.get-date-beta.outputs.date }}
           **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}
           **Debug SHA256**: `${{ steps.checksum-beta.outputs.sha256 }}`
           EOF
@@ -220,7 +187,7 @@ jobs:
         with:
           tag_name: v${{ needs.android-build.outputs.versionName }}-beta.${{ github.run_number }}
           name: Prerelease v${{ needs.android-build.outputs.versionName }}-beta
-          body_path: beta_notes.md
+          body_path: prerelease_notes.md
           files: app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
