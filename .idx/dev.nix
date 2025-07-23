@@ -9,7 +9,8 @@
     # pkgs.go
     # pkgs.python311
     # pkgs.python311Packages.pip
-    # pkgs.nodejs_20
+    pkgs.nodejs_20
+    pkgs.openjdk17
     # pkgs.nodePackages.nodemon
   ];
 
@@ -43,7 +44,7 @@
       # Runs when a workspace is first created
       onCreate = {
         # Example: install JS dependencies from NPM
-        # npm-install = "npm install";
+        npm-install = "npm install --prefix frontend";
       };
       # Runs when the workspace is (re)started
       onStart = {

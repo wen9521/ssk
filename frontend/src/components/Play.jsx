@@ -1,140 +1,130 @@
-import React, { useState, useEffect, useReducer } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GameBoard from './GameBoard';
 import Hand from './Hand';
-import { toCardFilename } from '../utils/card-utils';
+import { useGameStore, STAGES } from '../utils/store';
+import { createDeck, shuffleDeck } from '../game-logic/deck';
 import './Play.css';
 
-// 优先使用环境变量中的WebSocket地址，并提供一个本地开发的备用地址
-const WS_URL = process.env.REACT_APP_WS_URL || 'ws://127.0.0.1:8080';
-
-// Reducer to manage complex game state
-function gameReducer(state, action) {
-  switch (action.type) {
-    case 'GAME_STATE_UPDATE':
-      return { ...state, ...action.payload };
-    case 'PLAYER_HAND_UPDATE':
-      return { ...state, myHand: action.payload };
-    case 'SET_SOCKET':
-      return { ...state, socket: action.payload };
-    case 'SET_MESSAGE':
-      return { ...state, message: action.payload };
-    case 'RESET':
-      return initialState;
-    default:
-      return state;
-  }
-}
-
-const initialState = {
-  socket: null,
-  message: '',
-  players: [],
-  status: 'connecting',
-  myHand: [],
-  submittedHands: {},
-  scores: {},
-};
-
+// The new, simplified, HTTP-based Play component
 export default function Play() {
   const navigate = useNavigate();
-  const [state, dispatch] = useReducer(gameReducer, initialState);
-  const { socket, message, players, status, myHand, submittedHands, scores } = state;
+  // Get state and actions from our central store
+  const { stage, players, myCards, setStage, dealNewRound, setFinalResults } = useGameStore();
 
+  // On component mount, create a deck and deal cards to players
   useEffect(() => {
-    console.log(`正在连接到 WebSocket 服务器: ${WS_URL}`); // 添加日志方便调试
-    const ws = new WebSocket(WS_URL);
+    const deck = createDeck();
+    const shuffled = shuffleDeck(deck);
+    
+    // Distribute cards to 4 players (13 each)
+    const hands = [
+      shuffled.slice(0, 13),
+      shuffled.slice(13, 26),
+      shuffled.slice(26, 39),
+      shuffled.slice(39, 52),
+    ];
+    dealNewRound(hands);
+  }, [dealNewRound]);
 
-    ws.onopen = () => {
-      console.log('已连接到 WebSocket 服务器');
-      dispatch({ type: 'SET_SOCKET', payload: ws });
-      dispatch({ type: 'GAME_STATE_UPDATE', payload: { status: 'waiting' } });
-      dispatch({ type: 'SET_MESSAGE', payload: '已连接到服务器' });
-    };
+  /**
+   * This is the core function that communicates with our backend.
+   * @param {object} mySortedHand - { head: [...], middle: [...], tail: [...] }
+   */
+  const handleSubmit = async (mySortedHand) => {
+    setStage(STAGES.SUBMITTED);
+    console.log('Submitting my hand:', mySortedHand);
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('收到消息:', data);
-
-      switch (data.type) {
-        case 'game_state':
-          dispatch({ type: 'GAME_STATE_UPDATE', payload: data.payload });
-          break;
-        case 'player_hand':
-          dispatch({ type: 'PLAYER_HAND_UPDATE', payload: data.payload });
-          break;
-        case 'error':
-          dispatch({ type: 'SET_MESSAGE', payload: `错误: ${data.payload}` });
-          break;
-        default:
-          break;
+    // 1. Prepare the payload for the backend API
+    const payload = players.map(player => {
+      if (player.id === 'player1') { // This is us
+        return { id: player.id, hands: mySortedHand };
+      } else {
+        // For computer players, just split their cards naively for now.
+        // In a real game, this could be a more complex AI choice.
+        return {
+          id: player.id,
+          hands: {
+            head: player.cards.slice(0, 3),
+            middle: player.cards.slice(3, 8),
+            tail: player.cards.slice(8, 13),
+          },
+        };
       }
-    };
+    });
 
-    ws.onclose = () => {
-      console.log('与 WebSocket 服务器断开连接');
-      dispatch({ type: 'SET_MESSAGE', payload: '与服务器断开连接' });
-      dispatch({ type: 'RESET' });
-    };
+    console.log('Sending to backend:', JSON.stringify(payload, null, 2));
 
-    ws.onerror = (error) => {
-        console.error('WebSocket 错误:', error);
-        dispatch({ type: 'SET_MESSAGE', payload: 'WebSocket 连接出错' });
-    };
+    try {
+      // 2. Call the backend API
+      const response = await fetch('/api/v1/thirteen-water/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-    return () => {
-      ws.close();
-    };
-  }, []);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Backend calculation failed');
+      }
 
-  const sendMessage = (type, payload = {}) => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type, ...payload }));
+      const results = await response.json();
+      console.log('Received results from backend:', results);
+      
+      // 3. Update the central store with the authoritative results
+      setFinalResults(results);
+
+    } catch (error) {
+      console.error('Error submitting hand:', error);
+      // Optional: Revert stage to 'PLAYING' to allow user to try again
+      setStage(STAGES.PLAYING); 
     }
   };
 
-  const handleStartGame = () => {
-    sendMessage('start_game');
-  };
-
-  const handleSubmitHand = (hand) => {
-    // Hand will be an object with { head, middle, tail }
-    sendMessage('submit_hand', { hand });
+  const handlePlayAgain = () => {
+    // Simply dealing a new round will reset the game state via the store's logic
+    const deck = createDeck();
+    const shuffled = shuffleDeck(deck);
+    const hands = [
+      shuffled.slice(0, 13),
+      shuffled.slice(13, 26),
+      shuffled.slice(26, 39),
+      shuffled.slice(39, 52),
+    ];
+    dealNewRound(hands);
   };
 
   return (
     <div className="play-container">
-        <div className="game-wrapper">
-            <div className="game-header">
-                <button className="btn-quit" onClick={() => navigate('/')}>
-                    &lt; 退出房间
-                </button>
-                <div className="score-display">
-                    <span role="img" aria-label="coin" className="coin-icon">🪙</span>
-                    积分: {scores[socket?.resourceId] || 0}
-                </div>
-            </div>
-
-            <GameBoard players={players} status={status} />
-
-            <Hand
-                cards={myHand}
-                onSubmit={handleSubmitHand}
-                gameStatus={status}
-            />
-
-            <div className="actions-area">
-                <button
-                    className="btn-action btn-ready"
-                    onClick={handleStartGame}
-                    disabled={status !== 'waiting' || players.length < 2}
-                >
-                    开始游戏
-                </button>
-            </div>
-            
-            <div className="message-area">{message}</div>
+      <div className="game-wrapper">
+        <div className="game-header">
+          <button className="btn-quit" onClick={() => navigate('/')}>
+            &lt; 退出房间
+          </button>
+          <div className="game-stage-display">
+            {stage.toUpperCase()}
+          </div>
         </div>
+
+        <GameBoard players={players} status={stage} />
+
+        {stage !== STAGES.FINISHED && (
+          <Hand
+            cards={myCards}
+            onSubmit={handleSubmit}
+            gameStatus={stage}
+          />
+        )}
+        
+        {stage === STAGES.FINISHED && (
+            <div className="actions-area">
+                <button className="btn-action btn-primary" onClick={handlePlayAgain}>
+                    再来一局
+                </button>
+            </div>
+        )}
+
+      </div>
     </div>
   );
 }

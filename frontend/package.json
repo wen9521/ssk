@@ -11,10 +11,12 @@
     "eject": "react-scripts eject"
   },
   "dependencies": {
+    "immer": "^10.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3",
-    "react-scripts": "^5.0.1"
+    "react-scripts": "^5.0.1",
+    "zustand": "^5.0.6"
   },
   "browserslist": [
     ">0.2%",

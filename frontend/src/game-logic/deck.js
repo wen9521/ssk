@@ -3,27 +3,35 @@
 const SUITS = ['s', 'h', 'd', 'c'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
 
-export function getShuffledDeck() {
+/**
+ * Creates a standard 52-card deck.
+ * @returns {string[]} An array of card strings, e.g., ['2s', '3s', ...].
+ */
+function createDeck() {
   const deck = [];
   for (const suit of SUITS) {
     for (const rank of RANKS) {
+      // Using a consistent format: Rank then Suit (e.g., 'As', 'Th', '2c')
       deck.push(rank + suit);
     }
-  }
-
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
   }
   return deck;
 }
 
-export function dealHands(deck) {
-  const hands = [[], [], [], []];
-  for (let i = 0; i < 13; i++) {
-    for (let j = 0; j < 4; j++) {
-      hands[j].push(deck[i * 4 + j]);
-    }
+/**
+ * Shuffles a deck of cards using the Fisher-Yates algorithm.
+ * @param {string[]} deck The deck to shuffle.
+ * @returns {string[]} A new array containing the shuffled deck.
+ */
+function shuffleDeck(deck) {
+  // Create a copy to avoid modifying the original array
+  const shuffled = [...deck];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return hands;
+  return shuffled;
 }
+
+// Export the functions so they can be imported elsewhere
+export { createDeck, shuffleDeck };
