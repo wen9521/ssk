@@ -6,11 +6,9 @@ on:
       - main
 
 jobs:
-  # 1. 构建 React 前端
   frontend-build:
+    name: 构建前端
     runs-on: ubuntu-latest
-    outputs:
-      artifact-path: frontend-build
     steps:
       - name: Checkout 代码
         uses: actions/checkout@v4
@@ -32,10 +30,10 @@ jobs:
           npm ci
           npm run build
 
-      - name: 修补 build/index.html 中 base 和相对路径
+      - name: 修补 build/index.html 路径
         run: |
           sed -i -E '
-            s|<base href="[^"]*"|<base href="https://appassets.androidplatform.net/www/"|;
+            s|<base href="[^"]*"|<base href="file:///android_asset/www/"|;
             s|src="\./|src="|g;
             s|href="\./|href="|g
           ' frontend/build/index.html
@@ -46,24 +44,20 @@ jobs:
           name: frontend-build
           path: frontend/build/
 
-  # 2. 构建 Release APK 并自动发布
   android-release:
+    name: 构建并发布 Release APK
     needs: frontend-build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 代码
         uses: actions/checkout@v4
 
-      # 恢复 Keystore
-      - name: 恢复 Keystore 文件
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      - name: 恢复 Keystore
         run: |
           mkdir -p android/app
-          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
 
-      # 下载前端产物到 assets/www
-      - name: 下载并复制前端资源
+      - name: 下载前端产物到 assets/www
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
@@ -81,16 +75,15 @@ jobs:
           path: ~/.gradle
           key: gradle-${{ runner.os }}-release-${{ hashFiles('android/**/*.gradle*','android/gradle-wrapper.properties') }}
 
-      - name: 构建签名的 Release APK
+      - name: 构建签名 Release APK
         env:
-          KEYSTORE_PATH: android/app/release.keystore
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
           cd android
           ./gradlew clean assembleRelease \
-            -Pandroid.injected.signing.store.file=$KEYSTORE_PATH \
+            -Pandroid.injected.signing.store.file=$PWD/app/release.keystore \
             -Pandroid.injected.signing.store.password=$STORE_PASSWORD \
             -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
             -Pandroid.injected.signing.key.password=$KEY_PASSWORD \
