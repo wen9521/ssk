@@ -10,6 +10,7 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebViewAssetLoader;
@@ -30,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // ✅ 修正路径映射：将 /www/ 映射到 assets/www/
         WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
             .setDomain(APP_DOMAIN)
             .addPathHandler("/www/", new WebViewAssetLoader.AssetsPathHandler(this))
@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        webView.setWebViewClient(new androidx.webkit.WebViewClientCompat() {
+        webView.setWebViewClient(new WebViewClient() {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 WebResourceResponse resp = assetLoader.shouldInterceptRequest(request.getUrl());
@@ -79,6 +79,20 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 Log.i(TAG, "✅ 页面加载完成: " + url);
+            }
+
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
+                Log.e(TAG, "❌ 页面加载错误: " + request.getUrl() + " — " + errorResponse.getStatusCode());
+                view.loadData(
+                    "<html><body><h2 style='color:red;'>❌ 页面加载失败</h2><p>请检查资源路径或构建结果。</p></body></html>",
+                    "text/html", "UTF-8"
+                );
+            }
+
+            @Override
+            public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
+                Log.e(TAG, "❌ HTTP 错误: " + request.getUrl() + " — " + errorResponse.getStatusCode());
             }
         });
 
