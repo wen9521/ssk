@@ -14,6 +14,7 @@ jobs:
   frontend-build:
     name: Build Frontend Assets
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     outputs:
       build-hash: ${{ steps.hash-output.outputs.build-hash }}
     steps:
@@ -26,8 +27,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install & Build Frontend
         run: |
@@ -59,6 +60,7 @@ jobs:
     name: Build Android APK
     needs: frontend-build
     runs-on: ubuntu-22.04
+    timeout-minutes: 25
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
     steps:
@@ -71,15 +73,36 @@ jobs:
           name: frontend-assets
           path: android/app/src/main/assets/www
 
+      - name: Verify Frontend Assets
+        run: |
+          if [ ! -d android/app/src/main/assets/www ]; then
+            echo "::error::frontend assets missing"
+            exit 1
+          fi
+          echo "Found $(find android/app/src/main/assets/www -type f | wc -l) files"
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+          cache-dependency-path: |
+            android/**/*.gradle
+            android/**/*.gradle.kts
+            android/gradle/wrapper/gradle-wrapper.properties
+
       - name: Restore Keystore & Validate
         run: |
           if [ -z "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" ]; then
-            echo "::error::SIGNING_KEYSTORE_BASE64 is not set"; exit 1
+            echo "::error::SIGNING_KEYSTORE_BASE64 is not set"
+            exit 1
           fi
           if [ -z "${{ secrets.SIGNING_KEYSTORE_PASSWORD }}" ] || \
              [ -z "${{ secrets.SIGNING_KEY_ALIAS }}" ] || \
              [ -z "${{ secrets.SIGNING_KEY_PASSWORD }}" ]; then
-            echo "::error::Signing secrets missing"; exit 1
+            echo "::error::Signing secrets missing"
+            exit 1
           fi
           mkdir -p android/app
           echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d \
@@ -109,8 +132,6 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 1
 
-  # —————————————————————————————————————————
-  # 正式版 Release（仅在 main 分支触发）
   release:
     name: Create Release
     needs: [frontend-build, android-build]
@@ -129,7 +150,8 @@ jobs:
         id: version
         run: |
           V=$(grep versionName android/app/build.gradle \
-               | head -n1 | sed -E 's/.*versionName "(.*)".*/\1/')
+               | head -n1 \
+               | sed -E 's/.*versionName "(.*)".*/\1/')
           echo "version=$V" >> $GITHUB_OUTPUT
 
       - name: Rename APK
@@ -168,8 +190,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # —————————————————————————————————————————
-  # 测试版 Prerelease（仅在 develop 分支触发）
   beta:
     name: Create Prerelease
     needs: [frontend-build, android-build]
@@ -188,7 +208,8 @@ jobs:
         id: version-beta
         run: |
           V=$(grep versionName android/app/build.gradle \
-               | head -n1 | sed -E 's/.*versionName "(.*)".*/\1/')
+               | head -n1 \
+               | sed -E 's/.*versionName "(.*)".*/\1/')
           echo "version=$V" >> $GITHUB_OUTPUT
 
       - name: Rename APK
