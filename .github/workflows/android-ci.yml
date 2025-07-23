@@ -177,7 +177,7 @@ jobs:
           **Branch**: main  
           **Build Date**: ${{ steps.get-date.outputs.date }}  
           **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}  
-          **Release SHA256**: \`${{ steps.checksum.outputs.sha256 }}\`
+          **Release SHA256**: `${{ steps.checksum.outputs.sha256 }}`
           EOF
 
       - name: Create GitHub Release
@@ -231,10 +231,17 @@ jobs:
           **Branch**: develop/main  
           **Build Date**: ${{ steps.date-beta.outputs.date }}  
           **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}  
-          **Debug SHA256**: \`${{ steps.checksum-beta.outputs.sha256 }}\`
+          **Debug SHA256**: `${{ steps.checksum-beta.outputs.sha256 }}`
           EOF
 
       - name: Create GitHub Prerelease
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.versionName }}-debug.${{ github
+          tag_name: v${{ env.versionName }}-debug.${{ github.run_number }}
+          name: Prerelease v${{ env.versionName }}-debug
+          body_path: beta_notes.md
+          files: app-${{ env.versionName }}-debug.apk
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{
