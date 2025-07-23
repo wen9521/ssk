@@ -1,5 +1,6 @@
 package com.example.myapp;
 
+import android.net.Uri;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import android.webkit.WebResourceRequest;
@@ -27,20 +28,26 @@ public class MainActivity extends AppCompatActivity {
     WebSettings settings = webView.getSettings();
     settings.setJavaScriptEnabled(true);
     settings.setDomStorageEnabled(true);
-    // file:// 权限不再需要，全部走 HTTPS
 
     WebView.setWebContentsDebuggingEnabled(true);
 
-    // 2. 拦截请求，让 AssetLoader 处理 https://appassets.androidplatform.net/www/*
+    // 2. 拦截两种请求方式，交给 AssetLoader 处理
     webView.setWebViewClient(new WebViewClient() {
       @Override
       public WebResourceResponse shouldInterceptRequest(
           WebView view, WebResourceRequest request) {
         return assetLoader.shouldInterceptRequest(request.getUrl());
       }
+
+      @Override
+      @Deprecated
+      public WebResourceResponse shouldInterceptRequest(
+          WebView view, String url) {
+        return assetLoader.shouldInterceptRequest(Uri.parse(url));
+      }
     });
 
-    // 3. 直接加载伪 HTTPS 地址
+    // 3. 加载伪 HTTPS 地址
     webView.loadUrl("https://appassets.androidplatform.net/www/index.html");
   }
 }
