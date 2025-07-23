@@ -2,9 +2,9 @@ name: Android CI Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,7 +14,6 @@ jobs:
   frontend-build:
     name: Build Frontend Assets
     runs-on: ubuntu-22.04
-    timeout-minutes: 15
     outputs:
       build-hash: ${{ steps.hash-output.outputs.build-hash }}
     steps:
@@ -29,13 +28,6 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: 'frontend/package-lock.json'
-
-      - name: Verify Lockfile
-        run: |
-          if [ ! -f frontend/package-lock.json ]; then
-            echo "::error::frontend/package-lock.json not found"
-            exit 1
-          fi
 
       - name: Install & Build Frontend
         run: |
@@ -67,10 +59,8 @@ jobs:
     name: Build Android APK
     needs: frontend-build
     runs-on: ubuntu-22.04
-    timeout-minutes: 25
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -81,43 +71,19 @@ jobs:
           name: frontend-assets
           path: android/app/src/main/assets/www
 
-      - name: Verify Assets
-        run: |
-          if [ ! -d android/app/src/main/assets/www ]; then
-            echo "::error::frontend assets missing"
-            exit 1
-          fi
-          echo "Found $(find android/app/src/main/assets/www -type f | wc -l) files"
-
-      - name: Setup JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: gradle
-          cache-dependency-path: |
-            android/**/*.gradle
-            android/**/*.gradle.kts
-            android/gradle/wrapper/gradle-wrapper.properties
-
       - name: Restore Keystore & Validate
         run: |
           if [ -z "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" ]; then
-            echo "::error::SIGNING_KEYSTORE_BASE64 is not set"
-            exit 1
+            echo "::error::SIGNING_KEYSTORE_BASE64 is not set"; exit 1
           fi
-          if [ -z "${{ secrets.SIGNING_KEYSTORE_PASSWORD }}" ] \
-             || [ -z "${{ secrets.SIGNING_KEY_ALIAS }}" ] \
-             || [ -z "${{ secrets.SIGNING_KEY_PASSWORD }}" ]; then
-            echo "::error::One or more signing secrets are missing"
-            exit 1
+          if [ -z "${{ secrets.SIGNING_KEYSTORE_PASSWORD }}" ] || \
+             [ -z "${{ secrets.SIGNING_KEY_ALIAS }}" ] || \
+             [ -z "${{ secrets.SIGNING_KEY_PASSWORD }}" ]; then
+            echo "::error::Signing secrets missing"; exit 1
           fi
-
           mkdir -p android/app
           echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d \
             > android/app/release.keystore
-          ls -lh android/app/release.keystore
-
           keytool -list -v \
             -keystore android/app/release.keystore \
             -storepass "${{ secrets.SIGNING_KEYSTORE_PASSWORD }}" \
@@ -136,15 +102,6 @@ jobs:
           ORG_GRADLE_PROJECT_RELEASE_STORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
           ORG_GRADLE_PROJECT_RELEASE_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
 
-      - name: Verify APK
-        run: |
-          APK=android/app/build/outputs/apk/release/app-release.apk
-          if [ ! -f "$APK" ]; then
-            echo "::error::APK not found at $APK"
-            exit 1
-          fi
-          echo "APK size: $(du -h "$APK" | cut -f1)"
-
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -152,15 +109,15 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 1
 
+  # —————————————————————————————————————————
+  # 正式版 Release（仅在 main 分支触发）
   release:
-    name: Create GitHub Release
+    name: Create Release
     needs: [frontend-build, android-build]
     runs-on: ubuntu-22.04
     if: github.ref == 'refs/heads/main'
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Download APK
         uses: actions/download-artifact@v4
@@ -172,13 +129,11 @@ jobs:
         id: version
         run: |
           V=$(grep versionName android/app/build.gradle \
-               | head -n1 \
-               | sed -E 's/.*versionName "(.*)".*/\1/')
+               | head -n1 | sed -E 's/.*versionName "(.*)".*/\1/')
           echo "version=$V" >> $GITHUB_OUTPUT
 
       - name: Rename APK
-        run: |
-          mv app-release.apk app-v${{ steps.version.outputs.version }}.apk
+        run: mv app-release.apk app-v${{ steps.version.outputs.version }}.apk
 
       - name: Generate SHA256
         id: checksum
@@ -194,14 +149,11 @@ jobs:
       - name: Prepare Release Notes
         run: |
           cat <<EOF > release_notes.md
-          ### Android App Release
-          **Version**: v${{ steps.version.outputs.version }}
-          **Build Date**: ${{ steps.get-date.outputs.date }}
-          **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}
+          ### Android App v${{ steps.version.outputs.version }}
+          **Branch**: main  
+          **Build Date**: ${{ steps.get-date.outputs.date }}  
+          **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}  
           **APK SHA256**: \`${{ steps.checksum.outputs.sha256 }}\`
-
-          **Recent Changes:**
-          $(git log -n 5 --pretty=format:"- %s (%an)")
           EOF
 
       - name: Create GitHub Release
@@ -211,5 +163,66 @@ jobs:
           name: Release v${{ steps.version.outputs.version }}
           body_path: release_notes.md
           files: app-v${{ steps.version.outputs.version }}.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # —————————————————————————————————————————
+  # 测试版 Prerelease（仅在 develop 分支触发）
+  beta:
+    name: Create Prerelease
+    needs: [frontend-build, android-build]
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: .
+
+      - name: Extract Version
+        id: version-beta
+        run: |
+          V=$(grep versionName android/app/build.gradle \
+               | head -n1 | sed -E 's/.*versionName "(.*)".*/\1/')
+          echo "version=$V" >> $GITHUB_OUTPUT
+
+      - name: Rename APK
+        run: mv app-release.apk app-${{ steps.version-beta.outputs.version }}-beta.apk
+
+      - name: Generate SHA256
+        id: checksum-beta
+        run: |
+          S=$(sha256sum app-${{ steps.version-beta.outputs.version }}-beta.apk \
+               | cut -d' ' -f1)
+          echo "sha256=$S" >> $GITHUB_OUTPUT
+
+      - name: Get Build Date
+        id: date-beta
+        run: echo "date=$(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+
+      - name: Prepare Prerelease Notes
+        run: |
+          cat <<EOF > beta_notes.md
+          ### Android App v${{ steps.version-beta.outputs.version }}-beta
+          **Branch**: develop  
+          **Build Date**: ${{ steps.date-beta.outputs.date }}  
+          **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}  
+          **APK SHA256**: \`${{ steps.checksum-beta.outputs.sha256 }}\`
+          EOF
+
+      - name: Create GitHub Prerelease
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version-beta.outputs.version }}-beta.${{ github.run_number }}
+          name: Prerelease v${{ steps.version-beta.outputs.version }}-beta
+          body_path: beta_notes.md
+          files: app-${{ steps.version-beta.outputs.version }}-beta.apk
+          draft: false
+          prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
