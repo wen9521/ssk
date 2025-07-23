@@ -73,7 +73,7 @@ jobs:
           name: frontend-assets
           path: android/app/src/main/assets/www
 
-      - name: Verify Frontend Assets
+      - name: Verify Assets Directory
         run: |
           if [ ! -d android/app/src/main/assets/www ]; then
             echo "::error::frontend assets missing"
@@ -136,7 +136,9 @@ jobs:
     name: Create Release
     needs: [frontend-build, android-build]
     runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/main'
+    if: >
+      github.ref == 'refs/heads/main' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main')
     steps:
       - uses: actions/checkout@v4
 
@@ -150,8 +152,7 @@ jobs:
         id: version
         run: |
           V=$(grep versionName android/app/build.gradle \
-               | head -n1 \
-               | sed -E 's/.*versionName "(.*)".*/\1/')
+               | head -n1 | sed -E 's/.*versionName "(.*)".*/\1/')
           echo "version=$V" >> $GITHUB_OUTPUT
 
       - name: Rename APK
@@ -194,7 +195,9 @@ jobs:
     name: Create Prerelease
     needs: [frontend-build, android-build]
     runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/develop'
+    if: >
+      github.ref == 'refs/heads/develop' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'develop')
     steps:
       - uses: actions/checkout@v4
 
@@ -208,8 +211,7 @@ jobs:
         id: version-beta
         run: |
           V=$(grep versionName android/app/build.gradle \
-               | head -n1 \
-               | sed -E 's/.*versionName "(.*)".*/\1/')
+               | head -n1 | sed -E 's/.*versionName "(.*)".*/\1/')
           echo "version=$V" >> $GITHUB_OUTPUT
 
       - name: Rename APK
