@@ -188,11 +188,9 @@ jobs:
       - name: Extract Changelog
         id: changelog
         run: |
-          {
-            echo "changelog<<EOF"
-            git log -n 5 --pretty=format:"- %s (%an)"
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          git log -n 5 --pretty=format:"- %s (%an)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Get Current Date
         id: get-date
