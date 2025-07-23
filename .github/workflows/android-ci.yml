@@ -2,35 +2,38 @@ name: Android CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   frontend-build:
     name: 构建前端
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout 代码
+        uses: actions/checkout@v4
 
-      - name: 设置 Node.js
+      - name: 设置 Node.js 环境
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: 缓存依赖
+      - name: 缓存前端依赖
         uses: actions/cache@v3
         with:
           path: frontend/node_modules
           key: npm-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
 
-      - name: 安装并打包
+      - name: 安装并构建前端
         run: |
           cd frontend
           npm ci
           npm run build
 
-      - name: 修补 index.html 路径
+      - name: 修补 build/index.html 中的路径
         run: |
           sed -i -E '
             s|<base href="[^"]*"|<base href="file:///android_asset/www/"|;
@@ -38,7 +41,7 @@ jobs:
             s|href="\./|href="|g
           ' frontend/build/index.html
 
-      - name: 上传前端产物
+      - name: 上传前端构建产物
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
@@ -49,34 +52,34 @@ jobs:
     needs: frontend-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout 代码
+        uses: actions/checkout@v4
 
-      - name: 准备 assets 目录
+      - name: 准备 assets/www 目录
         run: mkdir -p android/app/src/main/assets/www
 
-      - name: 下载前端产物
+      - name: 下载前端构建产物
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
           path: android/app/src/main/assets/
 
-      - name: 移动到 assets/www
+      - name: 拷贝前端静态文件到 assets/www
         run: |
           rm -rf android/app/src/main/assets/www
           mkdir -p android/app/src/main/assets/www
-          mv android/app/src/main/assets/index.html android/app/src/main/assets/www/
-          mv android/app/src/main/assets/static     android/app/src/main/assets/www/
+          cp -R android/app/src/main/assets/frontend-build/* android/app/src/main/assets/www/
 
-      - name: 列出拷贝后的文件
+      - name: 列出打包进 APK 的前端资源
         run: ls -R android/app/src/main/assets/www
 
-      - name: 设置 Java
+      - name: 设置 Java 环境
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: 缓存 Gradle
+      - name: 缓存 Gradle 构建
         uses: actions/cache@v3
         with:
           path: ~/.gradle
