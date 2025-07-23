@@ -103,37 +103,29 @@ jobs:
 
       - name: Restore and Validate Keystore
         run: |
-          mkdir -p android/app
+          # Base64 解码密钥库
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
           
-          # 1. 将Base64密钥库内容写入临时文件
-          echo "${{ secrets.KEYSTORE_BASE64 }}" > keystore.b64
-          
-          # 2. 智能处理换行符问题
-          if grep -q '\\n' keystore.b64; then
-            sed -i -e 's/\\n/\n/g' keystore.b64
-          fi
-          
-          # 3. 解码Base64并创建密钥库文件
-          base64 -d keystore.b64 > android/app/release.keystore
-          
-          # 4. 验证密钥库是否存在且非空
+          # 验证文件存在且非空
           if [ ! -s "android/app/release.keystore" ]; then
-            echo "::error::Keystore file is empty or not created!"
-            echo "Debug: Base64 content length: $(wc -c < keystore.b64)"
+            echo "::error::Keystore file decode failed or is empty"
+            echo "Debug: Base64 content length: $(wc -c <<< "${{ secrets.KEYSTORE_BASE64 }}")"
             exit 1
           fi
           
-          # 5. 验证密钥库有效性
+          # 验证密钥库有效性（输出错误信息）
           echo "Verifying keystore..."
-          if ! keytool -list -v -keystore android/app/release.keystore \
+          if ! keytool -list -v \
+               -keystore android/app/release.keystore \
                -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
-               -alias "${{ secrets.KEY_ALIAS }}"; then
-            echo "::error::Keystore verification failed. Invalid keystore, password or alias."
+               -alias "${{ secrets.KEY_ALIAS }}" 2> keystore-error.log; then
+            echo "::error::Keystore verification failed"
+            echo "Error output:"
+            cat keystore-error.log
             exit 1
           fi
           
-          # 6. 清理临时文件
-          rm keystore.b64
+          echo "Keystore validation successful"
 
       - name: Build Release APK
         run: |
@@ -145,9 +137,6 @@ jobs:
             -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }} \
             --no-daemon \
             --stacktrace
-        env:
-          ORG_GRADLE_PROJECT_RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          ORG_GRADLE_PROJECT_RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Verify APK
         run: |
