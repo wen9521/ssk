@@ -103,24 +103,31 @@ jobs:
 
       - name: Restore and Validate Keystore
         run: |
-          # Base64 解码密钥库
+          # 检查密钥库Secret是否设置
+          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "::error::Keystore secret is empty or not configured!"
+            echo "Please ensure KEYSTORE_BASE64, KEYSTORE_PASSWORD and KEY_ALIAS secrets are set"
+            exit 1
+          fi
+          
+          # Base64解码密钥库
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
           
           # 验证文件存在且非空
           if [ ! -s "android/app/release.keystore" ]; then
-            echo "::error::Keystore file decode failed or is empty"
-            echo "Debug: Base64 content length: $(wc -c <<< "${{ secrets.KEYSTORE_BASE64 }}")"
+            echo "::error::Keystore file is empty or not created!"
+            echo "Base64 content length: $(wc -c <<< "${{ secrets.KEYSTORE_BASE64 }}")"
             exit 1
           fi
           
-          # 验证密钥库有效性（输出错误信息）
+          # 验证密钥库有效性
           echo "Verifying keystore..."
           if ! keytool -list -v \
                -keystore android/app/release.keystore \
                -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
                -alias "${{ secrets.KEY_ALIAS }}" 2> keystore-error.log; then
             echo "::error::Keystore verification failed"
-            echo "Error output:"
+            echo "Error details:"
             cat keystore-error.log
             exit 1
           fi
