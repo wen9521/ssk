@@ -70,10 +70,8 @@ jobs:
       - name: Generate Version Info
         id: versioning
         run: |
-          COMMIT_COUNT=$(git rev-list --count HEAD)
-          VERSION_NAME="1.0.${COMMIT_COUNT}"
-          echo "versionCode=${COMMIT_COUNT}" >> $GITHUB_ENV
-          echo "versionName=${VERSION_NAME}" >> $GITHUB_ENV
+          echo "versionCode=${{ github.run_number }}" >> $GITHUB_ENV
+          echo "versionName=1.0.${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Download Frontend Assets
         uses: actions/download-artifact@v4
@@ -102,19 +100,8 @@ jobs:
 
       - name: Restore Keystore & Validate
         run: |
-          if [ -z "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" ]; then
-            echo "::error::SIGNING_KEYSTORE_BASE64 is not set"
-            exit 1
-          fi
-          if [ -z "${{ secrets.SIGNING_KEYSTORE_PASSWORD }}" ] || \
-             [ -z "${{ secrets.SIGNING_KEY_ALIAS }}" ] || \
-             [ -z "${{ secrets.SIGNING_KEY_PASSWORD }}" ]; then
-            echo "::error::Signing secrets missing"
-            exit 1
-          fi
           mkdir -p android/app
-          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d \
-            > android/app/release.keystore
+          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
           keytool -list -v \
             -keystore android/app/release.keystore \
             -storepass "${{ secrets.SIGNING_KEYSTORE_PASSWORD }}" \
@@ -243,3 +230,10 @@ jobs:
           ### Android App v${{ env.versionName }}-debug
           **Branch**: develop/main  
           **Build Date**: ${{ steps.date-beta.outputs.date }}  
+          **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}  
+          **Debug SHA256**: \`${{ steps.checksum-beta.outputs.sha256 }}\`
+          EOF
+
+      - name: Create GitHub Prerelease
+        uses: softprops/action-gh-release@v1
+        with:
