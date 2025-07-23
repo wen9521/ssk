@@ -18,7 +18,6 @@ jobs:
   frontend-build:
     name: Build Frontend Assets
     runs-on: ubuntu-22.04
-    timeout-minutes: 15
     outputs:
       build-hash: ${{ steps.hash-output.outputs.build-hash }}
     steps:
@@ -59,9 +58,10 @@ jobs:
 
   android-build:
     name: Build Android APKs
-    runs-on: ubuntu-22.04
     needs: frontend-build
-    timeout-minutes: 30
+    runs-on: ubuntu-22.04
+    outputs:
+      versionName: ${{ steps.versioning.outputs.versionName }}
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
     steps:
@@ -71,8 +71,10 @@ jobs:
       - name: Generate version info
         id: versioning
         run: |
+          VERSION_NAME=1.0.${{ github.run_number }}
           echo "versionCode=${{ github.run_number }}" >> $GITHUB_ENV
-          echo "versionName=1.0.${{ github.run_number }}" >> $GITHUB_ENV
+          echo "versionName=${VERSION_NAME}" >> $GITHUB_ENV
+          echo "::set-output name=versionName::${VERSION_NAME}"
 
       - name: Download frontend assets
         uses: actions/download-artifact@v4
@@ -99,9 +101,9 @@ jobs:
         run: |
           mkdir -p android/app
           echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d \
-            > android/app/release.keystore
+            > android/app/release-key.jks
           keytool -list -v \
-            -keystore android/app/release.keystore \
+            -keystore android/app/release-key.jks \
             -storepass "${{ secrets.SIGNING_KEYSTORE_PASSWORD }}" \
             -alias "${{ secrets.SIGNING_KEY_ALIAS }}"
 
@@ -111,6 +113,10 @@ jobs:
           ./gradlew clean assembleRelease \
             -PversionCode=${{ env.versionCode }} \
             -PversionName=${{ env.versionName }} \
+            -Pandroid.injected.signing.store.file=$PWD/app/release-key.jks \
+            -Pandroid.injected.signing.store.password=${{ secrets.SIGNING_KEYSTORE_PASSWORD }} \
+            -Pandroid.injected.signing.key.alias=${{ secrets.SIGNING_KEY_ALIAS }} \
+            -Pandroid.injected.signing.key.password=${{ secrets.SIGNING_KEY_PASSWORD }} \
             --no-daemon --stacktrace
 
       - name: Upload Release APK
@@ -158,18 +164,18 @@ jobs:
       - name: Prepare Release Notes
         run: |
           cat <<EOF > release_notes.md
-          ### Android App v${{ env.versionName }}
+          ### Android App v${{ needs.android-build.outputs.versionName }}
           **Build Number**: ${{ github.run_number }}
           **Build Date**: ${{ steps.get-date.outputs.date }}
           **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}
-          **Release SHA256**: \`${{ steps.checksum.outputs.sha256 }}\`
+          **Release SHA256**: \`${{ steps.checksum.outputs.sha256 }}`
           EOF
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.versionName }}
-          name: Release v${{ env.versionName }}
+          tag_name: v${{ needs.android-build.outputs.versionName }}
+          name: Release v${{ needs.android-build.outputs.versionName }}
           body_path: release_notes.md
           files: app-release.apk
         env:
@@ -200,18 +206,18 @@ jobs:
       - name: Prepare Prerelease Notes
         run: |
           cat <<EOF > beta_notes.md
-          ### Android App v${{ env.versionName }}-beta
+          ### Android App v${{ needs.android-build.outputs.versionName }}-beta
           **Build Number**: ${{ github.run_number }}
           **Build Date**: ${{ steps.get-date-beta.outputs.date }}
           **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}
-          **Debug SHA256**: \`${{ steps.checksum-beta.outputs.sha256 }}\`
+          **Debug SHA256**: \`${{ steps.checksum-beta.outputs.sha256 }}`
           EOF
 
       - name: Create GitHub Prerelease
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.versionName }}-beta.${{ github.run_number }}
-          name: Prerelease v${{ env.versionName }}-beta
+          tag_name: v${{ needs.android-build.outputs.versionName }}-beta.${{ github.run_number }}
+          name: Prerelease v${{ needs.android-build.outputs.versionName }}-beta
           body_path: beta_notes.md
           files: app-debug.apk
         env:
