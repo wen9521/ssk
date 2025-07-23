@@ -172,13 +172,11 @@ jobs:
 
       - name: Prepare Release Notes
         run: |
-          cat <<EOF > release_notes.md
-          ### Android App v${{ env.versionName }}
-          **Branch**: main  
-          **Build Date**: ${{ steps.get-date.outputs.date }}  
-          **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}  
-          **Release SHA256**: `${{ steps.checksum.outputs.sha256 }}`
-          EOF
+          echo "### Android App v${{ env.versionName }}" > release_notes.md
+          echo "**Branch**: main" >> release_notes.md
+          echo "**Build Date**: ${{ steps.get-date.outputs.date }}" >> release_notes.md
+          echo "**Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}" >> release_notes.md
+          echo "**Release SHA256**: `${{ steps.checksum.outputs.sha256 }}`" >> release_notes.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -226,22 +224,11 @@ jobs:
 
       - name: Prepare Prerelease Notes
         run: |
-          cat <<EOF > beta_notes.md
-          ### Android App v${{ env.versionName }}-debug
-          **Branch**: develop/main  
-          **Build Date**: ${{ steps.date-beta.outputs.date }}  
-          **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}  
-          **Debug SHA256**: `${{ steps.checksum-beta.outputs.sha256 }}`
-          EOF
+          echo "### Android App v${{ env.versionName }}-debug" > beta_notes.md
+          echo "**Branch**: develop/main" >> beta_notes.md
+          echo "**Build Date**: ${{ steps.date-beta.outputs.date }}" >> beta_notes.md
+          echo "**Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}" >> beta_notes.md
+          echo "**Debug SHA256**: `${{ steps.checksum-beta.outputs.sha256 }}`" >> beta_notes.md
 
       - name: Create GitHub Prerelease
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ env.versionName }}-debug.${{ github.run_number }}
-          name: Prerelease v${{ env.versionName }}-debug
-          body_path: beta_notes.md
-          files: app-${{ env.versionName }}-debug.apk
-          draft: false
-          prerelease: true
-        env:
-          GITHUB_TOKEN: ${{
+        uses: softprops/action-gh-release@v
