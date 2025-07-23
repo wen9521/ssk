@@ -231,4 +231,8 @@ jobs:
           echo "**Debug SHA256**: `${{ steps.checksum-beta.outputs.sha256 }}`" >> beta_notes.md
 
       - name: Create GitHub Prerelease
-        uses: softprops/action-gh-release@v
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.versionName }}-debug.${{ github.run_number }}
+          name: Prerelease v${{ env.versionName }}-debug
+          body_path: beta_notes
