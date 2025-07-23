@@ -237,3 +237,10 @@ jobs:
       - name: Create GitHub Prerelease
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: v${{ env.versionName }}-debug.${{ github.run_number }}
+          name: Prerelease v${{ env.versionName }}-debug
+          body_path: beta_notes.md
+          files: app-${{ env.versionName }}-debug.apk
+          draft: false
+          prerelease: true
+        env:
