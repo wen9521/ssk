@@ -20,7 +20,7 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final String APP_DOMAIN = "appassets.androidplatform.net";
-    private static final String START_URL = "https://" + APP_DOMAIN + "/index.html";
+    private static final String START_URL = "https://" + APP_DOMAIN + "/www/index.html";
 
     private WebView webView;
 
@@ -30,9 +30,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // ✅ 修正路径映射：将 /www/ 映射到 assets/www/
         WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
             .setDomain(APP_DOMAIN)
-            .addPathHandler("/", new WebViewAssetLoader.AssetsPathHandler(this))
+            .addPathHandler("/www/", new WebViewAssetLoader.AssetsPathHandler(this))
             .build();
 
         webView = findViewById(R.id.webview);
@@ -77,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onPageFinished(WebView view, String url) {
-                Log.i(TAG, "页面加载完成: " + url);
+                Log.i(TAG, "✅ 页面加载完成: " + url);
             }
         });
 
@@ -87,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
             webView.setLayerType(WebView.LAYER_TYPE_SOFTWARE, null);
         }
 
-        Log.i(TAG, "加载页面: " + START_URL);
+        Log.i(TAG, "📦 加载页面: " + START_URL);
         webView.loadUrl(START_URL);
     }
 }
