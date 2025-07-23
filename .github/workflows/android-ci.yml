@@ -2,9 +2,13 @@ name: Android CI Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
   pull_request:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,7 +22,7 @@ jobs:
     outputs:
       build-hash: ${{ steps.hash-output.outputs.build-hash }}
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
@@ -30,17 +34,15 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install & Build Frontend
+      - name: Install & build frontend
         run: |
           npm ci --prefix frontend --prefer-offline
           cd frontend
           PUBLIC_URL='https://appassets.androidplatform.net/www' \
             REACT_APP_BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
             npm run build
-        env:
-          GENERATE_SOURCEMAP: false
 
-      - name: Generate Frontend Hash
+      - name: Generate frontend hash
         id: hash-output
         run: |
           BUILD_HASH=$(
@@ -49,40 +51,39 @@ jobs:
           )
           echo "build-hash=$BUILD_HASH" >> $GITHUB_OUTPUT
 
-      - name: Upload Frontend Artifacts
+      - name: Upload frontend artifacts
         uses: actions/upload-artifact@v4
         with:
           name: frontend-assets
           path: frontend/build/
-          retention-days: 1
 
   android-build:
     name: Build Android APKs
-    needs: frontend-build
     runs-on: ubuntu-22.04
+    needs: frontend-build
     timeout-minutes: 30
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Generate Version Info
+      - name: Generate version info
         id: versioning
         run: |
           echo "versionCode=${{ github.run_number }}" >> $GITHUB_ENV
           echo "versionName=1.0.${{ github.run_number }}" >> $GITHUB_ENV
 
-      - name: Download Frontend Assets
+      - name: Download frontend assets
         uses: actions/download-artifact@v4
         with:
           name: frontend-assets
           path: android/app/src/main/assets/www
 
-      - name: Verify Assets Directory
+      - name: Verify assets directory
         run: |
           if [ ! -d android/app/src/main/assets/www ]; then
-            echo "::error::frontend assets missing"
+            echo "::error::Frontend assets missing"
             exit 1
           fi
           echo "Found $(find android/app/src/main/assets/www -type f | wc -l) files"
@@ -93,15 +94,12 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
-          cache-dependency-path: |
-            android/**/*.gradle
-            android/**/*.gradle.kts
-            android/gradle/wrapper/gradle-wrapper.properties
 
-      - name: Restore Keystore & Validate
+      - name: Restore keystore & validate
         run: |
           mkdir -p android/app
-          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d \
+            > android/app/release.keystore
           keytool -list -v \
             -keystore android/app/release.keystore \
             -storepass "${{ secrets.SIGNING_KEYSTORE_PASSWORD }}" \
@@ -113,10 +111,6 @@ jobs:
           ./gradlew clean assembleRelease \
             -PversionCode=${{ env.versionCode }} \
             -PversionName=${{ env.versionName }} \
-            -Pandroid.injected.signing.store.file=$PWD/app/release.keystore \
-            -Pandroid.injected.signing.store.password=${{ secrets.SIGNING_KEYSTORE_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ secrets.SIGNING_KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.SIGNING_KEY_PASSWORD }} \
             --no-daemon --stacktrace
 
       - name: Upload Release APK
@@ -124,7 +118,6 @@ jobs:
         with:
           name: android-release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
-          retention-days: 1
 
       - name: Build Debug APK
         run: |
@@ -139,12 +132,87 @@ jobs:
         with:
           name: android-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 1
 
   release:
-    name: Create Release
-    needs: [frontend-build, android-build]
+    name: Create GitHub Release
+    needs: android-build
     runs-on: ubuntu-22.04
-    if: >
-      github.ref == 'refs/heads/main' ||
-      (github.event_name == 'pull_request' && github.event.pull_request.base.ref
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Download Release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-apk
+          path: .
+
+      - name: Generate Release SHA256
+        id: checksum
+        run: |
+          S=$(sha256sum app-release.apk | cut -d' ' -f1)
+          echo "sha256=$S" >> $GITHUB_OUTPUT
+
+      - name: Get Build Date
+        id: get-date
+        run: echo "date=$(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+
+      - name: Prepare Release Notes
+        run: |
+          cat <<EOF > release_notes.md
+          ### Android App v${{ env.versionName }}
+          **Build Number**: ${{ github.run_number }}
+          **Build Date**: ${{ steps.get-date.outputs.date }}
+          **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}
+          **Release SHA256**: \`${{ steps.checksum.outputs.sha256 }}\`
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.versionName }}
+          name: Release v${{ env.versionName }}
+          body_path: release_notes.md
+          files: app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  beta:
+    name: Create GitHub Prerelease
+    needs: android-build
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - name: Download Debug APK
+        uses: actions/download-artifact@v4
+        with:
+          name: android-debug-apk
+          path: .
+
+      - name: Generate Debug SHA256
+        id: checksum-beta
+        run: |
+          S=$(sha256sum app-debug.apk | cut -d' ' -f1)
+          echo "sha256=$S" >> $GITHUB_OUTPUT
+
+      - name: Get Build Date
+        id: get-date-beta
+        run: echo "date=$(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+
+      - name: Prepare Prerelease Notes
+        run: |
+          cat <<EOF > beta_notes.md
+          ### Android App v${{ env.versionName }}-beta
+          **Build Number**: ${{ github.run_number }}
+          **Build Date**: ${{ steps.get-date-beta.outputs.date }}
+          **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}
+          **Debug SHA256**: \`${{ steps.checksum-beta.outputs.sha256 }}\`
+          EOF
+
+      - name: Create GitHub Prerelease
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.versionName }}-beta.${{ github.run_number }}
+          name: Prerelease v${{ env.versionName }}-beta
+          body_path: beta_notes.md
+          files: app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
