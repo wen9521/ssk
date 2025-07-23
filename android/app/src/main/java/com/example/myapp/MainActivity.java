@@ -9,9 +9,10 @@ import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
-import android.webkit.WebSettings; 
+import android.webkit.WebSettings;
+import android.webkit.WebChromeClient;
 import android.widget.Toast;
-import java.io.File; 
+import java.io.File;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -22,7 +23,7 @@ import androidx.webkit.WebViewClientCompat;
 public class MainActivity extends AppCompatActivity {
     private static final String APP_DOMAIN = "appassets.androidplatform.net";
     private static final String START_URL = "https://" + APP_DOMAIN + "/www/index.html";
-    
+
     private WebViewAssetLoader assetLoader;
     private WebView webView;
 
@@ -36,12 +37,12 @@ public class MainActivity extends AppCompatActivity {
                 .setDomain(APP_DOMAIN)
                 .addPathHandler("/www/", new WebViewAssetLoader.AssetsPathHandler(this))
                 .addPathHandler("/media/", new WebViewAssetLoader.InternalStoragePathHandler(
-                        this, new File(getFilesDir(), "media"))) 
+                        this, new File(getFilesDir(), "media")))
                 .build();
 
         webView = findViewById(R.id.webview);
         configureWebView();
-        
+
         webView.loadUrl(START_URL);
     }
 
@@ -49,17 +50,21 @@ public class MainActivity extends AppCompatActivity {
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
         webView.getSettings().setDatabaseEnabled(true);
-        webView.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT); 
-        
+        webView.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
+
         webView.getSettings().setAllowFileAccess(false);
         webView.getSettings().setAllowContentAccess(true);
         webView.getSettings().setAllowFileAccessFromFileURLs(false);
         webView.getSettings().setAllowUniversalAccessFromFileURLs(false);
-        
+
+        // ✅ 修复：确保调试启用（建议放在最前）
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
 
+        // ✅ 修复：添加 WebChromeClient 以确保 Chrome DevTools 能识别
+        webView.setWebChromeClient(new WebChromeClient());
+
         webView.setWebViewClient(new LocalContentWebViewClient());
-        
+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
         } else {
@@ -79,20 +84,18 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onReceivedError(WebView view, int errorCode, 
+        public void onReceivedError(WebView view, int errorCode,
                                    String description, String failingUrl) {
-            // 关键修复：添加显式外部类引用
             MainActivity.this.handleLoadError(failingUrl, "Error: " + description);
         }
 
         @Override
-        public void onReceivedHttpError(WebView view, WebResourceRequest request, 
+        public void onReceivedHttpError(WebView view, WebResourceRequest request,
                                        WebResourceResponse errorResponse) {
             String errorMsg = "HTTP " + errorResponse.getStatusCode();
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                 errorMsg += " - " + errorResponse.getReasonPhrase();
             }
-            // 关键修复：添加显式外部类引用
             MainActivity.this.handleLoadError(request.getUrl().toString(), errorMsg);
         }
 
@@ -100,11 +103,11 @@ public class MainActivity extends AppCompatActivity {
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             Uri uri = request.getUrl();
             String host = uri.getHost();
-            
+
             if (APP_DOMAIN.equals(host)) {
                 return false;
             }
-            
+
             if ("tel".equals(uri.getScheme()) || "mailto".equals(uri.getScheme())) {
                 try {
                     startActivity(new Intent(Intent.ACTION_VIEW, uri));
@@ -113,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
                     Log.w("URL Handling", "No app to handle " + uri.getScheme() + " link");
                 }
             }
-            
+
             try {
                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -128,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleLoadError(String url, String error) {
         Log.e("WebViewError", "Failed to load: " + url + " | Error: " + error);
-        
+
         if (url.equals(START_URL)) {
             runOnUiThread(() -> {
                 String errorHtml = "<!DOCTYPE html><html><head><meta charset='UTF-8'>" +
@@ -141,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
                         "<p>无法加载应用程序，请检查网络连接或重启应用。</p>" +
                         "<button class='btn' onclick='location.reload()'>重试</button>" +
                         "</body></html>";
-                
+
                 webView.loadDataWithBaseURL(
                     "https://" + APP_DOMAIN,
                     errorHtml,
