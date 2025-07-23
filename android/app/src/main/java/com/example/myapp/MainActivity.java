@@ -12,15 +12,15 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebViewAssetLoader;
-import androidx.webkit.WebViewClientCompat;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -37,95 +37,106 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 初始化 Assets Loader
         assetLoader = new WebViewAssetLoader.Builder()
             .setDomain(APP_DOMAIN)
             .addPathHandler("/www/", new WebViewAssetLoader.AssetsPathHandler(this))
-            .addPathHandler("/media/",
-                new WebViewAssetLoader.InternalStoragePathHandler(
-                    this, new File(getFilesDir(), "media")))
+            .addPathHandler("/media/", new WebViewAssetLoader.InternalStoragePathHandler(
+                this, new File(getFilesDir(), "media")))
             .build();
 
         webView = findViewById(R.id.webview);
         configureWebView();
+        Log.i(TAG, "Loading URL: " + START_URL);
         webView.loadUrl(START_URL);
     }
 
-    @SuppressLint("NewApi")
     private void configureWebView() {
         WebSettings settings = webView.getSettings();
-        // 启用 JS、DOMStorage
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-
-        // 只允许 http/https 访问，关闭 file://
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(true);
         settings.setAllowFileAccessFromFileURLs(false);
         settings.setAllowUniversalAccessFromFileURLs(false);
 
-        // 混合内容模式，允许 HTTPS 页面加载 HTTP 资源（遇到跨协议时可开启）
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            settings.setMixedContentMode(
-                WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-            );
+            settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         }
 
-        // 仅 DEBUG 构建启用调试
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
-
-        // 捕获 console.log / 错误
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
-            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-                Log.d(TAG + ":JS", consoleMessage.message()
-                    + " — line " + consoleMessage.lineNumber()
-                    + " of " + consoleMessage.sourceId());
+            public boolean onConsoleMessage(ConsoleMessage msg) {
+                Log.d(TAG + ":JS", msg.message() + " — line " + msg.lineNumber() + " of " + msg.sourceId());
                 return true;
             }
         });
 
-        // 拦截本地资源 & 日志 page load
-        webView.setWebViewClient(new WebViewClientCompat() {
+        webView.setWebViewClient(new WebViewClient() {
             @Override
-            public WebResourceResponse shouldInterceptRequest(
-                    WebView view, WebResourceRequest request) {
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
-                String host = uri.getHost();
-                // 本地资源走 AssetLoader
-                if (APP_DOMAIN.equals(host)) {
+                if (APP_DOMAIN.equals(uri.getHost())) {
                     WebResourceResponse resp = assetLoader.shouldInterceptRequest(uri);
-
-                    // 移除可能干扰的 Permissions-Policy 头
                     if (resp != null && Build.VERSION.SDK_INT >= 21) {
                         Map<String, String> headers = resp.getResponseHeaders();
                         if (headers != null) {
+                            headers = new HashMap<>(headers);
                             headers.remove("Permissions-Policy");
                             resp.setResponseHeaders(headers);
                         }
                     }
                     return resp;
                 }
-
-                // 其他域名正常走外部
                 return super.shouldInterceptRequest(view, request);
             }
 
             @Override
             public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
                 Log.i(TAG, "页面加载完成: " + url);
+            }
+
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest req, WebResourceResponse errorResponse) {
+                Log.e(TAG, "加载失败: " + req.getUrl() + " — " + errorResponse.getStatusCode());
+                showErrorPage();
+            }
+
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                Log.e(TAG, "加载失败: " + failingUrl + " — " + description);
+                showErrorPage();
             }
         });
 
-        // 硬件加速
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
         } else {
             webView.setLayerType(WebView.LAYER_TYPE_SOFTWARE, null);
         }
+    }
+
+    private void showErrorPage() {
+        String html = "<!DOCTYPE html><html><head><meta charset='UTF-8'>" +
+            "<title>加载失败</title><style>" +
+            "body{font-family:sans-serif;text-align:center;padding:20% 20px;}" +
+            "h1{color:#d32f2f;}button{margin-top:20px;padding:10px 20px;" +
+            "background:#1976d2;color:white;border:none;border-radius:4px;}" +
+            "</style></head><body>" +
+            "<h1>应用加载失败</h1>" +
+            "<p>请检查网络连接或稍后重试。</p>" +
+            "<button onclick='location.reload()'>重试</button>" +
+            "</body></html>";
+
+        webView.loadDataWithBaseURL(
+            "https://" + APP_DOMAIN,
+            html,
+            "text/html",
+            "UTF-8",
+            null
+        );
     }
 
     @Override
@@ -138,17 +149,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         webView.onResume();
-        webView.evaluateJavascript(
-            "if(window.appResume) appResume();", null
-        );
+        webView.evaluateJavascript("if(window.appResume) appResume();", null);
     }
 
     @Override
     protected void onPause() {
         webView.onPause();
-        webView.evaluateJavascript(
-            "if(window.appPause) appPause();", null
-        );
+        webView.evaluateJavascript("if(window.appPause) appPause();", null);
         super.onPause();
     }
 
