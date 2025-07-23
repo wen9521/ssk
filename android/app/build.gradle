@@ -10,6 +10,7 @@ android {
         buildConfig true
     }
 
+    // ✅ 支持外部传入 versionCode 和 versionName
     def versionCodeProp = project.hasProperty("versionCode") ? project.versionCode.toInteger() : 1
     def versionNameProp = project.hasProperty("versionName") ? project.versionName : "1.0"
 
