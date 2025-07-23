@@ -27,10 +27,11 @@ public class MainActivity extends AppCompatActivity {
         // Set a custom WebChromeClient to catch console messages
         myWebView.setWebChromeClient(new WebChromeClient() {
             @Override
-            public void onConsoleMessage(android.webkit.ConsoleMessage consoleMessage) {
+            public boolean onConsoleMessage(android.webkit.ConsoleMessage consoleMessage) {
                 Log.d("WebView", consoleMessage.message() + " -- From line "
                         + consoleMessage.lineNumber() + " of "
                         + consoleMessage.sourceId());
+                return true;
             }
         });
 
