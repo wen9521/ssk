@@ -7,14 +7,12 @@ on:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
-    # Grant permissions to the job to create a release
     permissions:
       contents: write
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      # Fetch all history for all tags and branches for version counting
       with:
         fetch-depth: 0
 
@@ -45,8 +43,7 @@ jobs:
 
     - name: Decode Keystore
       id: decode_keystore
-      # Only run this step if the secret is present
-      if: secrets.SIGNING_KEYSTORE_BASE64 != ''
+      if: ${{ secrets.SIGNING_KEYSTORE_BASE64 != '' }}
       working-directory: ./android/app
       env:
         SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
@@ -58,7 +55,6 @@ jobs:
     - name: Calculate Version
       id: version
       run: |
-        # Use the total number of commits as the version code
         VERSION_CODE=$(git rev-list --count HEAD)
         VERSION_NAME="1.0.${VERSION_CODE}"
         echo "VERSION_CODE=${VERSION_CODE}" >> $GITHUB_ENV
@@ -73,12 +69,7 @@ jobs:
       run: ./gradlew assembleDebug -PversionCode=${{ env.VERSION_CODE }} -PversionName=${{ env.VERSION_NAME }}
 
     - name: Build Release APK
-      # Only run this step if all signing secrets are present
-      if: |
-        secrets.SIGNING_KEYSTORE_BASE64 != '' &&
-        secrets.SIGNING_KEYSTORE_PASSWORD != '' &&
-        secrets.SIGNING_KEY_ALIAS != '' &&
-        secrets.SIGNING_KEY_PASSWORD != ''
+      if: ${{ secrets.SIGNING_KEYSTORE_BASE64 != '' && secrets.SIGNING_KEYSTORE_PASSWORD != '' && secrets.SIGNING_KEY_ALIAS != '' && secrets.SIGNING_KEY_PASSWORD != '' }}
       working-directory: ./android
       env:
         SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
@@ -87,12 +78,7 @@ jobs:
       run: ./gradlew assembleRelease -PversionCode=${{ env.VERSION_CODE }} -PversionName=${{ env.VERSION_NAME }}
 
     - name: Create and Publish GitHub Release
-      # Only run this step if the release APK was built
-      if: |
-        secrets.SIGNING_KEYSTORE_BASE64 != '' &&
-        secrets.SIGNING_KEYSTORE_PASSWORD != '' &&
-        secrets.SIGNING_KEY_ALIAS != '' &&
-        secrets.SIGNING_KEY_PASSWORD != ''
+      if: ${{ secrets.SIGNING_KEYSTORE_BASE64 != '' && secrets.SIGNING_KEYSTORE_PASSWORD != '' && secrets.SIGNING_KEY_ALIAS != '' && secrets.SIGNING_KEY_PASSWORD != '' }}
       uses: softprops/action-gh-release@v2
       with:
         tag_name: v${{ env.VERSION_NAME }}
