@@ -36,7 +36,7 @@ jobs:
       - name: 修补 build/index.html 中的路径
         run: |
           sed -i -E '
-            s|<base href="[^"]*"|<base href="file:///android_asset/www/"|;
+            s|<base href="[^"]*"|<base href="https://appassets.androidplatform.net/www/"|;
             s|src="\./|src="|g;
             s|href="\./|href="|g
           ' frontend/build/index.html
@@ -55,12 +55,12 @@ jobs:
       - name: Checkout 代码
         uses: actions/checkout@v4
 
-      - name: 准备目录
+      - name: 准备 assets 目录
         run: |
-          mkdir -p android/app/src/main/assets/www
           mkdir -p android/app/src/main/assets/frontend-build
+          mkdir -p android/app/src/main/assets/www
 
-      - name: 下载前端构建产物到独立目录
+      - name: 下载前端构建产物
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
