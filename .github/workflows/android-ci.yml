@@ -57,10 +57,10 @@ jobs:
           retention-days: 1
 
   android-build:
-    name: Build Android APK
+    name: Build Android APKs
     needs: frontend-build
     runs-on: ubuntu-22.04
-    timeout-minutes: 25
+    timeout-minutes: 30
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
     steps:
@@ -125,11 +125,23 @@ jobs:
           ORG_GRADLE_PROJECT_RELEASE_STORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
           ORG_GRADLE_PROJECT_RELEASE_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
 
-      - name: Upload APK Artifact
+      - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-apk
+          name: android-release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 1
+
+      - name: Build Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 1
 
   release:
@@ -142,10 +154,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download APK
+      - name: Download Release APK
         uses: actions/download-artifact@v4
         with:
-          name: android-apk
+          name: android-release-apk
           path: .
 
       - name: Extract Version
@@ -155,10 +167,10 @@ jobs:
                | head -n1 | sed -E 's/.*versionName "(.*)".*/\1/')
           echo "version=$V" >> $GITHUB_OUTPUT
 
-      - name: Rename APK
+      - name: Rename Release APK
         run: mv app-release.apk app-v${{ steps.version.outputs.version }}.apk
 
-      - name: Generate SHA256
+      - name: Generate Release SHA256
         id: checksum
         run: |
           S=$(sha256sum app-v${{ steps.version.outputs.version }}.apk \
@@ -176,7 +188,7 @@ jobs:
           **Branch**: main  
           **Build Date**: ${{ steps.get-date.outputs.date }}  
           **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}  
-          **APK SHA256**: \`${{ steps.checksum.outputs.sha256 }}\`
+          **Release SHA256**: \`${{ steps.checksum.outputs.sha256 }}\`
           EOF
 
       - name: Create GitHub Release
@@ -204,10 +216,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download APK
+      - name: Download Debug APK
         uses: actions/download-artifact@v4
         with:
-          name: android-apk
+          name: android-debug-apk
           path: .
 
       - name: Extract Version
@@ -217,13 +229,13 @@ jobs:
                | head -n1 | sed -E 's/.*versionName "(.*)".*/\1/')
           echo "version=$V" >> $GITHUB_OUTPUT
 
-      - name: Rename APK
-        run: mv app-release.apk app-${{ steps.version-beta.outputs.version }}-beta.apk
+      - name: Rename Debug APK
+        run: mv app-debug.apk app-${{ steps.version-beta.outputs.version }}-debug.apk
 
-      - name: Generate SHA256
+      - name: Generate Debug SHA256
         id: checksum-beta
         run: |
-          S=$(sha256sum app-${{ steps.version-beta.outputs.version }}-beta.apk \
+          S=$(sha256sum app-${{ steps.version-beta.outputs.version }}-debug.apk \
                | cut -d' ' -f1)
           echo "sha256=$S" >> $GITHUB_OUTPUT
 
@@ -234,20 +246,20 @@ jobs:
       - name: Prepare Prerelease Notes
         run: |
           cat <<EOF > beta_notes.md
-          ### Android App v${{ steps.version-beta.outputs.version }}-beta
+          ### Android App v${{ steps.version-beta.outputs.version }}-debug
           **Branch**: develop/main  
           **Build Date**: ${{ steps.date-beta.outputs.date }}  
           **Frontend Hash**: ${{ needs.frontend-build.outputs.build-hash }}  
-          **APK SHA256**: \`${{ steps.checksum-beta.outputs.sha256 }}\`
+          **Debug SHA256**: \`${{ steps.checksum-beta.outputs.sha256 }}\`
           EOF
 
       - name: Create GitHub Prerelease
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ steps.version-beta.outputs.version }}-beta.${{ github.run_number }}
-          name: Prerelease v${{ steps.version-beta.outputs.version }}-beta
+          tag_name: v${{ steps.version-beta.outputs.version }}-debug.${{ github.run_number }}
+          name: Prerelease v${{ steps.version-beta.outputs.version }}-debug
           body_path: beta_notes.md
-          files: app-${{ steps.version-beta.outputs.version }}-beta.apk
+          files: app-${{ steps.version-beta.outputs.version }}-debug.apk
           draft: false
           prerelease: true
         env:
