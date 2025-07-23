@@ -68,7 +68,8 @@ jobs:
         run: |
           rm -rf android/app/src/main/assets/www
           mkdir -p android/app/src/main/assets/www
-          cp -R android/app/src/main/assets/frontend-build/* android/app/src/main/assets/www/
+          # 直接把 assets 根目录下的所有文件和文件夹复制进 www
+          cp -R android/app/src/main/assets/* android/app/src/main/assets/www/
 
       - name: 列出打包进 APK 的前端资源
         run: ls -R android/app/src/main/assets/www
