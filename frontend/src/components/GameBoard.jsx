@@ -46,21 +46,24 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     );
   }
   // --- End of Final Fix ---
-
-  const getInitialCards = () => {
-      // 在新一局开始时，如果玩家已经分好牌（head, middle, tail有内容），则手牌区为空
-      if (myPlayer.head?.length || myPlayer.middle?.length || myPlayer.tail?.length) {
-          return [];
-      }
-      return myPlayer.cards13 || myPlayer.hand || [];
+  
+  const getInitialPlayerState = (player) => {
+    const cards = player.cards13 || player.hand || [];
+    const head = player.head || [];
+    const middle = player.middle || [];
+    const tail = player.tail || [];
+    const myCards = (head.length || middle.length || tail.length) ? [] : cards;
+    return { myCards, head, middle, tail };
   };
 
+  const initialState = getInitialPlayerState(myPlayer);
+  
   // State management for the component
-  const [myCards, setMyCards] = useState(getInitialCards());
+  const [myCards, setMyCards] = useState(sortHand(initialState.myCards));
   const [selected, setSelected] = useState({ area: '', cards: [] });
-  const [head, setHead] = useState(myPlayer.head || []);
-  const [middle, setMiddle] = useState(myPlayer.middle || []);
-  const [tail, setTail] = useState(myPlayer.tail || []);
+  const [head, setHead] = useState(sortHand(initialState.head));
+  const [middle, setMiddle] = useState(sortHand(initialState.middle));
+  const [tail, setTail] = useState(sortHand(initialState.tail));
   const [submitMsg, setSubmitMsg] = useState('');
   const [submitted, setSubmitted] = useState(myPlayer.submitted || false);
   const [isReady, setIsReady] = useState(myPlayer.submitted || false);
@@ -71,14 +74,11 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   useEffect(() => {
     const freshPlayer = players.find(p => p.id === myPlayerId);
     if (freshPlayer) {
-      const initialCards = (freshPlayer.head?.length || freshPlayer.middle?.length || freshPlayer.tail?.length) 
-        ? [] 
-        : (freshPlayer.cards13 || freshPlayer.hand || []);
-      
-      setMyCards(sortHand(initialCards));
-      setHead(sortHand(freshPlayer.head || []));
-      setMiddle(sortHand(freshPlayer.middle || []));
-      setTail(sortHand(freshPlayer.tail || []));
+      const { myCards, head, middle, tail } = getInitialPlayerState(freshPlayer);
+      setMyCards(sortHand(myCards));
+      setHead(sortHand(head));
+      setMiddle(sortHand(middle));
+      setTail(sortHand(tail));
       setSubmitted(freshPlayer.submitted || false);
       setIsReady(freshPlayer.submitted || false);
       setSubmitMsg('');
@@ -90,7 +90,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   // Effect to handle showing the final results.
   useEffect(() => {
     const allSubmitted = players.every(p => p.submitted);
-    const finalResult = players.some(p => p.score !== undefined);
+    const finalResult = players.some(p => typeof p.score === 'number');
     if (allSubmitted && finalResult) {
       setResultModalData(players);
       setShowResult(true);
@@ -103,23 +103,31 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
       const timer = setTimeout(() => {
         setShowResult(false);
         if (typeof onRestart === 'function') onRestart();
-      }, 8000); // 延长显示时间到8秒
+      }, 8000); 
       return () => clearTimeout(timer);
     }
   }, [showResult, onRestart]);
 
-  function handleSmartSplit() {
-    // ai-logic.js SmartSplit expects string array like 'ace_of_spades'
-    const cardStrings = myCards.map(c => `${c.rank === 'T' ? '10' : c.rank.toLowerCase()}_of_${c.suit}`);
-    const hands = SmartSplit(cardStrings);
-    const bestHand = hands[0];
+  // Helper to convert card object to string for AI logic
+  const toCardString = (card) => {
+      const rankMap = { 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', 'T': '10'};
+      const rankStr = rankMap[card.rank] || card.rank;
+      return `${rankStr}_of_${card.suit}`;
+  };
 
-    // Convert back to card objects
-    const toCardObject = (cardStr) => {
-        const [rankStr, , suit] = cardStr.split('_');
-        const rank = rankStr === '10' ? 'T' : rankStr.charAt(0).toUpperCase();
-        return { rank, suit };
-    };
+  // Helper to convert string back to card object
+  const toCardObject = (cardStr) => {
+      const [rankStr, , suit] = cardStr.split('_');
+      const rankMapReverse = { 'ace': 'A', 'king': 'K', 'queen': 'Q', 'jack': 'J', '10': 'T' };
+      const rank = rankMapReverse[rankStr] || rankStr;
+      return { rank, suit };
+  };
+
+  function handleSmartSplit() {
+    if (myCards.length !== 13) return;
+    const cardStrings = myCards.map(toCardString);
+    const hands = SmartSplit(cardStrings); 
+    const bestHand = hands[0];
     
     setHead(sortHand(bestHand.head.map(toCardObject)));
     setMiddle(sortHand(bestHand.middle.map(toCardObject)));
@@ -175,11 +183,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   }
 
   const handleReadyClick = () => {
-    // In offline mode, this button is less meaningful, let's keep it simple
-    if (submitted) {
-        console.log("Already submitted.");
-        return;
-    }
+    // This button now acts as the "Compare" button
     handleStartCompare();
   };
 
@@ -197,12 +201,12 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     );
   }
 
-  function renderPaiDunCards(arr, area) {
+  function renderCards(arr, area) {
     return arr.map((card, index) => {
-      const isSelected = selected.area === area && selected.cards.some(c => c.rank === card.rank && c.suit === card.suit);
+      const isSelected = area !== 'result' && selected.area === area && selected.cards.some(c => c.rank === card.rank && c.suit === card.suit);
       return (
         <div 
-            key={`${card.rank}_of_${card.suit}_${area}`}
+            key={`${card.rank}_of_${card.suit}_${area}_${index}`}
             className="card-wrapper-dun"
             style={{ '--card-index': index, zIndex: index }}
         >
@@ -210,7 +214,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
             suit={card.suit}
             rank={card.rank}
             isSelected={isSelected}
-            onClick={() => handleCardClick(card, area)}
+            onClick={area !== 'result' ? () => handleCardClick(card, area) : undefined}
           />
         </div>
       );
@@ -224,7 +228,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
           {arr.length === 0 ? (
             <div className="pai-dun-placeholder">请放置</div>
           ) : (
-            <div className="cards-area">{renderPaiDunCards(arr, area)}</div>
+            <div className="cards-area">{renderCards(arr, area)}</div>
           )}
         </div>
         <div className="pai-dun-label">{label} ({arr.length})</div>
@@ -257,9 +261,9 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
                 {p.isFoul && <span className="foul-tag"> (倒水)</span>}
                 <span className="player-score"> ({p.score || 0}分)</span>
               </div>
-              <div className="result-hand">{renderPaiDunCards(p.head || [], 'result')}</div>
-              <div className="result-hand">{renderPaiDunCards(p.middle || [], 'result')}</div>
-              <div className="result-hand">{renderPaiDunCards(p.tail || [], 'result')}</div>
+              <div className="result-hand">{renderCards(sortHand(p.head || []), 'result')}</div>
+              <div className="result-hand">{renderCards(sortHand(p.middle || []), 'result')}</div>
+              <div className="result-hand">{renderCards(sortHand(p.tail || []), 'result')}</div>
             </div>
           ))}
         </div>
@@ -290,7 +294,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
             智能分牌
           </button>
           <button className="btn-action btn-compare" onClick={handleStartCompare} disabled={submitted}>
-            {submitted ? '已准备' : '开始比牌'}
+            {submitted ? '等待比牌' : '开始比牌'}
           </button>
         </div>
 
