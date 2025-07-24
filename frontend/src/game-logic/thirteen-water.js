@@ -312,12 +312,12 @@ function detectThreeStraight(cards13) {
 function detectThreeFlush(cards13) {
   const comb3 = combinations(cards13, 3);
   for (const head of comb3) {
-    if (!isFlush(head)) continue;
+    if (!isFlushForAI(head)) continue;
     const left10 = cards13.filter(c => !head.includes(c));
     for (const mid of combinations(left10, 5)) {
-      if (!isFlush(mid)) continue;
+      if (!isFlushForAI(mid)) continue;
       const tail = left10.filter(c => !mid.includes(c));
-      if (!isFlush(tail)) continue;
+      if (!isFlushForAI(tail)) continue;
       return { head, middle: mid, tail, type: '三同花' };
     }
   }
@@ -341,7 +341,7 @@ function isStraightForAI(cards) {
   }
   return true;
 }
-function isFlush(cards) {
+function isFlushForAI(cards) {
   if (!cards.length) return false;
   const suit = cardSuit(cards[0]);
   return cards.every(c => cardSuit(c) === suit);
