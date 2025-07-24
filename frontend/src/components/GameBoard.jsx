@@ -135,6 +135,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     if (!selected.cards.length) return;
     const allHands = { hand: myCards, head, middle, tail };
     const sourceArea = selected.area;
+    if (!sourceArea) return; // Do nothing if no source area is selected
     const selectedSet = new Set(selected.cards.map(c => `${c.rank}_${c.suit}`));
     allHands[sourceArea] = allHands[sourceArea].filter(c => !selectedSet.has(`${c.rank}_${c.suit}`));
     allHands[dest] = [...allHands[dest], ...selected.cards];
@@ -172,10 +173,10 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     );
   }
 
-  function renderCards(arr, area) {
-    if (!arr) return null;
+  // Render cards for interactive areas (pai dun)
+  function renderInteractiveCards(arr, area) {
     return arr.map((card, index) => {
-      const isSelected = area !== 'result' && selected.area === area && selected.cards.some(c => c.rank === card.rank && c.suit === card.suit);
+      const isSelected = selected.area === area && selected.cards.some(c => c.rank === card.rank && c.suit === card.suit);
       return (
         <div 
             key={`${card.rank}_of_${card.suit}_${area}_${index}`}
@@ -186,11 +187,25 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
             suit={card.suit}
             rank={card.rank}
             isSelected={isSelected}
-            onClick={area !== 'result' ? () => handleCardClick(card, area) : undefined}
+            onClick={() => handleCardClick(card, area)}
           />
         </div>
       );
     });
+  }
+
+  // Render cards for display-only areas (results modal)
+  function renderDisplayCards(arr, area) {
+    if (!arr) return null;
+    return arr.map((card, index) => (
+        <div 
+            key={`${card.rank}_of_${card.suit}_${area}_${index}`}
+            className="card-wrapper-dun"
+            style={{ '--card-index': index, zIndex: index }}
+        >
+          <Card suit={card.suit} rank={card.rank} />
+        </div>
+    ));
   }
   
   function renderPaiDun(arr, label, area) {
@@ -200,7 +215,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
           {arr.length === 0 ? (
             <div className="pai-dun-placeholder">请放置</div>
           ) : (
-            <div className="cards-area">{renderCards(arr, area)}</div>
+            <div className="cards-area">{renderInteractiveCards(arr, area)}</div>
           )}
         </div>
         <div className="pai-dun-label">{label} ({arr.length})</div>
@@ -234,9 +249,9 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
                 {p.isFoul && <span className="foul-tag"> (倒水)</span>}
                 <span className="player-score"> ({p.score > 0 ? '+' : ''}{p.score || 0}分)</span>
               </div>
-              <div className="result-hand">{renderCards(sortHand(p.head || []), 'result')}</div>
-              <div className="result-hand">{renderCards(sortHand(p.middle || []), 'result')}</div>
-              <div className="result-hand">{renderCards(sortHand(p.tail || []), 'result')}</div>
+              <div className="result-hand">{renderDisplayCards(sortHand(p.head || []), 'result-head')}</div>
+              <div className="result-hand">{renderDisplayCards(sortHand(p.middle || []), 'result-middle')}</div>
+              <div className="result-hand">{renderDisplayCards(sortHand(p.tail || []), 'result-tail')}</div>
             </div>
           ))}
         </div>
