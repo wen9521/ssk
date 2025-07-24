@@ -1,45 +1,47 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
-import Game from './components/Game'; // 导入新的 Game 组件
+import Game from './components/Game';
 import './App.css';
-import './components/Game.css';
 
 // 游戏大厅（首页）
 function Lobby() {
   return (
-    <div className="app">
+    <div className="app-container">
       <h1>扑克王</h1>
       <div className="menu">
-        <Link to="/thirteen" className="btn">十三水</Link>
-        <Link to="/eight" className="btn">八张</Link>
+        <Link to="/thirteen-menu" className="btn">十三水</Link>
+        <Link to="/coming-soon" className="btn">德州扑克</Link>
+        <Link to="/coming-soon" className="btn">斗地主</Link>
       </div>
     </div>
   );
 }
 
 // 敬请期待页面
-function ComingSoon({ gameName }) {
+function ComingSoon() {
   const navigate = useNavigate();
   return (
-    <div className="app">
-      <h2>{gameName}</h2>
-      <p>敬请期待！</p>
-      <button className="btn" onClick={() => navigate(-1)}>返回</button>
+    <div className="app-container coming-soon">
+      <h2>敬请期待</h2>
+      <p>更多精彩游戏正在路上！</p>
+      <button className="btn btn-secondary" onClick={() => navigate(-1)}>返回</button>
     </div>
   );
 }
 
 // 十三水子菜单
 function ThirteenWaterMenu() {
+  const navigate = useNavigate();
   return (
-    <div className="app">
+    <div className="app-container">
       <h2>十三水</h2>
       <div className="menu">
-        <Link to="/play" className="btn">试玩（离线）</Link>
-        <Link to="/thirteen/auto" className="btn">自动匹配</Link>
-        <Link to="/thirteen/rooms" className="btn">房间列表</Link>
+        <Link to="/play" className="btn">开始游戏 (离线模式)</Link>
+        <Link to="/coming-soon" className="btn">在线匹配</Link>
+        <Link to="/coming-soon" className="btn">创建房间</Link>
       </div>
-      <Link to="/" className="btn btn-back">返回首页</Link>
+      <br/>
+      <button className="btn btn-secondary" onClick={() => navigate('/')}>返回首页</button>
     </div>
   );
 }
@@ -49,11 +51,9 @@ export default function App() {
     <HashRouter>
       <Routes>
         <Route path="/" element={<Lobby />} />
-        <Route path="/thirteen" element={<ThirteenWaterMenu />} />
-        <Route path="/eight" element={<ComingSoon gameName="八张" />} />
-        <Route path="/thirteen/auto" element={<ComingSoon gameName="自动匹配" />} />
-        <Route path="/thirteen/rooms" element={<ComingSoon gameName="房间列表" />} />
+        <Route path="/thirteen-menu" element={<ThirteenWaterMenu />} />
         <Route path="/play" element={<Game />} />
+        <Route path="/coming-soon" element={<ComingSoon />} />
       </Routes>
     </HashRouter>
   );

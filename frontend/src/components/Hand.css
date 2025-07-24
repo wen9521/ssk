@@ -1,32 +1,49 @@
-.hand-container {
+.hand-display-container {
+  width: 100%;
+  min-height: 140px; /* 保证有足够空间展示卡牌 */
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
 }
 
 .hand {
   display: flex;
   justify-content: center;
-  padding: 20px;
-  overflow-x: auto;
+  /* 使用 padding 来防止卡牌在边缘时被截断 */
+  padding: 0 40px; 
 }
 
-.play-button {
-  padding: 10px 20px;
-  font-size: 16px;
-  border: none;
-  border-radius: 5px;
-  background-color: #4CAF50;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.3s;
+.card-wrapper {
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  margin-left: -50px; /* 让卡牌重叠 */
+  animation: fan-out 0.5s ease-out forwards;
+  animation-delay: calc(var(--card-index) * 0.05s);
+  transform-origin: bottom center;
 }
 
-.play-button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
+.hand:hover .card-wrapper {
+  margin-left: -40px; /* 鼠标悬浮时稍微展开 */
+  transform: translateY(-10px) rotate(calc(var(--card-index) * 2deg - (var(--total-cards, 13) - 1) * 1deg));
 }
 
-.play-button:hover:not(:disabled) {
-  background-color: #45a049;
+.card-wrapper:hover {
+  transform: translateY(-25px) scale(1.1) !important; /* 突出显示悬浮的卡牌 */
+  z-index: 100;
+}
+
+.empty-hand-message {
+  color: #ccc;
+  font-style: italic;
+}
+
+/* 定义卡牌展开动画 */
+@keyframes fan-out {
+  from {
+    opacity: 0;
+    transform: translateY(50px) rotate(0deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
 }

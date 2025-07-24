@@ -1,41 +1,36 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Card from './Card';
 import './Hand.css';
 
-function Hand({ cards, onPlay }) {
-  const [selectedCards, setSelectedCards] = useState([]);
-
-  const handleCardClick = (card) => {
-    setSelectedCards((prev) =>
-      prev.some((c) => c.suit === card.suit && c.rank === card.rank)
-        ? prev.filter((c) => c.suit !== card.suit || c.rank !== card.rank)
-        : [...prev, card]
-    );
-  };
-
-  const handlePlayClick = () => {
-    if (selectedCards.length > 0) {
-      onPlay(selectedCards);
-      setSelectedCards([]);
-    }
+function Hand({ cards, selectedCards, onCardSelect }) {
+  
+  // 检查一张牌是否被选中
+  const isCardSelected = (card) => {
+    return selectedCards.some(selected => selected.rank === card.rank && selected.suit === card.suit);
   };
 
   return (
-    <div className="hand-container">
-      <div className="hand">
-        {cards.map((card) => (
-          <Card
-            key={`${card.rank}-${card.suit}`}
-            suit={card.suit}
-            rank={card.rank}
-            isSelected={selectedCards.some((c) => c.suit === card.suit && c.rank === card.rank)}
-            onClick={() => handleCardClick(card)}
-          />
-        ))}
-      </div>
-      <button className="play-button" onClick={handlePlayClick} disabled={selectedCards.length === 0}>
-        Play
-      </button>
+    <div className="hand-display-container">
+      {cards.length > 0 ? (
+        <div className="hand">
+          {cards.map((card, index) => (
+            <div 
+              className="card-wrapper" 
+              key={`${card.rank}-${card.suit}`}
+              style={{'--card-index': index}} /* 用于CSS动画 */
+            >
+              <Card
+                suit={card.suit}
+                rank={card.rank}
+                isSelected={isCardSelected(card)}
+                onClick={() => onCardSelect(card)}
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="empty-hand-message">你已经出完所有牌了！</p>
+      )}
     </div>
   );
 }
