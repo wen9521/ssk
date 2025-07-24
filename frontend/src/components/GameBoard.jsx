@@ -37,13 +37,21 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   // --- Guard Clauses ---
   if (!players || players.length === 0) {
     return (
-      <div className="play-container"><div className="game-wrapper"><div>Loading Game...</div></div></div>
+      <div className="play-container">
+        <div className="game-wrapper">
+          <div>Loading Game...</div>
+        </div>
+      </div>
     );
   }
   const myPlayer = players.find(p => p.id === myPlayerId);
   if (!myPlayer) {
     return (
-      <div className="play-container"><div className="game-wrapper"><div>Initializing player...</div></div></div>
+      <div className="play-container">
+        <div className="game-wrapper">
+          <div>Initializing player...</div>
+        </div>
+      </div>
     );
   }
 
@@ -156,7 +164,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     }
   }
 
-  // --- Render Functions ---
+  // --- Render Helpers ---
   const renderPlayerSeat = (p) => (
     <div key={p.id} className={`player-seat ${p.id === myPlayerId ? 'player-me' : ''}`}>
       <div>{p.name}</div>
@@ -167,45 +175,31 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   );
 
   const renderCardsInDun = (arr, area) => (
-    arr.map((card, index) => {
+    arr.map((card, idx) => {
       const isSelected = selected.area === area && selected.cards.some(c => c.rank === card.rank && c.suit === card.suit);
-      const cardProps = {
-        key: `${card.rank}_of_${card.suit}_${area}_${index}`,
-        suit: card.suit,
-        rank: card.rank,
-        isSelected: isSelected,
-        onClick: () => handleCardClick(card, area),
-      };
       return (
-        <div className="card-wrapper-dun" style={{ '--card-index': index, zIndex: index }}>
-          <Card {...cardProps} />
+        <div key={`${card.rank}_${card.suit}_${area}_${idx}`} className="card-wrapper-dun" style={{ '--card-index': idx, zIndex: idx }}>
+          <Card suit={card.suit} rank={card.rank} isSelected={isSelected} onClick={() => handleCardClick(card, area)} />
         </div>
       );
     })
   );
 
-  const renderCardsForResult = (arr) => {
-    if (!arr) return null;
-    return arr.map((card, index) => (
-      <div 
-        key={`${card.rank}_of_${card.suit}_result_${index}`}
-        className="card-wrapper-dun" 
-        style={{ '--card-index': index, zIndex: index }}
-      >
-        {/* **核心修复：这里不传递 onClick 属性** */}
+  const renderCardsForResult = (arr) => (
+    arr.map((card, idx) => (
+      <div key={`${card.rank}_${card.suit}_result_${idx}`} className="card-wrapper-dun" style={{ '--card-index': idx, zIndex: idx }}>
         <Card suit={card.suit} rank={card.rank} isSelected={false} />
       </div>
-    ));
-  };
+    ))
+  );
 
   const renderPaiDun = (arr, label, area) => (
-    <div className="pai-dun" onClick={() => moveTo(area)}>
+    <div key={area} className="pai-dun" onClick={() => moveTo(area)}>
       <div className="pai-dun-content">
-        {arr.length === 0 ? (
-          <div className="pai-dun-placeholder">请放置</div>
-        ) : (
-          <div className="cards-area">{renderCardsInDun(arr, area)}</div>
-        )}
+        {arr.length === 0
+          ? <div className="pai-dun-placeholder">请放置</div>
+          : <div className="cards-area">{renderCardsInDun(arr, area)}</div>
+        }
       </div>
       <div className="pai-dun-label">{label} ({arr.length})</div>
     </div>
@@ -220,7 +214,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
       />
     </div>
   );
-  
+
   const renderResultModal = () => {
     if (!showResult || !resultModalData) return null;
     const sortedPlayers = [...resultModalData].sort((a, b) => (b.score || 0) - (a.score || 0));
@@ -249,33 +243,44 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     <div className="play-container">
       <div className="game-wrapper">
         <div className="game-header">
-          <button className="btn-quit" onClick={onQuit}>< 退出房间</button>
+          <button className="btn-quit" onClick={onQuit}>
+            {'< 退出房间'}
+          </button>
           <div className="score-display">
             <span role="img" aria-label="coin" className="coin-icon">🪙</span>
             积分: {myPlayer.points || 0}
           </div>
         </div>
+
         <div className="players-area">
           {players.map(renderPlayerSeat)}
         </div>
-        
+
         {renderPaiDun(head, '头道', 'head')}
         {renderPaiDun(middle, '中道', 'middle')}
         {renderPaiDun(tail, '尾道', 'tail')}
-        
+
         <div className="actions-area">
-          <button className="btn-action btn-smart-split" onClick={handleSmartSplit} disabled={submitted || myCards.length !== 13}>
+          <button
+            className="btn-action btn-smart-split"
+            onClick={handleSmartSplit}
+            disabled={submitted || myCards.length !== 13}
+          >
             智能分牌
           </button>
-          <button className="btn-action btn-compare" onClick={handleStartCompare} disabled={submitted}>
+          <button
+            className="btn-action btn-compare"
+            onClick={handleStartCompare}
+            disabled={submitted}
+          >
             {submitted ? '等待比牌' : '开始比牌'}
           </button>
         </div>
 
         {renderMyCards()}
-        
+
         <div className="message-area">{submitMsg}</div>
-        
+
         {renderResultModal()}
       </div>
     </div>
