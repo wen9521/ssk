@@ -2,17 +2,10 @@ import React from 'react';
 import './Card.css';
 
 function Card({ suit, rank, isSelected, onClick }) {
-  // Use '10' for rank 'T'
+  // Use '10' for rank 'T', and handle other ranks as is
   const displayRank = rank === 'T' ? '10' : rank;
   const cardImagePath = `assets/cards/${displayRank}_of_${suit}.svg`;
   
-  const suitSymbols = {
-    spades: '♠',
-    hearts: '♥',
-    diamonds: '♦',
-    clubs: '♣',
-  };
-
   return (
     <div className={`card ${isSelected ? 'selected' : ''}`} onClick={onClick}>
       <div className="card-inner">

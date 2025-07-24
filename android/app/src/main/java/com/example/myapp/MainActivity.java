@@ -8,11 +8,6 @@ import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
 public class MainActivity extends AppCompatActivity {
 
     @Override
@@ -29,7 +24,6 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setDomStorageEnabled(true);
         
         // Allow file access and cross-origin requests from file URLs
-        // This is crucial for fixing the CORS issue with file:/// protocol
         webSettings.setAllowFileAccess(true);
         webSettings.setAllowFileAccessFromFileURLs(true);
         webSettings.setAllowUniversalAccessFromFileURLs(true);
@@ -44,20 +38,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        try {
-            InputStream is = getAssets().open("www/index.html");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-            }
-            is.close();
-            String htmlData = sb.toString();
-
-            myWebView.loadDataWithBaseURL("file:///android_asset/www/", htmlData, "text/html", "UTF-8", null);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        myWebView.loadUrl("file:///android_asset/www/index.html");
     }
 }

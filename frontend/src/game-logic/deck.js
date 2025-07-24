@@ -1,30 +1,21 @@
-// src/game-logic/deck.js
+// frontend/src/game-logic/deck.js
 
-const SUITS = ['s', 'h', 'd', 'c'];
-const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
+const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
+const suits = ['clubs', 'diamonds', 'hearts', 'spades'];
 
-/**
- * Creates a standard 52-card deck.
- * @returns {string[]} An array of card strings, e.g., ['2s', '3s', ...].
- */
-function createDeck() {
+// Create a standard 52-card deck
+export function createDeck() {
   const deck = [];
-  for (const suit of SUITS) {
-    for (const rank of RANKS) {
-      // Using a consistent format: Rank then Suit (e.g., 'As', 'Th', '2c')
-      deck.push(rank + suit);
+  for (const suit of suits) {
+    for (const rank of ranks) {
+      deck.push({ suit, rank });
     }
   }
   return deck;
 }
 
-/**
- * Shuffles a deck of cards using the Fisher-Yates algorithm.
- * @param {string[]} deck The deck to shuffle.
- * @returns {string[]} A new array containing the shuffled deck.
- */
-function shuffleDeck(deck) {
-  // Create a copy to avoid modifying the original array
+// Shuffle the deck using the Fisher-Yates algorithm
+export function shuffleDeck(deck) {
   const shuffled = [...deck];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -33,5 +24,18 @@ function shuffleDeck(deck) {
   return shuffled;
 }
 
-// Export the functions so they can be imported elsewhere
-export { createDeck, shuffleDeck };
+// Deal cards to players
+export function dealCards(deck, numCards, numPlayers) {
+  const hands = Array(numPlayers).fill(null).map(() => []);
+  const remainingDeck = [...deck];
+  
+  for (let i = 0; i < numCards; i++) {
+    for (let j = 0; j < numPlayers; j++) {
+      if(remainingDeck.length > 0) {
+        hands[j].push(remainingDeck.pop());
+      }
+    }
+  }
+
+  return [ ...hands, remainingDeck ];
+}
