@@ -1,6 +1,11 @@
+// frontend/src/App.jsx
+
 import React from 'react';
 import { HashRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
-import Game from './components/Game';
+// 删掉 Game 的引入
+// import Game from './components/Game'; 
+// 引入我们正在使用的 Play 组件
+import Play from './components/Play'; 
 import './App.css';
 
 // 游戏大厅（首页）
@@ -39,6 +44,7 @@ function ThirteenCardsMenu() {
     <div className="app-container">
       <h2>十三张</h2>
       <div className="menu">
+        {/* 这里的 to="/play" 将会正确渲染 Play 组件 */}
         <Link to="/play" className="btn">开始游戏 (离线模式)</Link>
         <Link to="/coming-soon" className="btn">在线匹配</Link>
         <Link to="/coming-soon" className="btn">创建房间</Link>
@@ -73,7 +79,8 @@ export default function App() {
         <Route path="/" element={<Lobby />} />
         <Route path="/thirteen-cards-menu" element={<ThirteenCardsMenu />} />
         <Route path="/eight-cards-menu" element={<EightCardsMenu />} />
-        <Route path="/play" element={<Game />} />
+        {/* --- 核心修复点：将 element 从 <Game /> 改为 <Play /> --- */}
+        <Route path="/play" element={<Play />} />
         <Route path="/coming-soon" element={<ComingSoon gameName="此游戏"/>} />
       </Routes>
     </HashRouter>
