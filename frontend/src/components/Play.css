@@ -3,9 +3,9 @@
 /* 全局样式变量 */
 :root {
   --outer-max-width: 420px;
-  --pai-dun-height: 120px;
+  --pai-dun-height: 120px; /* 调整牌墩高度 */
   
-  /* 响应式卡牌偏移量 - 注意：尺寸现在由 Card.css 控制 */
+  /* 响应式卡牌偏移量 */
   --card-offset: 4.5vw; /* 使用 vw 单位，使其随屏幕宽度缩放 */
   --card-offset-max: 30px; /* 偏移量最大值 */
   
@@ -20,6 +20,8 @@
 
 /* 根容器 */
 .play-container {
+  /* --- 核心修复点：添加 width: 100% --- */
+  width: 100%;
   background: var(--app-bg);
   min-height: 100vh;
   font-family: inherit;
@@ -186,14 +188,11 @@
     min-height: 140px;
 }
 
-/* --- 核心修复点 --- */
-/* 这个包装器只负责定位，不设置尺寸 */
 .card-wrapper-dun {
   position: absolute;
-  top: 50%; /* 垂直居中 */
-  transform: translateY(-50%); /* 精确垂直居中 */
+  top: 50%;
+  transform: translateY(-50%);
   left: calc(var(--card-index, 0) * min(var(--card-offset), var(--card-offset-max)));
-  /* height 和 width 由内部的 .card 元素决定 */
 }
 
 /* 底部按钮区 */
@@ -318,13 +317,12 @@
   height: 100%;
 }
 
-/* --- 核心修复点 2: 直接为结果弹窗中的卡牌设置尺寸 --- */
 .result-hand .card-wrapper-dun .card {
   width: 30px;
   height: 42px;
 }
 .result-hand .card-wrapper-dun {
-  --card-offset: 15px; /* 结果弹窗中的卡牌偏移量 */
+  --card-offset: 15px;
   --card-offset-max: 15px;
 }
 
