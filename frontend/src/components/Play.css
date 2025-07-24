@@ -3,12 +3,11 @@
 /* 全局样式变量 */
 :root {
   --outer-max-width: 420px;
-  --pai-dun-height: 120px; /* 调整牌墩高度 */
+  --pai-dun-height: 120px;
   
-  /* 响应式卡牌尺寸和偏移量 */
-  --card-height: 100px;
-  --card-width: 70px;
-  --card-offset: 30px; /* 卡牌在牌墩中的水平偏移量 */
+  /* 响应式卡牌偏移量 - 注意：尺寸现在由 Card.css 控制 */
+  --card-offset: 4.5vw; /* 使用 vw 单位，使其随屏幕宽度缩放 */
+  --card-offset-max: 30px; /* 偏移量最大值 */
   
   --app-bg: #1a1a2d;
   --surface-bg: #2a2a3d;
@@ -126,7 +125,6 @@
   width: 100%;
   border-radius: 14px;
   background: #3c3c4d;
-  min-height: var(--pai-dun-height);
   height: var(--pai-dun-height);
   margin-bottom: 12px;
   position: relative;
@@ -174,38 +172,35 @@
   white-space: nowrap;
 }
 
-/* 牌墩和手牌区的公共容器 */
-.cards-area, .my-cards-area {
+.cards-area {
   position: relative;
   width: 100%;
+  height: 100%;
   min-width: 0;
   box-sizing: border-box;
   overflow: visible;
 }
 
 .my-cards-area {
-  margin-top: 10px;
-  min-height: 140px;
+    margin-top: 10px;
+    min-height: 140px;
 }
 
-.cards-area {
-  height: var(--pai-dun-height);
-}
-
-/* 牌墩中的卡牌包装器 */
+/* --- 核心修复点 --- */
+/* 这个包装器只负责定位，不设置尺寸 */
 .card-wrapper-dun {
   position: absolute;
-  top: calc((var(--pai-dun-height) - var(--card-height)) / 2);
-  left: calc(var(--card-index, 0) * var(--card-offset));
-  width: var(--card-width);
-  height: var(--card-height);
+  top: 50%; /* 垂直居中 */
+  transform: translateY(-50%); /* 精确垂直居中 */
+  left: calc(var(--card-index, 0) * min(var(--card-offset), var(--card-offset-max)));
+  /* height 和 width 由内部的 .card 元素决定 */
 }
 
 /* 底部按钮区 */
 .actions-area {
   display: flex;
   gap: 10px;
-  margin-top: auto; /* 推到底部 */
+  margin-top: auto;
   padding-top: 10px;
 }
 
@@ -223,6 +218,8 @@
 .btn-action:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background: #6c757d;
+  box-shadow: none;
 }
 
 .btn-smart-split {
@@ -321,21 +318,22 @@
   height: 100%;
 }
 
-.result-hand .card-wrapper-dun {
-  --card-height: 42px;
-  --card-width: 30px;
-  --card-offset: 15px;
-  top: 0;
+/* --- 核心修复点 2: 直接为结果弹窗中的卡牌设置尺寸 --- */
+.result-hand .card-wrapper-dun .card {
+  width: 30px;
+  height: 42px;
 }
-
+.result-hand .card-wrapper-dun {
+  --card-offset: 15px; /* 结果弹窗中的卡牌偏移量 */
+  --card-offset-max: 15px;
+}
 
 /* --- 响应式媒体查询 --- */
 @media (max-width: 480px) {
   :root {
-    --pai-dun-height: 95px;
-    --card-height: 80px;
-    --card-width: 56px;
-    --card-offset: 25px;
+    --pai-dun-height: 100px;
+    --card-offset: 6vw;
+    --card-offset-max: 28px;
   }
   .modal-content {
     grid-template-columns: 1fr;
@@ -346,12 +344,11 @@
 
 @media (max-width: 380px) {
   :root {
-    --pai-dun-height: 85px;
-    --card-height: 70px;
-    --card-width: 49px;
-    --card-offset: 22px;
+    --pai-dun-height: 90px;
+    --card-offset: 6.5vw;
+    --card-offset-max: 25px;
   }
-   .game-wrapper {
+  .game-wrapper {
     padding: 8px;
   }
   .actions-area {
