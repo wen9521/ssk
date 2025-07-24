@@ -1,6 +1,10 @@
+/* frontend/src/components/Card.css */
+
 .card {
-  width: 80px;
-  height: 112px;
+  /* 使用 vw 单位实现响应式尺寸，20vw 表示宽度的 20% */
+  /* 同时设置最大和最小值，以在各种屏幕上保持良好观感 */
+  width: clamp(50px, 18vw, 80px);
+  height: clamp(70px, 25.2vw, 112px);
   perspective: 1000px;
   cursor: pointer;
   position: relative; /* 确保伪元素正确定位 */
