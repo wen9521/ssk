@@ -10,8 +10,7 @@ function Lobby() {
       <h1>扑克王</h1>
       <div className="menu">
         <Link to="/thirteen-menu" className="btn">十三水</Link>
-        <Link to="/coming-soon" className="btn">德州扑克</Link>
-        <Link to="/coming-soon" className="btn">斗地主</Link>
+        <Link to="/coming-soon" className="btn">八张 (开发中)</Link>
       </div>
     </div>
   );
@@ -23,7 +22,7 @@ function ComingSoon() {
   return (
     <div className="app-container coming-soon">
       <h2>敬请期待</h2>
-      <p>更多精彩游戏正在路上！</p>
+      <p>新游戏正在紧张开发中！</p>
       <button className="btn btn-secondary" onClick={() => navigate(-1)}>返回</button>
     </div>
   );
