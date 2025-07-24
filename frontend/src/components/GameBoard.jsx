@@ -1,60 +1,43 @@
 import React from 'react';
+import Hand from './Hand';
+import Play from './Play';
 import './GameBoard.css';
 
-function GameBoard({ players, status }) {
-
-  const renderPlayerSeat = (player, index) => {
-    // In the future, we can distinguish the local player via a unique ID
-    const isMe = index === 0; 
-    const playerClass = `player-seat ${isMe ? 'player-me' : ''} ${player.isReady ? 'player-ready' : ''}`;
-    
-    return (
-      <div key={player.id || index} className={playerClass}>
-        <div className="player-avatar"></div>
-        <div className="player-name">{player.name || `玩家 ${player.id}`}</div>
-        <div className="player-status">
-          {status === 'playing' && (player.hasSubmitted ? '已出牌' : '思考中...')}
-          {status === 'waiting' && '等待中...'}
-          {status === 'finished' && `得分: ${player.score}`}
+function GameBoard({ player, opponent, onPlay, onCompare, message, result, onRestart }) {
+  return (
+    <div className="game-board">
+      <div className="opponent-area">
+        <div className="player-info">
+          <h2>{opponent.name}</h2>
+          <p>Cards: {opponent.cardCount}</p>
+        </div>
+        <div className="plays">
+          {opponent.plays.map((play, index) => (
+            <Play key={index} cards={play.cards} type={play.type} />
+          ))}
         </div>
       </div>
-    );
-  };
 
-  const renderFinalHands = () => {
-    if (status !== 'finished') return null;
+      <div className="player-area">
+        <div className="player-info">
+          <h2>{player.name}</h2>
+        </div>
+        <Hand cards={player.hand} onPlay={onPlay} />
+      </div>
 
-    return (
-      <div className="modal-overlay">
-        <div className="modal-content">
-          <h2>本局结果</h2>
-          <div className="result-grid">
-            {players.map((player, index) => (
-              <div key={player.id || index} className="result-player-summary">
-                <div className="result-player-name">
-                    {player.name || `Player ${player.id}`}
-                    {player.isFoul && <span className="foul-tag">(倒水)</span>}
-                    <span className="score-tag">({player.score}分)</span>
-                </div>
-                {/* We will need to render the 3 sets of cards here */}
-                {/* This requires the server to send the final hands in the 'finished' state */}
-              </div>
-            ))}
+      <div className="actions">
+        <button onClick={onCompare} disabled={!player.canCompare}>Compare</button>
+        <p className="message">{message}</p>
+      </div>
+
+      {result && (
+        <div className="result-modal">
+          <div className="result-content">
+            <h2>{result.message}</h2>
+            <button onClick={onRestart}>Play Again</button>
           </div>
         </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="game-board-container">
-        <div className="players-area">
-            {players.map(renderPlayerSeat)}
-        </div>
-        {renderFinalHands()}
-        <div className="game-status-display">
-            状态: {status}
-        </div>
+      )}
     </div>
   );
 }

@@ -1,0 +1,32 @@
+.hand-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hand {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  overflow-x: auto;
+}
+
+.play-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.play-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.play-button:hover:not(:disabled) {
+  background-color: #45a049;
+}

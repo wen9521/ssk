@@ -1,14 +1,29 @@
 import React from 'react';
+import './Card.css';
 
-function Card({ suit, rank }) {
-  const cardImagePath = `assets/cards/${rank}_of_${suit}.svg`;
+function Card({ suit, rank, isSelected, onClick }) {
+  // Use '10' for rank 'T'
+  const displayRank = rank === 'T' ? '10' : rank;
+  const cardImagePath = `assets/cards/${displayRank}_of_${suit}.svg`;
+  
+  const suitSymbols = {
+    spades: '♠',
+    hearts: '♥',
+    diamonds: '♦',
+    clubs: '♣',
+  };
 
   return (
-    <img 
-      src={cardImagePath} 
-      alt={`${rank} of ${suit}`} 
-      style={{ width: '50px', height: '70px' }} 
-    />
+    <div className={`card ${isSelected ? 'selected' : ''}`} onClick={onClick}>
+      <div className="card-inner">
+        <div className="card-front">
+          <img src={cardImagePath} alt={`${rank} of ${suit}`} className="card-face-img" />
+        </div>
+        <div className="card-back">
+          <div className="card-back-pattern"></div>
+        </div>
+      </div>
+    </div>
   );
 }
 

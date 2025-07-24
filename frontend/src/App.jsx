@@ -1,7 +1,8 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
-import Play from './components/Play.jsx'; // 导入真正的 Play 组件
-import './App.css'; 
+import Game from './components/Game'; // 导入新的 Game 组件
+import './App.css';
+import './components/Game.css';
 
 // 游戏大厅（首页）
 function Lobby() {
@@ -52,7 +53,7 @@ export default function App() {
         <Route path="/eight" element={<ComingSoon gameName="八张" />} />
         <Route path="/thirteen/auto" element={<ComingSoon gameName="自动匹配" />} />
         <Route path="/thirteen/rooms" element={<ComingSoon gameName="房间列表" />} />
-        <Route path="/play" element={<Play />} />
+        <Route path="/play" element={<Game />} />
       </Routes>
     </HashRouter>
   );
