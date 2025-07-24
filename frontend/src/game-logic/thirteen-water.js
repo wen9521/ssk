@@ -268,7 +268,7 @@ function combinations(arr, k) {
   comb([], 0);
   return res;
 }
-function sortCards(cards) {
+function sortCardsForAI(cards) {
   return [...cards].sort((a, b) => cardValue(b) - cardValue(a) || cardSuit(b).localeCompare(cardSuit(a)));
 }
 
@@ -276,7 +276,7 @@ function sortCards(cards) {
 function detectDragon(cards13) {
   const vals = uniq(cards13.map(cardValue));
   if (vals.length === 13) {
-    const sorted = sortCards(cards13);
+    const sorted = sortCardsForAI(cards13);
     return { head: sorted.slice(0, 3), middle: sorted.slice(3, 8), tail: sorted.slice(8, 13), type: '一条龙' };
   }
   return null;
