@@ -348,7 +348,7 @@ function isFlushForAI(cards) {
 }
 
 // ==== 牌型判定/倒水/评分 ====
-function handType(cards, area) {
+function handTypeForAI(cards, area) {
   if (!cards || cards.length < 3) return "高牌";
   const vals = cards.map(cardValue), suits = cards.map(cardSuit),
     uniqVals = uniq(vals), uniqSuits = uniq(suits);
@@ -371,7 +371,7 @@ function handType(cards, area) {
   return "高牌";
 }
 function handTypeScore(cards, area) {
-  const t = handType(cards, area);
+  const t = handTypeForAI(cards, area);
   switch (t) {
     case "铁支": return 8; case "同花顺": return 7; case "葫芦": return 6; case "同花": return 5; case "顺子": return 4;
     case "三条": return 3; case "两对": return 2; case "对子": return 1; default: return 0;
@@ -379,7 +379,7 @@ function handTypeScore(cards, area) {
 }
 function handTypeRank(cards, area) {
   if (area === 'head') {
-    const t = handType(cards, area);
+    const t = handTypeForAI(cards, area);
     if (t === "三条") return 4; if (t === "对子") return 2; return 1;
   }
   return handTypeScore(cards, area);
@@ -397,10 +397,10 @@ function scoreSplit(head, mid, tail) {
   // 新增头道对子/三条奖励，优先不拆葫芦/顺子/三条
   let sHead = evalHead(head), sMid = evalTail(mid), sTail = evalTail(tail);
   let score = sTail * 1.9 + sMid * 1.1 + sHead * 1.0;
-  if (handType(head, 'head') === '三条') score += 90;
-  if (handType(head, 'head') === '对子') score += 28;
+  if (handTypeForAI(head, 'head') === '三条') score += 90;
+  if (handTypeForAI(head, 'head') === '对子') score += 28;
   // 中道葫芦/顺子/同花奖励
-  if (['葫芦', '顺子', '同花'].includes(handType(mid, 'middle'))) score += 18;
+  if (['葫芦', '顺子', '同花'].includes(handTypeForAI(mid, 'middle'))) score += 18;
   return score;
 }
 function isSpecialType(head, mid, tail) {
@@ -416,7 +416,7 @@ function isSpecialType(head, mid, tail) {
 
 // ==== compareArea（同步sssScore.js核心） ====
 function compareArea(a, b, area) {
-  const typeA = handType(a, area), typeB = handType(b, area);
+  const typeA = handTypeForAI(a, area), typeB = handTypeForAI(b, area);
   const rankA = handTypeRank(a, area), rankB = handTypeRank(b, area);
   if (rankA !== rankB) return rankA - rankB;
   const groupedA = groupBy(a.map(cardValue)), groupedB = groupBy(b.map(cardValue));
@@ -464,7 +464,7 @@ function compareArea(a, b, area) {
 
 // ==== 头道/尾道评分 ====
 function evalHead(head) {
-  const t = handType(head, 'head');
+  const t = handTypeForAI(head, 'head');
   let score = 0;
   if (t === "三条") score += 130;
   else if (t === "对子") score += 36;
@@ -473,7 +473,7 @@ function evalHead(head) {
   return score;
 }
 function evalTail(tail) {
-  const t = handType(tail, 'tail');
+  const t = handTypeForAI(tail, 'tail');
   let score = 0;
   if (t === "同花顺") score += 10000; // 强制极高分
   if (t === "铁支") score += 240;
@@ -502,7 +502,7 @@ export function getSmartSplits(cards13, opts = {}) {
 
   // 2. 有同花顺，必做尾道
   for (const tail of combinations(cards13, 5)) {
-    if (handType(tail, 'tail') === '同花顺') {
+    if (handTypeForAI(tail, 'tail') === '同花顺') {
       const left8 = cards13.filter(c => !tail.includes(c));
       let best = null, bestScore = -Infinity;
       for (const mid of combinations(left8, 5)) {
@@ -541,9 +541,9 @@ export function getSmartSplits(cards13, opts = {}) {
       if (isFoul(head, mid, tail)) continue;
       const score = scoreSplit(head, mid, tail);
       let tieBreaker = 0;
-      if (handType(head, 'head') === '三条') tieBreaker += 1000;
-      if (handType(head, 'head') === '对子') tieBreaker += 300;
-      if (['葫芦', '顺子', '同花'].includes(handType(mid, 'middle'))) tieBreaker += 40;
+      if (handTypeForAI(head, 'head') === '三条') tieBreaker += 1000;
+      if (handTypeForAI(head, 'head') === '对子') tieBreaker += 300;
+      if (['葫芦', '顺子', '同花'].includes(handTypeForAI(mid, 'middle'))) tieBreaker += 40;
       if (score + tieBreaker > bestScore) {
         bestScore = score + tieBreaker;
         bestSplit = { head, middle: mid, tail };
