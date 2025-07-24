@@ -2,7 +2,7 @@ import React from 'react';
 import Card from './Card';
 import './Hand.css';
 
-function Hand({ cards, selectedCards, onCardSelect }) {
+function Hand({ cards, selectedCards = [], onCardSelect }) {
   
   // 检查一张牌是否被选中
   const isCardSelected = (card) => {
