@@ -1,132 +1,39 @@
-:root {
-  --table-color: #0d5f3a; /* 经典的绿色桌面 */
-  --table-border-color: #5d4037; /* 木质边框 */
-  --avatar-bg-color: #f0b90b;
-}
-
-.game-board-container {
-  width: 100%;
-  height: 100%;
-  background-color: var(--table-color);
-  background-image: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%);
-  border: 10px solid var(--table-border-color);
-  box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-  border-radius: 150px / 80px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-/* 对手和玩家区域通用样式 */
-.opponent-area, .player-area {
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-.player-avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background-color: var(--avatar-bg-color);
-  color: var(--text-dark-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 24px;
-  font-weight: bold;
-  border: 2px solid white;
-}
-.player-avatar.self {
-    background-color: #4CAF50;
-}
-
-.player-details {
-  display: flex;
-  flex-direction: column;
-  margin-left: 10px;
-  background-color: rgba(0,0,0,0.3);
-  padding: 5px 10px;
-  border-radius: var(--border-radius);
-}
-
-.player-main-hand, .opponent-segments {
-  flex-grow: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* 桌面中心 */
-.table-center {
+.play-container {
+  max-width: 420px;
+  margin: 28px auto 0 auto;
+  background: #185a30; /* 深绿色，和全局统一 */
+  border-radius: 18px;
+  box-shadow: 0 8px 40px #23e67a50, 0 1.5px 5px #1a462a6a;
+  padding: 22px 12px 24px 12px;
   text-align: center;
-  color: white;
-  min-height: 100px;
+}
+.cards-area {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
 }
-.game-message {
-  font-size: 1.2rem;
-  padding: 10px 20px;
-  background-color: rgba(0,0,0,0.4);
-  border-radius: var(--border-radius);
+.card-img {
+  width: 46px;
+  height: 66px;
+  border-radius: 6px;
+  box-shadow: 0 4px 22px #23e67a44, 0 1.5px 5px #1a462a6a !important;
+  background: #fff;
+  object-fit: contain;
 }
-
-.result-modal {
-  background-color: var(--surface-color);
-  padding: 20px;
-  border-radius: var(--border-radius);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+.result-container {
+  max-width: 350px;
+  margin: 60px auto 0 auto;
+  background: #185a30; /* 深绿色，和全局统一 */
+  border-radius: 18px;
+  box-shadow: 0 8px 40px #23e67a50, 0 1.5px 5px #23e67a6a;
+  padding: 28px 24px 24px 24px;
+  text-align: center;
 }
-
-/* 玩家区域特殊样式 */
-.player-area {
-  flex-direction: column;
-  width: 100%;
-}
-.player-segments {
-    display: flex;
-    width: 100%;
-    justify-content: space-around;
-    margin: 10px 0;
-}
-.hand-segment {
-    background-color: rgba(0,0,0,0.2);
-    border-radius: var(--border-radius);
-    padding: 10px;
-    width: 30%;
-    min-height: 80px;
-    border: 1px dashed rgba(255,255,255,0.3);
-}
-.hand-segment h3 {
-    margin: 0 0 5px 0;
-    text-align: center;
-    color: #ccc;
-    font-size: 0.9rem;
-}
-.hand-type {
-    color: var(--primary-color);
-    margin-left: 5px;
-    font-size: 0.8rem;
-}
-.card-placeholder {
-    display: flex;
-    justify-content: center;
-    gap: -40px; /* 卡牌重叠效果 */
-}
-.card-placeholder img {
-    width: 50px;
-    height: 70px;
-}
-
-.player-controls {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  width: 100%;
-  gap: 10px;
-  padding: 10px 0;
+/* 牌墩和seat的绿色暗影风格 */
+.play-seat, .play-seat.empty, .play-pai-dun {
+  border: none !important;
+  box-shadow: 0 4px 22px #23e67a44, 0 1.5px 5px #1a462a6a !important;
+  background: #185a30 !important;
 }
