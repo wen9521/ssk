@@ -1,74 +1,78 @@
-import React, { useEffect } from 'react';
+// frontend/src/components/Play.jsx
+
+import React, { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GameBoard from './GameBoard';
 import { useGameStore, STAGES } from '../utils/store';
-import { createDeck, shuffleDeck } from '../game-logic/deck';
+import { createDeck, shuffleDeck, dealCards } from '../game-logic/deck';
+import { SmartSplit } from '../game-logic/ai-logic';
 
 export default function Play() {
   const navigate = useNavigate();
-  const { stage, players, setStage, dealNewRound, setFinalResults, updatePlayerStatus } = useGameStore();
+  const { players, dealNewRound, setFinalResults, updatePlayerStatus, setStage } = useGameStore();
+
+  const handlePlayAgain = useCallback(() => {
+    const deck = createDeck();
+    const shuffled = shuffleDeck(deck);
+    const [p1, p2, p3, p4] = dealCards(shuffled, 13, 4);
+    dealNewRound([p1, p2, p3, p4]);
+  }, [dealNewRound]);
 
   useEffect(() => {
-    // Start a new round as soon as the component mounts
     handlePlayAgain();
-  }, []); // We can remove dealNewRound from dependencies if handlePlayAgain covers it
+  }, [handlePlayAgain]);
+
+  // Helper to convert card object to string for AI logic
+  const toCardString = (card) => {
+      const rankMap = { 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', 'T': '10'};
+      const rankStr = rankMap[card.rank] || card.rank.toLowerCase();
+      return `${rankStr}_of_${card.suit}`;
+  };
 
   const handleSubmit = async (mySortedHand) => {
-    setStage(STAGES.SUBMITTED);
-    
+    // 立即更新玩家状态为已提交
+    updatePlayerStatus('player1', { submitted: true, ...mySortedHand });
+    setStage(STAGES.SUBMITTING);
+
+    // 为 AI 玩家生成手牌
     const payload = players.map(player => {
       if (player.id === 'player1') {
         return { id: player.id, hands: mySortedHand };
       }
-      // For AI/opponents, send their full hand for backend processing
-      return { id: player.id, cards: player.cards };
+      
+      const cardStrings = player.cards13.map(toCardString);
+      const aiHand = SmartSplit(cardStrings)[0]; // Get the best split
+      // AI hand needs to be in the same object format
+      const aiHandObj = {
+          head: aiHand.head,
+          middle: aiHand.middle,
+          tail: aiHand.tail
+      };
+      updatePlayerStatus(player.id, { submitted: true, ...aiHandObj });
+      return { id: player.id, hands: aiHandObj };
     });
 
-    try {
-      const response = await fetch('/api/v1/thirteen-water/calculate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Backend calculation failed');
-      }
-
-      const results = await response.json();
-      setFinalResults(results);
-
-    } catch (error) {
-      console.error('Error submitting hand:', error);
-      setStage(STAGES.PLAYING); 
-    }
-  };
-
-  const handlePlayAgain = () => {
-    const deck = createDeck();
-    const shuffled = shuffleDeck(deck);
-    const hands = [
-      shuffled.slice(0, 13),
-      shuffled.slice(13, 26),
-      shuffled.slice(26, 39),
-      shuffled.slice(39, 52),
-    ];
-    dealNewRound(hands);
-  };
-
-  const handleReady = (isReady) => {
-    updatePlayerStatus('player1', { submitted: isReady });
-    // In a real multiplayer game, this would also emit an event to the server
-    console.log(`Player ${'player1'} is ${isReady ? 'ready' : 'not ready'}`);
+    // 模拟后端延迟和计算
+    setTimeout(() => {
+      // 在前端模拟计算结果 (这里可以替换为真实 API 调用)
+      // For now, let's create mock results
+      const mockResults = {
+          scores: players.map(p => ({
+              id: p.id,
+              totalScore: Math.floor(Math.random() * 20) - 10,
+              isFoul: false,
+              hands: p.id === 'player1' ? mySortedHand : payload.find(pl=>pl.id === p.id).hands,
+          }))
+      };
+      setFinalResults(mockResults);
+    }, 1500); // 1.5秒延迟
   };
 
   const handleQuit = () => {
     navigate('/');
   };
 
-  // Ensure players array is not empty before rendering
-  if (!players || players.length === 0) {
+  if (!players || players.length === 0 || !players.find(p=>p.id === 'player1')) {
     return <div>Loading...</div>;
   }
 
@@ -78,7 +82,6 @@ export default function Play() {
       myPlayerId="player1"
       onCompare={handleSubmit}
       onRestart={handlePlayAgain}
-      onReady={handleReady}
       onQuit={handleQuit}
     />
   );
