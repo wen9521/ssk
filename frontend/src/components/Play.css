@@ -174,9 +174,12 @@
   overflow: visible;
 }
 
+/* --- 核心修复点 --- */
 .card-img {
   position: absolute;
   top: calc((var(--pai-dun-height) - var(--card-height)) / 2);
+  /* 通过 CSS 变量和 calc() 函数为每张牌设置不同的 left 值，解决重叠问题 */
+  left: calc(var(--card-index, 0) * 40px);
   width: var(--card-width);
   height: var(--card-height);
   border-radius: 5px;
@@ -306,7 +309,22 @@
   justify-content: center;
   gap: 4px;
   margin-bottom: 3px;
+  position: relative;
+  height: 40px; /* Give it some height */
 }
+
+/* 调整结果弹窗里的牌大小和间距 */
+.result-hand .card-img {
+    height: 56px;
+    width: 40px;
+    top: 0;
+    left: calc(var(--card-index, 0) * 15px);
+}
+.result-hand .card {
+    width: 40px;
+    height: 56px;
+}
+
 
 @media (max-width: 480px) {
   .player-seat {
