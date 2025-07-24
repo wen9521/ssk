@@ -1,7 +1,10 @@
+// frontend/src/components/Card.jsx
+
 import React from 'react';
 import './Card.css';
 
-function Card({ suit, rank, isSelected, onClick }) {
+// 添加了 onDragStart, draggable 和 isDragging 属性
+function Card({ card, isSelected, onClick, onDragStart, isDragging }) {
   const getDisplayRank = (rank) => {
     switch (rank) {
       case 'A': return 'ace';
@@ -13,15 +16,21 @@ function Card({ suit, rank, isSelected, onClick }) {
     }
   };
 
-  const displayRank = getDisplayRank(rank);
-  // 使用 process.env.PUBLIC_URL 来确保无论部署在哪里，都能正确找到 public 目录下的资源
-  const cardImagePath = `${process.env.PUBLIC_URL}/assets/cards/${displayRank}_of_${suit}.svg`;
+  const displayRank = getDisplayRank(card.rank);
+  const cardImagePath = `${process.env.PUBLIC_URL}/assets/cards/${displayRank}_of_${card.suit}.svg`;
+
+  const className = `card ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''}`;
 
   return (
-    <div className={`card ${isSelected ? 'selected' : ''}`} onClick={onClick}>
+    <div 
+      className={className} 
+      onClick={onClick}
+      draggable="true" // 使卡片可拖拽
+      onDragStart={onDragStart} // 绑定拖拽开始事件
+    >
       <div className="card-inner">
         <div className="card-front">
-          <img src={cardImagePath} alt={`${rank} of ${suit}`} className="card-face-img" />
+          <img src={cardImagePath} alt={`${card.rank} of ${card.suit}`} className="card-face-img" />
         </div>
         <div className="card-back">
           <div className="card-back-pattern"></div>
