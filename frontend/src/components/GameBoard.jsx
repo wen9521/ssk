@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { SmartSplit } from '../game-logic/thirteen-water';
+import { SmartSplit } from '../game-logic/ai-logic'; // ai-logic.js 提供了 SmartSplit
+import Card from './Card'; // 引入 Card 组件
+import Hand from './Hand'; // 引入 Hand 组件
 import './Play.css';
+
+// 定义牌的点数顺序，用于排序
+const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
+const suits = ['diamonds', 'clubs', 'hearts', 'spades'];
+
+const sortHand = (hand) => {
+  if (!hand) return [];
+  return [...hand].sort((a, b) => {
+    const rankComparison = ranks.indexOf(a.rank) - ranks.indexOf(b.rank);
+    if (rankComparison !== 0) return rankComparison;
+    return suits.indexOf(a.suit) - suits.indexOf(b.suit);
+  });
+};
 
 export default function GameBoard({ players, myPlayerId, onCompare, onRestart, onReady, onQuit }) {
   // --- Start of Final Fix ---
@@ -33,27 +48,27 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   // --- End of Final Fix ---
 
   // State management for the component, now safely initialized.
-  const [myCards, setMyCards] = useState(myPlayer.hand || []);
+  const [myCards, setMyCards] = useState(myPlayer.cards13 || []); // 确保使用正确的 prop
   const [selected, setSelected] = useState({ area: '', cards: [] });
   const [head, setHead] = useState([]);
   const [middle, setMiddle] = useState([]);
   const [tail, setTail] = useState([]);
   const [submitMsg, setSubmitMsg] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [isReady, setIsReady] = useState(false);
+  const [submitted, setSubmitted] = useState(myPlayer.submitted || false);
+  const [isReady, setIsReady] = useState(myPlayer.submitted || false);
   const [showResult, setShowResult] = useState(false);
   const [resultModalData, setResultModalData] = useState(null);
 
   // Effect to reset the board when a new hand is dealt (i.e., when players prop changes).
   useEffect(() => {
     const freshPlayer = players.find(p => p.id === myPlayerId);
-    if (freshPlayer) {
-      setMyCards(freshPlayer.hand || []);
-      setHead([]);
-      setMiddle([]);
-      setTail([]);
-      setSubmitted(false);
-      setIsReady(false);
+    if (freshPlayer && freshPlayer.cards13) {
+      setMyCards(freshPlayer.cards13);
+      setHead(freshPlayer.head || []);
+      setMiddle(freshPlayer.middle || []);
+      setTail(freshPlayer.tail || []);
+      setSubmitted(freshPlayer.submitted || false);
+      setIsReady(freshPlayer.submitted || false);
       setSubmitMsg('');
     }
   }, [players, myPlayerId]);
@@ -79,7 +94,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   }, [showResult, onRestart]);
 
   function handleSmartSplit() {
-    const hands = SmartSplit(myCards);
+    const hands = SmartSplit(myCards); // ai-logic.js SmartSplit
     const bestHand = hands[0];
     setHead(bestHand.head);
     setMiddle(bestHand.middle);
@@ -89,11 +104,15 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
 
   function handleCardClick(card, area) {
     if (submitted) return;
+    const sourceArea = area || 'hand';
+    
     setSelected(sel => {
-      if (sel.area !== area) return { area, cards: [card] };
-      return sel.cards.includes(card)
-        ? { area, cards: sel.cards.filter(c => c !== card) }
-        : { area, cards: [...sel.cards, card] };
+      if (sel.area !== sourceArea) return { area: sourceArea, cards: [card] };
+      const cardExists = sel.cards.some(c => c.rank === card.rank && c.suit === card.suit);
+      
+      return cardExists
+        ? { area: sourceArea, cards: sel.cards.filter(c => !(c.rank === card.rank && c.suit === card.suit)) }
+        : { area: sourceArea, cards: [...sel.cards, card] };
     });
   }
 
@@ -104,13 +123,15 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     const allHands = { hand: myCards, head, middle, tail };
     const sourceArea = selected.area;
 
-    allHands[sourceArea] = allHands[sourceArea].filter(c => !selected.cards.includes(c));
+    const selectedSet = new Set(selected.cards.map(c => `${c.rank}_${c.suit}`));
+
+    allHands[sourceArea] = allHands[sourceArea].filter(c => !selectedSet.has(`${c.rank}_${c.suit}`));
     allHands[dest] = [...allHands[dest], ...selected.cards];
 
-    setMyCards(allHands.hand);
-    setHead(allHands.head);
-    setMiddle(allHands.middle);
-    setTail(allHands.tail);
+    setMyCards(sortHand(allHands.hand));
+    setHead(sortHand(allHands.head));
+    setMiddle(sortHand(allHands.middle));
+    setTail(sortHand(allHands.tail));
     setSelected({ area: dest, cards: [] });
     setSubmitMsg('');
   }
@@ -150,21 +171,25 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   }
 
   function renderPaiDunCards(arr, area) {
-    return arr.map(card => {
-      const isSelected = selected.area === area && selected.cards.includes(card);
+    return arr.map((card, index) => {
+      const isSelected = selected.area === area && selected.cards.some(c => c.rank === card.rank && c.suit === card.suit);
       return (
-        <img
-          key={`${card.rank}_of_${card.suit}`}
-          src={`/assets/cards/${card.rank}_of_${card.suit}.svg`}
-          alt={`${card.rank} of ${card.suit}`}
-          className={`card-img ${isSelected ? 'selected' : ''}`}
-          onClick={() => handleCardClick(card, area)}
-          draggable={false}
-        />
+        <div 
+            key={`${card.rank}_of_${card.suit}_${area}`}
+            className="card-img" // .card-img controls size and absolute position
+            style={{ '--card-index': index, zIndex: index }} // Pass index to CSS for staggering
+        >
+          <Card
+            suit={card.suit}
+            rank={card.rank}
+            isSelected={isSelected}
+            onClick={() => handleCardClick(card, area)}
+          />
+        </div>
       );
     });
   }
-
+  
   function renderPaiDun(arr, label, area) {
     return (
       <div className="pai-dun" onClick={() => moveTo(area)}>
@@ -182,14 +207,16 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
 
   function renderMyCards() {
     return (
-      <div className="my-cards-area">
-        <div className="cards-area">
-          {renderPaiDunCards(myCards, 'hand')}
-        </div>
+      <div className="my-cards-area" onClick={() => moveTo('hand')}>
+        <Hand
+            cards={myCards}
+            selectedCards={selected.area === 'hand' ? selected.cards : []}
+            onCardSelect={(card) => handleCardClick(card, 'hand')}
+        />
       </div>
     );
   }
-
+  
   function renderResultModal() {
     if (!showResult || !resultModalData) return null;
     return (
@@ -217,7 +244,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     <div className="play-container">
       <div className="game-wrapper">
         <div className="game-header">
-          <button className="btn-quit" onClick={() => typeof onQuit === 'function' && onQuit()}>&lt; 退出房间</button>
+          <button className="btn-quit" onClick={() => typeof onQuit === 'function' && onQuit()}>< 退出房间</button>
           <div className="score-display">
             <span role="img" aria-label="coin" className="coin-icon">🪙</span>
             积分: {myPlayer.points || 0}
@@ -235,7 +262,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
           <button className={`btn-action btn-ready ${isReady ? 'cancel' : ''}`} onClick={handleReadyClick}>
             {isReady ? '取消准备' : '准备'}
           </button>
-          <button className="btn-action btn-smart-split" onClick={handleSmartSplit} disabled={submitted}>
+          <button className="btn-action btn-smart-split" onClick={handleSmartSplit} disabled={submitted || myCards.length !== 13}>
             智能分牌
           </button>
           <button className="btn-action btn-compare" onClick={handleStartCompare} disabled={submitted}>
