@@ -4,8 +4,11 @@
 :root {
   --outer-max-width: 420px;
   --pai-dun-height: 133px;
-  --card-height: 125px;
-  --card-width: 87px;
+  /* 将卡牌尺寸和偏移量定义为变量 */
+  --card-height: 112px;
+  --card-width: 78px;
+  --card-offset: 35px; /* 卡牌在牌墩中的水平偏移量 */
+  
   --app-bg: #1a1a2d;
   --surface-bg: #2a2a3d;
   --accent-color: #00e5ff; /* 青色强调色 */
@@ -20,7 +23,8 @@
   background: var(--app-bg);
   min-height: 100vh;
   font-family: inherit;
-  padding: 30px 0;
+  padding: 20px 0; /* 减小上下边距 */
+  box-sizing: border-box;
 }
 
 .game-wrapper {
@@ -35,7 +39,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 650px;
+  min-height: 600px; /* 适应小屏幕高度 */
   box-sizing: border-box;
 }
 
@@ -48,30 +52,30 @@
 
 .btn-quit {
   background: var(--quit-btn-bg);
-  color: #333; /* 深色文字以保证对比度 */
+  color: #333;
   font-weight: bold;
   border: none;
   border-radius: 9px;
-  padding: 7px 22px;
+  padding: 7px 18px; /* 调整内边距 */
   cursor: pointer;
-  margin-right: 18px;
-  font-size: 17px;
+  margin-right: 12px; /* 调整外边距 */
+  font-size: 16px; /* 调整字体 */
   box-shadow: 0 1.5px 6px rgba(0, 0, 0, 0.2);
 }
 
 .score-display {
   flex: 1;
   text-align: right;
-  color: var(--accent-color); /* 使用新的强调色 */
+  color: var(--accent-color);
   font-weight: 900;
-  font-size: 21px;
-  letter-spacing: 2px;
+  font-size: 18px; /* 调整字体 */
+  letter-spacing: 1px; /* 调整字距 */
   margin-right: 8px;
   text-shadow: 0 2px 7px rgba(0, 229, 255, 0.3);
 }
 
 .score-display .coin-icon {
-  font-size: 18px;
+  font-size: 16px;
   margin-right: 4px;
 }
 
@@ -85,17 +89,20 @@
 .player-seat {
   border: none;
   border-radius: 10px;
-  width: 22%;
-  min-width: 70px;
+  flex: 1; /* 使用 flex 布局自适应宽度 */
+  min-width: 60px; /* 最小宽度 */
   color: #fff;
-  background: #3c3c4d; /* 更换背景色 */
+  background: #3c3c4d;
   text-align: center;
-  padding: 12px 0;
+  padding: 10px 4px; /* 调整内边距 */
   font-weight: 700;
-  font-size: 17px;
+  font-size: 15px; /* 调整字体 */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
   box-sizing: border-box;
   transition: color 0.28s, background 0.28s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .player-seat.player-me {
@@ -105,29 +112,29 @@
 
 .player-seat .player-status {
   margin-top: 4px;
-  font-size: 13px;
+  font-size: 12px; /* 调整字体 */
   font-weight: 400;
 }
 
 .player-seat .player-status.ready {
-  color: var(--ready-color); /* 已准备的玩家用独立的就绪色 */
+  color: var(--ready-color);
 }
 
 /* 牌墩区域 */
 .pai-dun {
   width: 100%;
   border-radius: 14px;
-  background: #3c3c4d; /* 牌墩背景 */
+  background: #3c3c4d;
   min-height: var(--pai-dun-height);
   height: var(--pai-dun-height);
-  margin-bottom: 20px;
+  margin-bottom: 15px; /* 调整外边距 */
   position: relative;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  padding-left: 16px;
-  padding-right: 70px;
+  padding-left: 12px;
+  padding-right: 60px;
 }
 
 .pai-dun-content {
@@ -145,20 +152,20 @@
   display: flex;
   align-items: center;
   color: #9e9e9e;
-  font-size: 18px;
+  font-size: 16px; /* 调整字体 */
   font-weight: 500;
   user-select: none;
 }
 
 .pai-dun-label {
   position: absolute;
-  right: 16px;
+  right: 12px;
   top: 0;
   height: 100%;
   display: flex;
   align-items: center;
   color: var(--accent-color);
-  font-size: 18px;
+  font-size: 16px; /* 调整字体 */
   font-weight: 600;
   pointer-events: none;
   background: transparent;
@@ -174,12 +181,10 @@
   overflow: visible;
 }
 
-/* --- 核心修复点 --- */
 .card-img {
   position: absolute;
   top: calc((var(--pai-dun-height) - var(--card-height)) / 2);
-  /* 通过 CSS 变量和 calc() 函数为每张牌设置不同的 left 值，解决重叠问题 */
-  left: calc(var(--card-index, 0) * 40px);
+  left: calc(var(--card-index, 0) * var(--card-offset));
   width: var(--card-width);
   height: var(--card-height);
   border-radius: 5px;
@@ -190,16 +195,11 @@
   cursor: pointer;
 }
 
-.card-img.selected {
-  border-color: #ff4444;
-  box-shadow: 0 0 16px 2px #ff4444cc;
-}
-
 /* 底部按钮区 */
 .actions-area {
   display: flex;
-  gap: 12px;
-  margin-top: 14px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .btn-action {
@@ -208,8 +208,8 @@
   font-weight: 700;
   border: none;
   border-radius: 10px;
-  padding: 13px 0;
-  font-size: 18px;
+  padding: 12px 0;
+  font-size: 16px;
   cursor: pointer;
   transition: background 0.16s, opacity 0.2s;
 }
@@ -239,9 +239,9 @@
 .message-area {
   color: #c3e1d1;
   text-align: center;
-  font-size: 16px;
+  font-size: 14px;
   margin-top: 8px;
-  min-height: 24px;
+  min-height: 20px;
 }
 
 /* 结果弹窗 */
@@ -256,18 +256,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 10px;
+  box-sizing: border-box;
 }
 
 .modal-content {
   background: var(--surface-bg);
   border-radius: 15px;
-  padding: 24px;
-  min-width: 400px;
-  min-height: 270px;
+  padding: 20px;
+  width: 100%;
+  max-width: 500px;
   box-shadow: 0 8px 40px #0002;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: auto auto;
   gap: 16px;
   position: relative;
 }
@@ -286,12 +288,14 @@
 .result-player {
   text-align: center;
   border-bottom: 1px solid #444;
+  padding-bottom: 8px;
 }
 
 .result-player-header {
   font-weight: 700;
   margin-bottom: 8px;
   color: #00bfff;
+  font-size: 14px;
 }
 
 .result-player-header.me {
@@ -301,39 +305,75 @@
 .result-player-header .foul-tag {
   color: red;
   font-weight: 800;
-  margin-left: 6px;
+  margin-left: 4px;
 }
 
 .result-hand {
+  height: 40px;
+  position: relative;
+  margin-bottom: 3px;
   display: flex;
   justify-content: center;
-  gap: 4px;
-  margin-bottom: 3px;
-  position: relative;
-  height: 40px; /* Give it some height */
 }
 
-/* 调整结果弹窗里的牌大小和间距 */
+.result-hand .cards-area {
+  justify-content: center;
+}
+
 .result-hand .card-img {
-    height: 56px;
-    width: 40px;
+    height: 42px;
+    width: 30px;
     top: 0;
-    left: calc(var(--card-index, 0) * 15px);
+    left: auto; /* We let the Hand/flexbox handle positioning */
+    position: relative;
+    margin-left: -15px;
 }
 .result-hand .card {
-    width: 40px;
-    height: 56px;
+    width: 30px;
+    height: 42px;
+}
+.result-hand .card-img:first-child {
+  margin-left: 0;
 }
 
 
+/* --- 响应式媒体查询 --- */
 @media (max-width: 480px) {
-  .player-seat {
-    margin-right: 4px;
-    width: 24%;
-    min-width: 0;
+  :root {
+    --pai-dun-height: 110px;
+    --card-height: 90px;
+    --card-width: 63px;
+    --card-offset: 28px;
   }
-  .card-img {
-    transform: scale(0.92);
-    transform-origin: top left;
+
+  .game-wrapper {
+    padding: 12px;
+    min-height: 560px;
+  }
+  
+  .my-cards-area {
+    margin-top: -10px; /* 减少手牌区域和按钮的间距 */
+  }
+  
+  .modal-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 380px) {
+  :root {
+    --pai-dun-height: 100px;
+    --card-height: 80px;
+    --card-width: 56px;
+    --card-offset: 25px;
+  }
+   .game-wrapper {
+    padding: 8px;
+  }
+  .actions-area {
+    flex-direction: column;
   }
 }
