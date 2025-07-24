@@ -1,10 +1,8 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GameBoard from './GameBoard';
-import Hand from './Hand';
 import { useGameStore, STAGES } from '../utils/store';
 import { createDeck, shuffleDeck } from '../game-logic/deck';
-import './Play.css';
 
 // The new, simplified, HTTP-based Play component
 export default function Play() {
@@ -94,37 +92,27 @@ export default function Play() {
     dealNewRound(hands);
   };
 
+  const handleReady = (isReady) => {
+    // In a real multiplayer game, this would send a message to the server.
+    // For now, we'll just update the local state.
+    console.log(`Player is ${isReady ? 'ready' : 'not ready'}`);
+    
+  };
+
+  const handleQuit = () => {
+    navigate('/');
+  };
+
   return (
-    <div className="play-container">
-      <div className="game-wrapper">
-        <div className="game-header">
-          <button className="btn-quit" onClick={() => navigate('/')}>
-            &lt; 退出房间
-          </button>
-          <div className="game-stage-display">
-            {stage.toUpperCase()}
-          </div>
-        </div>
-
-        <GameBoard players={players} status={stage} />
-
-        {stage !== STAGES.FINISHED && (
-          <Hand
-            cards={myCards}
-            onSubmit={handleSubmit}
-            gameStatus={stage}
-          />
-        )}
-        
-        {stage === STAGES.FINISHED && (
-            <div className="actions-area">
-                <button className="btn-action btn-primary" onClick={handlePlayAgain}>
-                    再来一局
-                </button>
-            </div>
-        )}
-
-      </div>
-    </div>
+    <GameBoard
+      player={players.find(p => p.id === 'player1')}
+      opponent={players.find(p => p.id !== 'player1')}
+      onCompare={handleSubmit}
+      onRestart={handlePlayAgain}
+      onReady={handleReady}
+      onQuit={handleQuit}
+      message={stage}
+      result={stage === STAGES.FINISHED ? players : null}
+    />
   );
 }
