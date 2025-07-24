@@ -3,8 +3,37 @@ import { SmartSplit } from '../game-logic/thirteen-water';
 import './Play.css';
 
 export default function GameBoard({ players, myPlayerId, onCompare, onRestart, onReady, onQuit }) {
-  const [myPlayer, setMyPlayer] = useState(players.find(p => p.id === myPlayerId));
-  const [myCards, setMyCards] = useState(myPlayer.hand);
+  // --- Start of Final Fix ---
+  // 1. Add a robust guard clause at the very beginning of the component.
+  // This checks if `players` is falsy (like undefined) or an empty array.
+  if (!players || players.length === 0) {
+    return (
+      <div className="play-container">
+        <div className="game-wrapper">
+          <div>Loading Game...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Derive `myPlayer` directly from props *after* the guard clause.
+  // This code will only run if `players` is a valid, non-empty array.
+  const myPlayer = players.find(p => p.id === myPlayerId);
+
+  // Add another guard clause in case myPlayer is somehow not found.
+  if (!myPlayer) {
+    return (
+      <div className="play-container">
+        <div className="game-wrapper">
+          <div>Initializing player...</div>
+        </div>
+      </div>
+    );
+  }
+  // --- End of Final Fix ---
+
+  // State management for the component, now safely initialized.
+  const [myCards, setMyCards] = useState(myPlayer.hand || []);
   const [selected, setSelected] = useState({ area: '', cards: [] });
   const [head, setHead] = useState([]);
   const [middle, setMiddle] = useState([]);
@@ -15,7 +44,21 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   const [showResult, setShowResult] = useState(false);
   const [resultModalData, setResultModalData] = useState(null);
 
-  // Effect to handle external result updates
+  // Effect to reset the board when a new hand is dealt (i.e., when players prop changes).
+  useEffect(() => {
+    const freshPlayer = players.find(p => p.id === myPlayerId);
+    if (freshPlayer) {
+      setMyCards(freshPlayer.hand || []);
+      setHead([]);
+      setMiddle([]);
+      setTail([]);
+      setSubmitted(false);
+      setIsReady(false);
+      setSubmitMsg('');
+    }
+  }, [players, myPlayerId]);
+
+  // Effect to handle showing the final results.
   useEffect(() => {
     const finalResult = players.some(p => p.score !== undefined);
     if (finalResult) {
@@ -24,7 +67,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     }
   }, [players]);
 
-  // Effect for auto-closing result modal
+  // Effect for auto-closing the result modal.
   useEffect(() => {
     if (showResult) {
       const timer = setTimeout(() => {
@@ -35,7 +78,6 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     }
   }, [showResult, onRestart]);
 
-  // AI-powered card splitting
   function handleSmartSplit() {
     const hands = SmartSplit(myCards);
     const bestHand = hands[0];
@@ -45,7 +87,6 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     setMyCards([]);
   }
 
-  // Card selection logic
   function handleCardClick(card, area) {
     if (submitted) return;
     setSelected(sel => {
@@ -56,7 +97,6 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     });
   }
 
-  // Move selected cards to a new area
   function moveTo(dest) {
     if (submitted) return;
     if (!selected.cards.length) return;
@@ -64,9 +104,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     const allHands = { hand: myCards, head, middle, tail };
     const sourceArea = selected.area;
 
-    // Remove cards from source
     allHands[sourceArea] = allHands[sourceArea].filter(c => !selected.cards.includes(c));
-    // Add cards to destination
     allHands[dest] = [...allHands[dest], ...selected.cards];
 
     setMyCards(allHands.hand);
@@ -77,7 +115,6 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     setSubmitMsg('');
   }
 
-  // Final submission to compare hands
   function handleStartCompare() {
     if (submitted) return;
     if (head.length !== 3 || middle.length !== 5 || tail.length !== 5) {
@@ -90,7 +127,6 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     }
   }
 
-  // Toggle ready state
   const handleReadyClick = () => {
     const newReadyState = !isReady;
     setIsReady(newReadyState);
@@ -114,7 +150,6 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   }
 
   function renderPaiDunCards(arr, area) {
-    // This function now only focuses on rendering, logic is handled elsewhere
     return arr.map(card => {
       const isSelected = selected.area === area && selected.cards.includes(card);
       return (
