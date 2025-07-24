@@ -298,12 +298,12 @@ function detectSixPairs(cards13) {
 function detectThreeStraight(cards13) {
   const comb3 = combinations(cards13, 3);
   for (const head of comb3) {
-    if (!isStraight(head)) continue;
+    if (!isStraightForAI(head)) continue;
     const left10 = cards13.filter(c => !head.includes(c));
     for (const mid of combinations(left10, 5)) {
-      if (!isStraight(mid)) continue;
+      if (!isStraightForAI(mid)) continue;
       const tail = left10.filter(c => !mid.includes(c));
-      if (!isStraight(tail)) continue;
+      if (!isStraightForAI(tail)) continue;
       return { head, middle: mid, tail, type: '三顺子' };
     }
   }
@@ -330,7 +330,7 @@ function detectAllSpecialSplits(cards13) {
     || detectThreeFlush(cards13)
     || null;
 }
-function isStraight(cards) {
+function isStraightForAI(cards) {
   const vals = uniq(cards.map(cardValue)).sort((a, b) => a - b);
   if (vals.length !== cards.length) return false;
   for (let i = 1; i < vals.length; ++i) if (vals[i] !== vals[i - 1] + 1) return false;
@@ -354,10 +354,10 @@ function handType(cards, area) {
     uniqVals = uniq(vals), uniqSuits = uniq(suits);
   if (cards.length === 5) {
     if (Object.values(groupBy(vals)).some(a => a.length === 4)) return "铁支";
-    if (uniqSuits.length === 1 && isStraight(cards)) return "同花顺";
+    if (uniqSuits.length === 1 && isStraightForAI(cards)) return "同花顺";
     if (Object.values(groupBy(vals)).some(a => a.length === 3) && Object.values(groupBy(vals)).some(a => a.length === 2)) return "葫芦";
     if (uniqSuits.length === 1) return "同花";
-    if (isStraight(cards)) return "顺子";
+    if (isStraightForAI(cards)) return "顺子";
     if (Object.values(groupBy(vals)).some(a => a.length === 3)) return "三条";
     if (Object.values(groupBy(vals)).filter(a => a.length === 2).length === 2) return "两对";
     if (Object.values(groupBy(vals)).some(a => a.length === 2)) return "对子";
@@ -410,7 +410,7 @@ function isSpecialType(head, mid, tail) {
   if (Object.values(cnt).filter(x => x === 2).length === 6) return true;
   const suit = c => cardSuit(c);
   if ([head, mid, tail].every(arr => arr.every(x => suit(x) === suit(arr[0])))) return true;
-  if ([head, mid, tail].every(arr => isStraight(arr))) return true;
+  if ([head, mid, tail].every(arr => isStraightForAI(arr))) return true;
   return false;
 }
 
