@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { SmartSplit } from '../game-logic/ai-logic'; // ai-logic.js 提供了 SmartSplit
-import Card from './Card'; // 引入 Card 组件
-import Hand from './Hand'; // 引入 Hand 组件
+import { SmartSplit } from '../game-logic/ai-logic';
+import Card from './Card'; 
+import Hand from './Hand'; 
 import './Play.css';
 
-// 定义牌的点数顺序，用于排序
+// 定义牌的点数和花色顺序，用于排序
 const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
 const suits = ['diamonds', 'clubs', 'hearts', 'spades'];
 
+// 卡牌排序函数
 const sortHand = (hand) => {
-  if (!hand) return [];
+  if (!hand || !Array.isArray(hand)) return [];
   return [...hand].sort((a, b) => {
     const rankComparison = ranks.indexOf(a.rank) - ranks.indexOf(b.rank);
     if (rankComparison !== 0) return rankComparison;
@@ -17,10 +18,10 @@ const sortHand = (hand) => {
   });
 };
 
+
 export default function GameBoard({ players, myPlayerId, onCompare, onRestart, onReady, onQuit }) {
   // --- Start of Final Fix ---
   // 1. Add a robust guard clause at the very beginning of the component.
-  // This checks if `players` is falsy (like undefined) or an empty array.
   if (!players || players.length === 0) {
     return (
       <div className="play-container">
@@ -32,7 +33,6 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   }
 
   // 2. Derive `myPlayer` directly from props *after* the guard clause.
-  // This code will only run if `players` is a valid, non-empty array.
   const myPlayer = players.find(p => p.id === myPlayerId);
 
   // Add another guard clause in case myPlayer is somehow not found.
@@ -47,36 +47,51 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   }
   // --- End of Final Fix ---
 
-  // State management for the component, now safely initialized.
-  const [myCards, setMyCards] = useState(myPlayer.cards13 || []); // 确保使用正确的 prop
+  const getInitialCards = () => {
+      // 在新一局开始时，如果玩家已经分好牌（head, middle, tail有内容），则手牌区为空
+      if (myPlayer.head?.length || myPlayer.middle?.length || myPlayer.tail?.length) {
+          return [];
+      }
+      return myPlayer.cards13 || myPlayer.hand || [];
+  };
+
+  // State management for the component
+  const [myCards, setMyCards] = useState(getInitialCards());
   const [selected, setSelected] = useState({ area: '', cards: [] });
-  const [head, setHead] = useState([]);
-  const [middle, setMiddle] = useState([]);
-  const [tail, setTail] = useState([]);
+  const [head, setHead] = useState(myPlayer.head || []);
+  const [middle, setMiddle] = useState(myPlayer.middle || []);
+  const [tail, setTail] = useState(myPlayer.tail || []);
   const [submitMsg, setSubmitMsg] = useState('');
   const [submitted, setSubmitted] = useState(myPlayer.submitted || false);
   const [isReady, setIsReady] = useState(myPlayer.submitted || false);
   const [showResult, setShowResult] = useState(false);
   const [resultModalData, setResultModalData] = useState(null);
 
-  // Effect to reset the board when a new hand is dealt (i.e., when players prop changes).
+  // Effect to reset the board when a new hand is dealt
   useEffect(() => {
     const freshPlayer = players.find(p => p.id === myPlayerId);
-    if (freshPlayer && freshPlayer.cards13) {
-      setMyCards(freshPlayer.cards13);
-      setHead(freshPlayer.head || []);
-      setMiddle(freshPlayer.middle || []);
-      setTail(freshPlayer.tail || []);
+    if (freshPlayer) {
+      const initialCards = (freshPlayer.head?.length || freshPlayer.middle?.length || freshPlayer.tail?.length) 
+        ? [] 
+        : (freshPlayer.cards13 || freshPlayer.hand || []);
+      
+      setMyCards(sortHand(initialCards));
+      setHead(sortHand(freshPlayer.head || []));
+      setMiddle(sortHand(freshPlayer.middle || []));
+      setTail(sortHand(freshPlayer.tail || []));
       setSubmitted(freshPlayer.submitted || false);
       setIsReady(freshPlayer.submitted || false);
       setSubmitMsg('');
+      setShowResult(false);
+      setResultModalData(null);
     }
   }, [players, myPlayerId]);
 
   // Effect to handle showing the final results.
   useEffect(() => {
+    const allSubmitted = players.every(p => p.submitted);
     const finalResult = players.some(p => p.score !== undefined);
-    if (finalResult) {
+    if (allSubmitted && finalResult) {
       setResultModalData(players);
       setShowResult(true);
     }
@@ -88,17 +103,27 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
       const timer = setTimeout(() => {
         setShowResult(false);
         if (typeof onRestart === 'function') onRestart();
-      }, 5000);
+      }, 8000); // 延长显示时间到8秒
       return () => clearTimeout(timer);
     }
   }, [showResult, onRestart]);
 
   function handleSmartSplit() {
-    const hands = SmartSplit(myCards); // ai-logic.js SmartSplit
+    // ai-logic.js SmartSplit expects string array like 'ace_of_spades'
+    const cardStrings = myCards.map(c => `${c.rank === 'T' ? '10' : c.rank.toLowerCase()}_of_${c.suit}`);
+    const hands = SmartSplit(cardStrings);
     const bestHand = hands[0];
-    setHead(bestHand.head);
-    setMiddle(bestHand.middle);
-    setTail(bestHand.tail);
+
+    // Convert back to card objects
+    const toCardObject = (cardStr) => {
+        const [rankStr, , suit] = cardStr.split('_');
+        const rank = rankStr === '10' ? 'T' : rankStr.charAt(0).toUpperCase();
+        return { rank, suit };
+    };
+    
+    setHead(sortHand(bestHand.head.map(toCardObject)));
+    setMiddle(sortHand(bestHand.middle.map(toCardObject)));
+    setTail(sortHand(bestHand.tail.map(toCardObject)));
     setMyCards([]);
   }
 
@@ -143,18 +168,20 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
       return;
     }
     setSubmitted(true);
+    setIsReady(true);
     if (typeof onCompare === 'function') {
       onCompare({ head, middle, tail });
     }
   }
 
   const handleReadyClick = () => {
-    const newReadyState = !isReady;
-    setIsReady(newReadyState);
-    if (typeof onReady === 'function') {
-      onReady(newReadyState);
+    // In offline mode, this button is less meaningful, let's keep it simple
+    if (submitted) {
+        console.log("Already submitted.");
+        return;
     }
-  }
+    handleStartCompare();
+  };
 
   // --- Render Functions ---
 
@@ -164,7 +191,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
       <div key={p.id} className={`player-seat ${isMe ? 'player-me' : ''}`}>
         <div>{p.name}</div>
         <div className={`player-status ${p.submitted ? 'ready' : ''}`}>
-          {p.submitted ? '已准备' : '未准备'}
+          {p.submitted ? '已准备' : '等待中'}
         </div>
       </div>
     );
@@ -176,8 +203,8 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
       return (
         <div 
             key={`${card.rank}_of_${card.suit}_${area}`}
-            className="card-img" // .card-img controls size and absolute position
-            style={{ '--card-index': index, zIndex: index }} // Pass index to CSS for staggering
+            className="card-wrapper-dun"
+            style={{ '--card-index': index, zIndex: index }}
         >
           <Card
             suit={card.suit}
@@ -207,7 +234,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
 
   function renderMyCards() {
     return (
-      <div className="my-cards-area" onClick={() => moveTo('hand')}>
+      <div className="my-cards-area">
         <Hand
             cards={myCards}
             selectedCards={selected.area === 'hand' ? selected.cards : []}
@@ -222,19 +249,19 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
     return (
       <div className="modal-overlay">
         <div className="modal-content">
+          <button className="modal-close-btn" onClick={() => typeof onRestart === 'function' && onRestart()}>×</button>
           {resultModalData.map(p => (
             <div key={p.id} className="result-player">
               <div className={`result-player-header ${p.id === myPlayerId ? 'me' : ''}`}>
-                {p.name}
+                <span className="player-name">{p.name}</span>
                 {p.isFoul && <span className="foul-tag"> (倒水)</span>}
-                <span> ({p.score || 0}分)</span>
+                <span className="player-score"> ({p.score || 0}分)</span>
               </div>
-              <div className="result-hand"><div className="cards-area">{renderPaiDunCards(p.head || [], 'none')}</div></div>
-              <div className="result-hand"><div className="cards-area">{renderPaiDunCards(p.middle || [], 'none')}</div></div>
-              <div className="result-hand"><div className="cards-area">{renderPaiDunCards(p.tail || [], 'none')}</div></div>
+              <div className="result-hand">{renderPaiDunCards(p.head || [], 'result')}</div>
+              <div className="result-hand">{renderPaiDunCards(p.middle || [], 'result')}</div>
+              <div className="result-hand">{renderPaiDunCards(p.tail || [], 'result')}</div>
             </div>
           ))}
-          <button className="modal-close-btn" onClick={() => typeof onRestart === 'function' && onRestart()}>×</button>
         </div>
       </div>
     );
@@ -259,14 +286,11 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
         {renderPaiDun(tail, '尾道', 'tail')}
         
         <div className="actions-area">
-          <button className={`btn-action btn-ready ${isReady ? 'cancel' : ''}`} onClick={handleReadyClick}>
-            {isReady ? '取消准备' : '准备'}
-          </button>
           <button className="btn-action btn-smart-split" onClick={handleSmartSplit} disabled={submitted || myCards.length !== 13}>
             智能分牌
           </button>
           <button className="btn-action btn-compare" onClick={handleStartCompare} disabled={submitted}>
-            开始比牌
+            {submitted ? '已准备' : '开始比牌'}
           </button>
         </div>
 
