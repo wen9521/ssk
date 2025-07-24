@@ -1,7 +1,7 @@
 import React from 'react';
 
 function Card({ suit, rank }) {
-  const cardImagePath = `/assets/cards/${rank}_of_${suit}.svg`;
+  const cardImagePath = `assets/cards/${rank}_of_${suit}.svg`;
 
   return (
     <img 
