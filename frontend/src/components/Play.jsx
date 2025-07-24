@@ -4,57 +4,27 @@ import GameBoard from './GameBoard';
 import { useGameStore, STAGES } from '../utils/store';
 import { createDeck, shuffleDeck } from '../game-logic/deck';
 
-// The new, simplified, HTTP-based Play component
 export default function Play() {
   const navigate = useNavigate();
-  // Get state and actions from our central store
-  const { stage, players, myCards, setStage, dealNewRound, setFinalResults } = useGameStore();
+  const { stage, players, setStage, dealNewRound, setFinalResults, updatePlayerStatus } = useGameStore();
 
-  // On component mount, create a deck and deal cards to players
   useEffect(() => {
-    const deck = createDeck();
-    const shuffled = shuffleDeck(deck);
-    
-    // Distribute cards to 4 players (13 each)
-    const hands = [
-      shuffled.slice(0, 13),
-      shuffled.slice(13, 26),
-      shuffled.slice(26, 39),
-      shuffled.slice(39, 52),
-    ];
-    dealNewRound(hands);
-  }, [dealNewRound]);
+    // Start a new round as soon as the component mounts
+    handlePlayAgain();
+  }, []); // We can remove dealNewRound from dependencies if handlePlayAgain covers it
 
-  /**
-   * This is the core function that communicates with our backend.
-   * @param {object} mySortedHand - { head: [...], middle: [...], tail: [...] }
-   */
   const handleSubmit = async (mySortedHand) => {
     setStage(STAGES.SUBMITTED);
-    console.log('Submitting my hand:', mySortedHand);
-
-    // 1. Prepare the payload for the backend API
+    
     const payload = players.map(player => {
-      if (player.id === 'player1') { // This is us
+      if (player.id === 'player1') {
         return { id: player.id, hands: mySortedHand };
-      } else {
-        // For computer players, just split their cards naively for now.
-        // In a real game, this could be a more complex AI choice.
-        return {
-          id: player.id,
-          hands: {
-            head: player.cards.slice(0, 3),
-            middle: player.cards.slice(3, 8),
-            tail: player.cards.slice(8, 13),
-          },
-        };
       }
+      // For AI/opponents, send their full hand for backend processing
+      return { id: player.id, cards: player.cards };
     });
 
-    console.log('Sending to backend:', JSON.stringify(payload, null, 2));
-
     try {
-      // 2. Call the backend API
       const response = await fetch('/api/v1/thirteen-water/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -67,20 +37,15 @@ export default function Play() {
       }
 
       const results = await response.json();
-      console.log('Received results from backend:', results);
-      
-      // 3. Update the central store with the authoritative results
       setFinalResults(results);
 
     } catch (error) {
       console.error('Error submitting hand:', error);
-      // Optional: Revert stage to 'PLAYING' to allow user to try again
       setStage(STAGES.PLAYING); 
     }
   };
 
   const handlePlayAgain = () => {
-    // Simply dealing a new round will reset the game state via the store's logic
     const deck = createDeck();
     const shuffled = shuffleDeck(deck);
     const hands = [
@@ -93,26 +58,28 @@ export default function Play() {
   };
 
   const handleReady = (isReady) => {
-    // In a real multiplayer game, this would send a message to the server.
-    // For now, we'll just update the local state.
-    console.log(`Player is ${isReady ? 'ready' : 'not ready'}`);
-    
+    updatePlayerStatus('player1', { submitted: isReady });
+    // In a real multiplayer game, this would also emit an event to the server
+    console.log(`Player ${'player1'} is ${isReady ? 'ready' : 'not ready'}`);
   };
 
   const handleQuit = () => {
     navigate('/');
   };
 
+  // Ensure players array is not empty before rendering
+  if (players.length === 0) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <GameBoard
-      player={players.find(p => p.id === 'player1')}
-      opponent={players.find(p => p.id !== 'player1')}
+      players={players}
+      myPlayerId="player1"
       onCompare={handleSubmit}
       onRestart={handlePlayAgain}
       onReady={handleReady}
       onQuit={handleQuit}
-      message={stage}
-      result={stage === STAGES.FINISHED ? players : null}
     />
   );
 }
