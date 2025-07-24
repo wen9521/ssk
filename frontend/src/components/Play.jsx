@@ -68,7 +68,7 @@ export default function Play() {
   };
 
   // Ensure players array is not empty before rendering
-  if (players.length === 0) {
+  if (!players || players.length === 0) {
     return <div>Loading...</div>;
   }
 
