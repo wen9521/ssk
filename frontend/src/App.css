@@ -1,4 +1,4 @@
-/* frontend/src/App.css (全新科技感主题 - 终极版) */
+/* frontend/src/App.css (全新科技感主题 - 终极修正版) */
 
 /* --- 变量定义 --- */
 :root {
@@ -9,43 +9,41 @@
   --surface-border: rgba(0, 229, 255, 0.25);
   --text-color: #c0c8ff;
   --text-bright: #ffffff;
-  --font-family: 'Orbitron', sans-serif; /* 引入科技感字体 */
+  --font-family: 'Orbitron', sans-serif;
 }
 
 /* 引入外部字体 */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
-/* --- 动态粒子背景 --- */
-@keyframes move-particles {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(var(--x), var(--y)); }
-}
-
-.particle {
-  position: absolute;
-  border-radius: 50%;
-  background: var(--primary-glow);
-  animation: move-particles 20s linear infinite;
-}
-
+/* --- 基础 Body 样式 --- */
 body {
   margin: 0;
   font-family: var(--font-family), sans-serif;
   background-color: var(--bg-color);
-  background-image: radial-gradient(circle at 20% 20%, rgba(78, 84, 200, 0.3), transparent 40%),
-                    radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.2), transparent 40%);
   color: var(--text-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  padding: 20px;
-  box-sizing: border-box;
-  overflow: hidden;
-  position: relative;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-body::before { /* 添加一层静态网格 */
+/* --- 扫描线与网格背景 (应用到专用div) --- */
+@keyframes scanline {
+  0% { transform: translateY(-10%); }
+  100% { transform: translateY(10%); }
+}
+
+#app-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1; /* 确保在所有内容的底层 */
+  background-image: radial-gradient(circle at 20% 20%, rgba(78, 84, 200, 0.3), transparent 40%),
+                    radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.2), transparent 40%);
+  overflow: hidden;
+}
+
+#app-background::before { /* 网格 */
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -53,9 +51,17 @@ body::before { /* 添加一层静态网格 */
     linear-gradient(rgba(0, 229, 255, 0.07) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 229, 255, 0.07) 1px, transparent 1px);
   background-size: 30px 30px;
-  z-index: -1;
+  z-index: -3;
 }
 
+#app-background::after { /* 扫描线 */
+  content: '';
+  position: absolute;
+  top: -50%; left: 0; right: 0; bottom: -50%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0) 100%);
+  animation: scanline 10s linear infinite;
+  z-index: -2;
+}
 
 /* --- App 容器通用样式 --- */
 .app-container {
@@ -74,8 +80,6 @@ body::before { /* 添加一层静态网格 */
   gap: 30px;
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
-  position: relative;
-  z-index: 1;
 }
 
 /* --- 标题样式 --- */
@@ -87,7 +91,7 @@ body::before { /* 添加一层静态网格 */
 h1 {
   color: var(--text-bright);
   margin: 0 0 20px 0;
-  font-size: clamp(2.8em, 8vw, 4em);
+  font-size: clamp(2.5em, 8vw, 3.8em);
   font-weight: 900;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -113,7 +117,7 @@ h1::after { content: ']'; right: 0; }
 h2 {
   color: var(--text-bright);
   margin-bottom: 15px;
-  font-size: clamp(2em, 7vw, 2.8em);
+  font-size: clamp(1.8em, 6vw, 2.5em);
   font-weight: 700;
   text-shadow: 0 0 12px var(--primary-glow);
 }
@@ -244,12 +248,13 @@ h2 {
 
 .game-section .btn.btn-primary {
   border-width: 2px; font-size: 1.1em;
-  padding: 12px 30px;
+  padding: 12px 25px;
 }
 .thirteen-cards-section .btn.btn-primary { border-color: white; color: white; box-shadow: none; text-shadow: none; }
 .eight-cards-section .btn.btn-primary { border-color: white; color: white; box-shadow: none; text-shadow: none; }
 .thirteen-cards-section .btn.btn-primary:hover { background-color: var(--secondary-glow); color: var(--bg-color); border-color: var(--secondary-glow); }
 .eight-cards-section .btn.btn-primary:hover { background-color: var(--primary-glow); color: var(--bg-color); border-color: var(--primary-glow); }
+
 
 /* --- "Coming Soon" 页面特定样式 --- */
 .coming-soon p { font-size: 1.2em; margin-bottom: 25px; opacity: 0.8; }
