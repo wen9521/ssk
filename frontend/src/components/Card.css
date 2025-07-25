@@ -1,8 +1,7 @@
-/* frontend/src/components/Card.css (图片卡牌样式) */
-
+/* src/components/Card.css */
 .card-container {
   width: var(--card-width, 60px);
-  aspect-ratio: 0.7; /* 调整为更接近标准扑克牌的比例 */
+  aspect-ratio: 0.7;
   position: relative;
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
   border-radius: 6px;
@@ -15,13 +14,13 @@
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* 保证图片填满容器 */
-  background-color: #fff; /* 为透明SVG提供白色背景 */
+  object-fit: cover;
+  background-color: #fff;
 }
 
 .card-container.is-selected {
   transform: translateY(-15px) scale(1.05);
-  box-shadow: 0 0 15px 5px var(--accent-orange); /* 橙色高亮 */
+  box-shadow: 0 0 15px 5px rgba(243, 156, 18, 0.7);
   z-index: 100 !important;
 }
 
