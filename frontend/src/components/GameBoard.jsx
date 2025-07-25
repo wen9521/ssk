@@ -1,8 +1,9 @@
-// src/components/GameBoard.jsx
+// src/components/GameBoard.jsx (究极简化版 - 用于测试构建)
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import { STAGES, useGameStore } from '../utils/store';
 
+// 内部排序函数
 const ranks = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
 const suits = ['diamonds','clubs','hearts','spades'];
 const sortHandInternal = (hand) => {
@@ -22,9 +23,11 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
   const [selectedCards, setSelectedCards] = useState([]);
   const [draggedCards, setDraggedCards] = useState(null);
   const [dragOverArea, setDragOverArea] = useState(null);
-  const [showResult, setShowResult] = useState(false);
+  // const [showResult, setShowResult] = useState(false); // 暂时禁用
 
   useEffect(() => {
+    // 暂时禁用结果显示逻辑
+    /*
     if (stage === STAGES.FINISHED) {
       setShowResult(true);
       const timer = setTimeout(() => {
@@ -35,6 +38,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     } else {
       setShowResult(false);
     }
+    */
   }, [stage, onRestart]);
 
   useEffect(() => {
@@ -136,57 +140,15 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     </div>
   );
   
+  // ==========================================================
+  //  ↓↓↓  将整个 renderResultModal 函数注释掉  ↓↓↓
+  // ==========================================================
+  /*
   const renderResultModal = () => {
-    if (!showResult || !players.some(p => p.score != null)) return null;
-
-    const renderResultPile = (cards, score, rank, areaName) => (
-      <div className="result-hand">
-        <div className="hand-score">{rank} (得分: {score || 0})</div>
-        <div className="hand-cards-display">
-          {(cards || []).map((card, i) => (
-            <div key={`${card.rank}_${card.suit}_${areaName}_${i}`} className="card-wrapper-dun">
-              <Card card={card} />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-
-    return (
-      <div className="modal-overlay" onClick={onRestart}>
-        <div className="modal-content" onClick={e => e.stopPropagation()}>
-          <button className="modal-close-btn" onClick={onRestart}>×</button>
-          <h2>对局结果</h2>
-          {players.map(p => (
-            <div key={p.id} className="result-player">
-              <div className={`result-player-header ${p.id === myPlayerId ? 'me' : ''}`}>
-                <span className="player-name">{p.name}</span>
-                {p.isFoul && <span className="foul-tag">(倒水)</span>}
-                <span className="player-score" data-positive={p.score > 0}>
-                  总分: {p.score > 0 ? '+' : ''}{p.score || 0}
-                </span>
-              </div>
-              {p.handDetails && (
-                <>
-                  {renderResultPile(p.head, p.handDetails.head.score, p.handDetails.head.rank, 'head')}
-                  {renderResultPile(p.middle, p.handDetails.middle.score, p.handDetails.middle.rank, 'middle')}
-                  {renderResultPile(p.tail, p.handDetails.tail.score, p.handDetails.tail.rank, 'tail')}
-                </>
-              )}
-            </div>
-          ))}
-          <button 
-            className="btn-action" 
-            data-type="smart" 
-            onClick={onRestart} 
-            style={{gridColumn: '1 / -1', marginTop: '20px'}}
-          >
-            再来一局
-          </button>
-        </div>
-      </div>
-    );
+    // ...函数体...
   };
+  */
+  // ==========================================================
 
   if (!me) return <div>加载中...</div>;
 
@@ -236,7 +198,8 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
           </button>
         </div>
         
-        {renderResultModal()}
+        {/* 暂时不渲染结果弹窗 */}
+        {/* {renderResultModal()} */}
       </div>
     </div>
   );
