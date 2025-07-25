@@ -241,23 +241,19 @@ function cardValue(card) {
   }
   
   function scoreSplit(head, mid, tail) {
-    // 新增头道对子/三条奖励，优先不拆葫芦/顺子/三条
     let sHead = evalHead(head), sMid = evalTail(mid), sTail = evalTail(tail);
     let score = sTail * 1.9 + sMid * 1.1 + sHead * 1.0;
     if (handTypeForAI(head, 'head') === '三条') score += 90;
     if (handTypeForAI(head, 'head') === '对子') score += 28;
-    // 中道葫芦/顺子/同花奖励
     if (['葫芦', '顺子', '同花'].includes(handTypeForAI(mid, 'middle'))) score += 18;
     return score;
   }
   
   // ==== 核心导出：同花顺必做尾道 + 全局最优 ====
   export function getSmartSplits(cards13, opts = {}) {
-    // 1. 特殊牌型优先
     const special = detectAllSpecialSplits(cards13);
     if (special) return [special];
   
-    // 2. 有同花顺，必做尾道
     for (const tail of combinations(cards13, 5)) {
       if (handTypeForAI(tail, 'tail') === '同花顺') {
         const left8 = cards13.filter(c => !tail.includes(c));
@@ -273,12 +269,10 @@ function cardValue(card) {
           }
         }
         if (best) return [best];
-        // 若所有拆法都倒水则继续全局最优法兜底
         break;
       }
     }
   
-    // 3. 全局最优候选法
     let bestSplit = null, bestScore = -Infinity;
     const tailComb = combinations(cards13, 5)
       .map(tail => ({ tail, score: evalTail(tail) }))
@@ -308,7 +302,6 @@ function cardValue(card) {
       }
     }
     if (bestSplit) return [bestSplit];
-    // 4. 兜底均匀分配
     return [balancedSplit(cards13)];
   }
   
@@ -320,10 +313,11 @@ function cardValue(card) {
   export function fillAiPlayers(playersArr) {
     return playersArr.map(p =>
       p.isAI && Array.isArray(p.cards13) && p.cards13.length === 13
-        ? { ...p, ...aiSmartSplit(p.cards13) }
+        // --- 核心修正 ---
+        // 错误地调用了 aiSmartSplit，应改为 SmartSplit
+        ? { ...p, ...SmartSplit(p.cards13)[0] } 
         : p
     );
   }
   
   export { isFoul as isFoulForAI };
-  
