@@ -14,7 +14,7 @@ const Card = React.memo(({
   }
   const imageName = cardToImageName(card);
   const displayName = cardToDisplayName(card);
-  const imageUrl = `/assets/cards/${imageName}`;
+  const imageUrl = `assets/cards/${imageName}`;
   const containerClasses = ['card-container', isSelected ? 'is-selected' : '', isDragging ? 'is-dragging' : ''].join(' ').trim();
   return (
     <div className={containerClasses} onClick={onClick}>
