@@ -1,12 +1,13 @@
-/* frontend/src/components/Card.css */
+/* frontend/src/components/Card.css (全新科技感主题) */
 
 .card {
   width: clamp(50px, 18vw, 80px);
   height: clamp(70px, 25.2vw, 112px);
   perspective: 1000px;
-  cursor: pointer; /* 改回 pointer */
+  cursor: pointer;
   position: relative;
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
 }
 
 .card-inner {
@@ -16,18 +17,21 @@
   transform-style: preserve-3d;
   border-radius: 8px;
   overflow: hidden;
-  border: none;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
 }
 
 .card.selected .card-inner {
-  transform: translateY(-10px) scale(1.05);
-  box-shadow: 0 6px 15px rgba(0, 229, 255, 0.6);
+  transform: translateY(-12px) scale(1.08);
+  border-color: var(--primary-glow);
+  box-shadow: 0 8px 30px rgba(0, 229, 255, 0.4);
 }
 
-.card.dragging {
-    opacity: 0.5;
-    transform: scale(0.9);
+.card.dragging .card-inner {
+  opacity: 0.6;
+  transform: scale(0.95);
+  box-shadow: 0 0 25px var(--primary-glow);
 }
 
 .card-front, .card-back {
@@ -37,7 +41,27 @@
   backface-visibility: hidden;
 }
 
-.card-front { background-color: #fff; }
-.card-back { background-color: #f2f2f2; transform: rotateY(180deg); }
-.card-face-img { width: 100%; height: 100%; display: block; }
-.card-back-pattern { width: 100%; height: 100%; background-image: repeating-linear-gradient(45deg, #606dbc, #606dbc 10px, #465298 10px, #465298 20px); }
+.card-front {
+  background-color: #0c0d2e;
+}
+.card-back {
+  background-color: #f2f2f2;
+  transform: rotateY(180deg);
+}
+.card-face-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: saturate(1.1); /* 稍微增加饱和度 */
+}
+.card-back-pattern {
+  width: 100%;
+  height: 100%;
+  background-image: repeating-linear-gradient(
+    45deg,
+    #1d2b64,
+    #1d2b64 10px,
+    #4e54c8 10px,
+    #4e54c8 20px
+  );
+}
