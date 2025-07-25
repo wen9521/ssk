@@ -213,10 +213,14 @@ function getUniqueCardsByRank(cards) {
 
 function getRanksByCount(counts, count) {
     return Object.keys(counts)
-        .filter(rank => counts[rank] >= count)mekashi
+        .filter(rank => counts[rank] >= count)
+        .sort((a, b) => valueMap[a] - valueMap[b]);
+}
 
-print(default_api.read_file(path="frontend/src/game-logic/doudizhu.rules.js"))
-print(default_api.read_file(path="frontend/src/utils/doudizhu.store.js"))
-print(default_api.read_file(path="frontend/src/components/doudizhu/DoudizhuBoard.jsx"))
-print(default_api.read_file(path="frontend/src/components/doudizhu/DoudizhuPlay.jsx"))
-mekashi
+function isContinuous(values) {
+    if (values.length < 2 || values.some(v => v >= valueMap['2'])) return false;
+    for (let i = 0; i < values.length - 1; i++) {
+        if (values[i + 1] - values[i] !== 1) return false;
+    }
+    return true;
+}
