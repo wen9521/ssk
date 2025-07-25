@@ -3,7 +3,6 @@ import { create } from 'zustand';
 import { produce } from 'immer';
 import { createDeck, shuffleDeck, dealCards } from '@/game-logic/deck';
 import { SmartSplit } from '@/game-logic/ai-logic';
-// 1. 导入新的规则文件
 import { calcSSSAllScores, isFoul } from '@/game-logic/thirteen-water-rules';
 
 export const STAGES = {
@@ -37,13 +36,12 @@ const toHandStrings = (hand) => ({
 });
 
 const useGameStore = create((set, get) => ({
-  // ... (初始状态不变) ...
   stage: STAGES.LOBBY,
   players: [
-    { id: 'player1', name: '你', submitted: false, isReady: false, points: 100, isFoul: false },
-    { id: 'player2', name: '小明', submitted: false, isReady: true, points: 100, isAI: true },
-    { id: 'player3', name: '小红', submitted: false, isReady: true, points: 100, isAI: true },
-    { id: 'player4', name: '小刚', submitted: false, isReady: true, points: 100, isAI: true },
+    { id: 'player1', name: '你', submitted: false, isReady: false, points: 100, isFoul: false, head: [], middle: [], tail: [] },
+    { id: 'player2', name: '小明', submitted: false, isReady: true, points: 100, isAI: true, head: [], middle: [], tail: [] },
+    { id: 'player3', name: '小红', submitted: false, isReady: true, points: 100, isAI: true, head: [], middle: [], tail: [] },
+    { id: 'player4', name: '小刚', submitted: false, isReady: true, points: 100, isAI: true, head: [], middle: [], tail: [] },
   ],
 
   resetRound: () => set(produce(state => {
@@ -61,7 +59,6 @@ const useGameStore = create((set, get) => ({
   })),
   
   startGame: () => {
-    // ... (此函数不变) ...
     set({ stage: STAGES.DEALING });
     setTimeout(() => {
       const deck = createDeck();
@@ -71,18 +68,21 @@ const useGameStore = create((set, get) => ({
         state.players.forEach((player, index) => {
             const playerHandObjects = hands[index];
             if (player.isAI) {
+                // AI 自动理牌并提交
                 const playerHandStrings = playerHandObjects.map(toCardString);
                 const splitResult = SmartSplit(playerHandStrings)[0];
                 player.head = splitResult.head.map(toCardObject).filter(Boolean);
                 player.middle = splitResult.middle.map(toCardObject).filter(Boolean);
                 player.tail = splitResult.tail.map(toCardObject).filter(Boolean);
+                player.isFoul = isFoul(splitResult.head, splitResult.middle, splitResult.tail);
+                player.submitted = true; // AI 默认直接提交
             } else {
-                // 将所有牌默认放入尾道，让玩家自己理牌
+                // 核心修复：将所有13张牌放在玩家的尾道，让玩家自己理牌
                 player.head = [];
                 player.middle = [];
                 player.tail = playerHandObjects;
+                player.isFoul = true; // 初始状态牌数不对，肯定是倒水
             }
-            player.isFoul = true; // 初始状态牌数不对，肯定是倒水
         });
         state.stage = STAGES.PLAYING;
       }));
@@ -100,7 +100,6 @@ const useGameStore = create((set, get) => ({
     }
   })),
 
-  // 2. 增强 updatePlayerHands
   updatePlayerHands: (playerId, newHands) => set(produce(state => {
     const player = state.players.find(p => p.id === playerId);
     if (player) {
@@ -108,15 +107,20 @@ const useGameStore = create((set, get) => ({
       player.middle = newHands.middle;
       player.tail = newHands.tail;
       const handStrings = toHandStrings(newHands);
-      // 使用新的 isFoul 函数进行实时判断
       player.isFoul = isFoul(handStrings.head, handStrings.middle, handStrings.tail);
     }
   })),
   
   autoSplitForPlayer: (playerId) => set(produce(state => {
       const player = state.players.find(p => p.id === playerId);
-      if (player && player.head && player.middle && player.tail) {
-        const allCards = [ ...player.head, ...player.middle, ...player.tail ].map(toCardString);
+      if (player) {
+        // 合并所有牌墩的牌
+        const allCards = [
+          ...(player.head || []),
+          ...(player.middle || []),
+          ...(player.tail || [])
+        ].map(toCardString);
+
         if (allCards.length === 13) {
             const splitResult = SmartSplit(allCards)[0];
             if (splitResult) {
@@ -129,7 +133,6 @@ const useGameStore = create((set, get) => ({
       }
   })),
 
-  // 3. 增强 submitHands
   submitHands: () => {
     const { players } = get();
     const me = players.find(p => p.id === 'player1');
@@ -137,38 +140,36 @@ const useGameStore = create((set, get) => ({
       if (!window.confirm("当前牌型为倒水，确定要提交吗？")) return;
     }
 
+    // 标记玩家已提交
     set(produce(state => {
         const player = state.players.find(p => p.id === 'player1');
-        player.submitted = true;
+        if (player) player.submitted = true;
     }));
 
-    set({ stage: STAGES.SUBMITTING });
-    
-    // AI 玩家自动提交
-    set(produce(state => {
-      state.players.forEach(p => {
-        if(p.isAI) p.submitted = true;
-      });
-    }));
-
-    setTimeout(() => {
-      const handsForScoring = players.map(p => ({
-        ...toHandStrings(p),
-        isFoul: p.isFoul
-      }));
-      const scoresArray = calcSSSAllScores(handsForScoring);
-      set(produce(state => {
-        state.players.forEach((p, index) => {
-          if (scoresArray[index]) {
-            const resultData = scoresArray[index];
-            p.score = resultData.totalScore;
-            p.points += resultData.totalScore;
-            p.handDetails = resultData.details;
-          }
-        });
-        state.stage = STAGES.FINISHED;
-      }));
-    }, 1500);
+    // 检查是否所有玩家都已提交
+    const allSubmitted = get().players.every(p => p.submitted);
+    if (allSubmitted) {
+        set({ stage: STAGES.SUBMITTING });
+        // 延迟一段时间进行结算，模拟比牌过程
+        setTimeout(() => {
+          const handsForScoring = get().players.map(p => ({
+            ...toHandStrings(p),
+            isFoul: p.isFoul
+          }));
+          const scoresArray = calcSSSAllScores(handsForScoring);
+          set(produce(state => {
+            state.players.forEach((p, index) => {
+              if (scoresArray[index]) {
+                const resultData = scoresArray[index];
+                p.score = resultData.totalScore;
+                p.points += resultData.totalScore;
+                p.handDetails = resultData.details;
+              }
+            });
+            state.stage = STAGES.FINISHED;
+          }));
+        }, 1500);
+    }
   },
 }));
 
