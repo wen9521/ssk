@@ -1,40 +1,41 @@
-/* frontend/src/components/Card.css (变形金刚风格重构 V2) */
+/* frontend/src/components/Card.css (能量数据板风格 V3) */
 .card-container {
   width: var(--card-width);
   aspect-ratio: var(--card-aspect-ratio);
   position: relative;
   transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
   will-change: transform;
-  transform-style: preserve-3d;
-  perspective: 1000px;
+  cursor: pointer;
 }
 
-.card-border {
+.card-border-outer {
   position: absolute;
   inset: 0;
-  border-radius: 6px;
-  background: linear-gradient(160deg, #2a3a5f 0%, #1a223f 50%, #0a101f 100%);
-  border: 1px solid rgba(192, 200, 255, 0.3);
-  overflow: hidden;
-  box-shadow: inset 0 0 5px rgba(0,0,0,0.5), 0 2px 5px rgba(0,0,0,0.4);
-  transform: rotateY(0deg);
+  border-radius: 8px;
+  padding: 2px;
+  background: linear-gradient(145deg, rgba(127, 199, 255, 0.5), rgba(169, 65, 255, 0.5));
   transition: all 0.3s ease;
+}
+
+.card-border-inner {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(160deg, #1e2a4a 0%, #0d1226 100%);
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
 }
 
 .card-glow {
   position: absolute;
-  inset: -1px;
-  border-radius: 6px;
-  box-shadow: 0 0 0 0 transparent;
-  transition: box-shadow 0.3s ease;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(0, 229, 255, 0.15), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.card-container:hover .card-border {
-  transform: translateY(-5px) rotateY(10deg) scale(1.05);
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.5);
-}
 .card-container:hover .card-glow {
-  box-shadow: 0 0 15px var(--autobot-glow);
+  opacity: 1;
 }
 
 .card-content {
@@ -48,50 +49,45 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: clamp(16px, 4vw, 20px);
-  font-weight: 900;
+  font-size: clamp(14px, 4vw, 18px);
+  font-weight: 700;
   line-height: 1;
-  text-shadow: 0 0 8px currentColor, 0 0 12px currentColor;
+  text-shadow: 0 0 5px currentColor;
 }
-.top-left { top: 6px; left: 8px; }
-.bottom-right { bottom: 6px; right: 8px; transform: rotate(180deg); }
+
+.top-left { top: 6px; left: 7px; }
+.bottom-right { bottom: 6px; right: 7px; transform: rotate(180deg); }
 
 .suit-icon-small {
-  width: 0.7em;
-  height: 0.7em;
-  margin-top: 3px;
-  filter: drop-shadow(0 0 3px currentColor);
+  width: 0.8em;
+  height: 0.8em;
+  margin-top: 2px;
 }
 
 .card-center-suit {
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  opacity: 0.8;
+  opacity: 0.3;
+  width: 60%;
 }
-
 .card-center-suit .suit-icon-large {
-    width: clamp(35px, 10vw, 50px);
-    height: clamp(35px, 10vw, 50px);
-    filter: drop-shadow(0 0 12px currentColor);
-    opacity: 0.2;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 10px currentColor);
 }
 
 /* --- 交互状态 --- */
 .card-container.is-selected {
-  transform: translateY(-25px) scale(1.15);
-  box-shadow: 0 0 25px var(--action-glow);
+  transform: translateY(-20px) scale(1.1);
+  box-shadow: 0 0 25px var(--action-primary);
   z-index: 100 !important;
 }
-.card-container.is-selected .card-border {
-  border-color: var(--action-glow);
-  background: linear-gradient(160deg, #4d546a 0%, #303752 50%, #1d2338 100%);
-}
-.card-container.is-selected .card-glow {
-  box-shadow: 0 0 20px var(--action-glow);
+.card-container.is-selected .card-border-outer {
+  background: linear-gradient(145deg, var(--action-primary), var(--action-secondary));
 }
 
 .card-container.is-dragging {
-  opacity: 0.4;
-  transform: scale(0.9) rotateZ(5deg);
+  opacity: 0.5;
+  transform: scale(0.9) rotate(3deg);
 }
