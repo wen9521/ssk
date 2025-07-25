@@ -1,8 +1,8 @@
-// src/components/GameBoard.jsx
+// src/components/GameBoard.jsx (兼容性与健壮性最终版)
+
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
-import { STAGES } from '../utils/store';
-import { useGameStore } from '../utils/store'; // 引入 autoSplit action
+import { STAGES, useGameStore } from '../utils/store';
 
 // 内部排序函数
 const ranks = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
@@ -19,7 +19,7 @@ const sortHandInternal = (hand) => {
 
 export default function GameBoard({ players, myPlayerId, stage, onReady, onCompare, onRestart, onQuit, onUpdateHands }) {
   const me = players.find(p => p.id === myPlayerId);
-  const autoSplitForPlayer = useGameStore(state => state.autoSplitForPlayer); // 获取智能理牌action
+  const autoSplitForPlayer = useGameStore(state => state.autoSplitForPlayer);
 
   const [selectedCards, setSelectedCards] = useState([]);
   const [draggedCards, setDraggedCards] = useState(null);
@@ -49,6 +49,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     if (stage !== STAGES.PLAYING || !me) return;
     const cardId = `${card.rank}_${card.suit}`;
     const isSelected = selectedCards.some(c => c.id === cardId);
+
     if (event.shiftKey) {
       setSelectedCards(prev => isSelected ? prev.filter(c => c.id !== cardId) : [...prev, { ...card, area, id: cardId }]);
     } else {
@@ -61,7 +62,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     const cardId = `${card.rank}_${card.suit}`;
     let cardsToDrag = selectedCards.some(c => c.id === cardId) ? selectedCards : [{ ...card, area, id: cardId }];
     if (!selectedCards.some(c => c.id === cardId)) {
-        setSelectedCards(cardsToDrag);
+      setSelectedCards(cardsToDrag);
     }
     setDraggedCards(cardsToDrag);
     e.dataTransfer.setData("text/plain", JSON.stringify(cardsToDrag));
@@ -74,7 +75,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     const draggedData = JSON.parse(e.dataTransfer.getData("text/plain"));
     
     let hands = { head: [...me.head], middle: [...me.middle], tail: [...me.tail] };
-
+    
     draggedData.forEach(dragged => {
       for (const areaName in hands) {
         hands[areaName] = hands[areaName].filter(c => !(c.rank === dragged.rank && c.suit === dragged.suit));
@@ -84,12 +85,12 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     draggedData.forEach(dragged => {
       hands[toArea].push({ rank: dragged.rank, suit: dragged.suit });
     });
-
+    
     hands.head = sortHandInternal(hands.head);
     hands.middle = sortHandInternal(hands.middle);
     hands.tail = sortHandInternal(hands.tail);
 
-    onUpdateHands(myPlayerId, hands); // 确保传递 playerId
+    onUpdateHands(myPlayerId, hands);
     setSelectedCards([]);
     setDraggedCards(null);
   };
@@ -117,7 +118,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
           const isDragging = draggedCards?.some(c => c.id === cardId) ?? false;
           return (
             <div
-              key={cardId + '_' + area + i}
+              key={`${cardId}_${area}_${i}`} // 使用更唯一的key
               className="card-wrapper-dun"
               style={{ zIndex: isSelected ? 100 + i : i }}
               draggable="true"
@@ -138,7 +139,57 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     </div>
   );
   
-  const renderResultModal = () => { /* 实现保持不变 */ };
+  const renderResultModal = () => {
+    if (!showResult || !players.some(p => p.score != null)) return null;
+
+    const renderResultPile = (cards, score, rank, areaName) => (
+      <div className="result-hand">
+        <div className="hand-score">{rank} (得分: {score || 0})</div>
+        <div className="hand-cards-display">
+          {(cards || []).map((card, i) => (
+            <div key={`${card.rank}_${card.suit}_${areaName}_${i}`} className="card-wrapper-dun">
+              <Card card={card} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+    return (
+      <div className="modal-overlay" onClick={onRestart}>
+        <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <button className="modal-close-btn" onClick={onRestart}>×</button>
+          <h2>对局结果</h2>
+          {players.map(p => (
+            <div key={p.id} className="result-player">
+              <div className={`result-player-header ${p.id === myPlayerId ? 'me' : ''}`}>
+                <span className="player-name">{p.name}</span>
+                {p.isFoul && <span className="foul-tag">(倒水)</span>}
+                <span className="player-score" data-positive={p.score > 0}>
+                  总分: {p.score > 0 ? '+' : ''}{p.score || 0}
+                </span>
+              </div>
+              {p.handDetails && (
+                <>
+                  {renderResultPile(p.head, p.handDetails.head.score, p.handDetails.head.rank, 'head')}
+                  {renderResultPile(p.middle, p.handDetails.middle.score, p.handDetails.middle.rank, 'middle')}
+                  {renderResultPile(p.tail, p.handDetails.tail.score, p.handDetails.tail.rank, 'tail')}
+                </>
+              )}
+            </div>
+          ))}
+          <button 
+            className="btn-action" 
+            data-type="smart" 
+            onClick={onRestart} 
+            style={{gridColumn: '1 / -1', marginTop: '20px'}}
+          >
+            再来一局
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   if (!me) return <div>加载中...</div>;
 
