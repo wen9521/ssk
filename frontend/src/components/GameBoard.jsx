@@ -137,7 +137,9 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     </div>
   );
   
-  // --- 完整的结果弹窗函数 ---
+  // ==========================================================
+  //  ↓↓↓ 完整的 renderResultModal 函数 ↓↓↓
+  // ==========================================================
   const renderResultModal = () => {
     if (!showResult || !players.some(p => p.score != null)) return null;
 
@@ -189,6 +191,9 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
       </div>
     );
   };
+  // ==========================================================
+  //  ↑↑↑ 完整的 renderResultModal 函数 ↑↑↑
+  // ==========================================================
 
   if (!me) return <div>加载中...</div>;
 
