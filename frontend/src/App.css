@@ -1,6 +1,4 @@
-/* src/App.css (最终融合修复版) */
-
-/* --- App 容器通用样式 (用于子菜单等) --- */
+/* src/App.css */
 #root .app-container {
   background: var(--surface-bg);
   border: 1px solid var(--surface-border);
@@ -18,10 +16,7 @@
   gap: 20px;
   clip-path: polygon(0 20px, 20px 0, calc(100% - 20px) 0, 100% 20px, 100% calc(100% - 20px), calc(100% - 20px) 100%, 20px 100%, 0 calc(100% - 20px));
 }
-
-/* --- 主界面 Lobby 的特殊样式 --- */
 #root .lobby-container {
-  /* 关键修复：恢复透明背景和正确的垂直居中布局 */
   background: none;
   border: none;
   box-shadow: none;
@@ -35,12 +30,10 @@
   align-items: center;
   justify-content: center;
 }
-
 @keyframes title-glow {
   0%, 100% { text-shadow: 0 0 10px #fff, 0 0 20px var(--autobot-primary), 0 0 40px var(--autobot-primary); }
   50% { text-shadow: 0 0 15px #fff, 0 0 30px var(--autobot-primary), 0 0 50px var(--autobot-primary); }
 }
-
 #root .lobby-container h1 {
   font-family: var(--font-family-title);
   font-weight: 900;
@@ -50,8 +43,6 @@
   text-transform: uppercase;
   animation: title-glow 3s infinite linear;
 }
-
-/* 游戏选项卡样式 */
 #root .game-section {
   width: 100%;
   max-width: 400px;
@@ -68,11 +59,9 @@
   gap: 20px;
   transition: all 0.3s ease;
 }
-
 #root .game-section:hover {
   transform: translateY(-8px) scale(1.03);
 }
-
 #root .game-section h2 {
   font-family: var(--font-family-title);
   font-weight: 700;
@@ -80,10 +69,44 @@
   margin: 0;
   color: var(--text-bright);
 }
-
-/* 不同游戏入口的颜色 */
 #root .thirteen-cards-section { border-color: var(--autobot-primary); }
-#root .thirteen-cards-section:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--autobot-primary); }mekashi
-
-print(default_api.read_file(path="frontend/src/utils/doudizhu.store.js"))
-mekashi
+#root .thirteen-cards-section:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--autobot-primary); }
+#root .thirteen-cards-section h2 { text-shadow: 0 0 10px var(--autobot-primary); }
+#root .doudizhu-section { border-color: var(--action-primary); }
+#root .doudizhu-section:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--action-primary); }
+#root .doudizhu-section h2 { text-shadow: 0 0 10px var(--action-primary); }
+#root .eight-cards-section { border-color: var(--decepticon-primary); opacity: 0.8; }
+#root .eight-cards-section:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--decepticon-primary); }
+#root .eight-cards-section h2 { text-shadow: 0 0 10px var(--decepticon-primary); }
+#root .btn {
+  display: block; width: 100%;
+  padding: 15px 30px; border-radius: 8px;
+  color: var(--text-bright); font-size: 1.1em;
+  font-weight: 500; font-family: var(--font-family-title);
+  cursor: pointer; text-decoration: none; border: 1px solid;
+  transition: all 0.2s ease-in-out;
+  text-transform: uppercase;
+}
+#root .btn:hover { transform: translateY(-2px); }
+#root .btn-primary {
+  background: var(--autobot-secondary); border-color: var(--autobot-primary);
+  box-shadow: 0 0 15px rgba(0, 180, 255, 0.4);
+}
+#root .btn-primary:hover {
+  background: var(--autobot-primary); color: var(--bg-color);
+  box-shadow: 0 0 25px var(--autobot-primary);
+}
+#root .btn-action {
+  background: var(--action-secondary); border-color: var(--action-primary);
+  box-shadow: 0 0 15px rgba(255, 196, 0, 0.4);
+}
+#root .btn-action:hover {
+  background: var(--action-primary); color: var(--bg-color);
+  box-shadow: 0 0 25px var(--action-primary);
+}
+#root .btn-secondary {
+  background: rgba(255, 255, 255, 0.1); border-color: var(--glass-border);
+}
+#root .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.5);
+}
