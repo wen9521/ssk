@@ -3,6 +3,7 @@ import React from 'react';
 import { HashRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import Play from './components/Play';
 import DoudizhuPlay from './components/doudizhu/DoudizhuPlay';
+import EightCardsPlay from './components/EightCardsPlay'; // <-- 1. 导入新组件
 import './App.css';
 
 // 游戏大厅（首页），包含三个游戏
@@ -20,13 +21,15 @@ function Lobby() {
       </div>
       <div className="game-section eight-cards-section">
         <h2>八张突袭</h2>
-        <Link to="/coming-soon" className="btn btn-secondary">情报收集中</Link>
+        {/* --- 2. 修改链接，并更新按钮样式 --- */}
+        <Link to="/eight-cards" className="btn btn-primary">进入战区</Link>
       </div>
     </div>
   );
 }
 
-// 敬请期待页面
+// ... (ComingSoon 和 ThirteenCardsMenu 组件保持不变) ...
+
 function ComingSoon() {
   const navigate = useNavigate();
   return (
@@ -38,7 +41,6 @@ function ComingSoon() {
   );
 }
 
-// 十三张子菜单
 function ThirteenCardsMenu() {
   const navigate = useNavigate();
   return (
@@ -55,6 +57,7 @@ function ThirteenCardsMenu() {
   );
 }
 
+
 function App() {
   return (
     <HashRouter>
@@ -63,6 +66,7 @@ function App() {
         <Route path="/thirteen-cards-menu" element={<ThirteenCardsMenu />} />
         <Route path="/play" element={<Play />} />
         <Route path="/doudizhu" element={<DoudizhuPlay />} /> 
+        <Route path="/eight-cards" element={<EightCardsPlay />} /> {/* <-- 3. 添加新路由 */}
         <Route path="/coming-soon" element={<ComingSoon />} />
       </Routes>
     </HashRouter>
