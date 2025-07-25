@@ -1,21 +1,42 @@
-/* 通用样式 */
+/* frontend/src/App.css (全新美化版本) */
+
+/* --- 变量与通用样式 --- */
+:root {
+  --app-bg: linear-gradient(160deg, #1d2b64 0%, #0c0d2e 100%);
+  --surface-bg: rgba(22, 24, 63, 0.6);
+  --surface-border: rgba(132, 121, 255, 0.2);
+  --accent-glow: rgba(78, 84, 200, 0.5);
+  --accent-color: #a7a1ff;
+  --text-color: #e0e0e0;
+  --text-color-bright: #ffffff;
+  --btn-primary-bg: linear-gradient(135deg, #8f94fb, #4e54c8);
+  --btn-secondary-bg: rgba(255, 255, 255, 0.1);
+}
+
 body {
   margin: 0;
-  font-family: 'Arial', sans-serif;
-  background-color: #f0f2f5; /* 浅灰色背景 */
-  color: #333;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--app-bg);
+  color: var(--text-color);
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
   padding: 20px;
   box-sizing: border-box;
+  perspective: 1500px; /* 为3D效果准备 */
 }
 
+/* --- App 容器通用样式 --- */
 .app-container {
-  background-color: #fff;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  background: var(--surface-bg);
+  border: 1px solid var(--surface-border);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 15px var(--accent-glow);
   padding: 40px;
   text-align: center;
   max-width: 600px;
@@ -24,180 +45,174 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px; /* 增加组件之间的间距 */
+  gap: 30px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
+/* --- 标题样式 --- */
 h1 {
-  color: #2c3e50;
-  margin-bottom: 30px;
-  font-size: 2.8em;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+  color: var(--text-color-bright);
+  margin-bottom: 20px;
+  font-size: 3.5em;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 0 20px var(--accent-glow);
 }
 
 h2 {
-  color: #34495e;
-  margin-bottom: 20px;
-  font-size: 2em;
+  color: var(--text-color-bright);
+  margin-bottom: 10px;
+  font-size: 2.2em;
+  font-weight: 700;
+  text-shadow: 0 0 8px var(--accent-glow);
 }
 
+/* --- 菜单与按钮通用样式 --- */
 .menu {
   display: flex;
   flex-direction: column;
   gap: 15px;
   width: 100%;
-  max-width: 300px;
+  max-width: 320px;
 }
 
 .btn {
   display: block;
-  padding: 15px 25px;
-  border: none;
-  border-radius: 10px;
-  background-color: #3498db; /* 蓝色 */
+  padding: 15px 30px;
+  border: 1px solid transparent;
+  border-radius: 12px;
   color: white;
   font-size: 1.2em;
+  font-weight: 600;
   cursor: pointer;
   text-decoration: none;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .btn:hover {
-  background-color: #2980b9; /* 深蓝色 */
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
-.btn-secondary {
-  background-color: #95a5a6; /* 灰色 */
+.btn.btn-primary { /* 游戏大厅中的主要进入按钮 */
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  font-size: 1.3em;
+  padding: 12px 30px;
+}
+
+.btn.btn-primary:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-secondary { /* 返回按钮 */
+  background: var(--btn-secondary-bg);
+  border-color: var(--surface-border);
 }
 
 .btn-secondary:hover {
-  background-color: #7f8c8d;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--accent-color);
 }
 
-/* 游戏大厅特定样式 */
+/* --- 游戏大厅特定样式 --- */
 .lobby-container {
   display: flex;
-  flex-direction: column; /* 确保上下布局 */
+  flex-direction: column;
   align-items: center;
-  gap: 40px; /* 两个游戏板块之间的间距 */
-  padding: 50px; /* 增加大厅容器的内边距 */
+  gap: 40px;
+  padding: 50px;
+  background: none;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .game-section {
-  width: 90%; /* 宽度调整 */
-  max-width: 450px; /* 最大宽度 */
+  width: 90%;
+  max-width: 450px;
   border-radius: 20px;
-  padding: 30px;
+  padding: 40px 30px;
   color: white;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 25px; /* 标题和按钮之间的间距 */
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer; /* 使整个板块可点击 */
+  gap: 25px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease-out;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transform-style: preserve-3d;
 }
 
 .game-section:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  transform: translateY(-10px) rotateX(5deg) rotateY(-5deg) scale(1.05);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-glow);
+  border-color: var(--accent-color);
 }
 
 .game-section h2 {
-  color: white; /* 游戏板块标题为白色 */
-  font-size: 2.5em;
-  margin-bottom: 0;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-}
-
-.game-section .btn-primary {
-  background-color: rgba(255, 255, 255, 0.3); /* 透明白色按钮 */
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(5px); /* 磨砂玻璃效果 */
-  -webkit-backdrop-filter: blur(5px); /* Safari 支持 */
-  font-size: 1.3em;
-  padding: 12px 30px;
-}
-
-.game-section .btn-primary:hover {
-  background-color: rgba(255, 255, 255, 0.5);
-  transform: translateY(-3px);
+  font-size: 2.8em;
+  margin-bottom: 0;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+  font-weight: 800;
 }
 
 /* 十三张板块的渐变色 */
 .thirteen-cards-section {
-  background: linear-gradient(135deg, #FF6B6B, #EE4266); /* 暖色调渐变 */
+  background: linear-gradient(145deg, #FF6B6B, #556270);
 }
 
 /* 八张板块的渐变色 */
 .eight-cards-section {
-  background: linear-gradient(135deg, #1ABC9C, #16A085); /* 冷色调渐变 */
+  background: linear-gradient(145deg, #1ABC9C, #2C3E50);
 }
 
-
-/* ComingSoon 页面特定样式 */
-.coming-soon {
-  background-color: #ecf0f1;
-  color: #2c3e50;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+/* --- 子菜单页面样式 (十三张/八张) --- */
+.app-container:not(.lobby-container) .btn {
+  background: var(--btn-primary-bg);
 }
 
-.coming-soon h2 {
-  color: #2c3e50;
+.app-container:not(.lobby-container) .btn:hover {
+   box-shadow: 0 8px 25px rgba(78, 84, 200, 0.4);
 }
 
+/* --- "Coming Soon" 页面特定样式 --- */
 .coming-soon p {
-  font-size: 1.1em;
+  font-size: 1.2em;
   margin-bottom: 25px;
+  opacity: 0.8;
 }
 
-/* 响应式设计 */
+/* --- 响应式设计 --- */
 @media (max-width: 768px) {
   .app-container {
-    padding: 20px;
+    padding: 30px;
   }
-
-  h1 {
-    font-size: 2em;
-  }
-
-  h2 {
-    font-size: 1.5em;
-  }
-
-  .game-section {
-    padding: 20px;
-  }
-
-  .game-section h2 {
-    font-size: 2em;
-  }
+  h1 { font-size: 2.5em; }
+  h2 { font-size: 1.8em; }
+  .game-section { padding: 30px; }
+  .game-section h2 { font-size: 2.2em; }
 }
 
 @media (max-width: 480px) {
   .app-container {
-    padding: 15px;
-    border-radius: 10px;
+    padding: 20px;
+    border-radius: 20px;
+    gap: 20px;
   }
-
-  h1 {
-    font-size: 1.8em;
-  }
-
-  .game-section {
-    width: 100%;
-    padding: 15px;
-  }
-
-  .game-section h2 {
-    font-size: 1.8em;
-  }
-
-  .btn {
-    padding: 12px 20px;
-    font-size: 1em;
-  }
+  h1 { font-size: 2em; margin-bottom: 10px; }
+  .lobby-container { gap: 25px; padding: 20px; }
+  .game-section { width: 100%; padding: 25px; }
+  .game-section h2 { font-size: 2em; }
+  .btn { padding: 12px 20px; font-size: 1em; }
 }
