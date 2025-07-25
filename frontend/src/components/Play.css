@@ -181,16 +181,24 @@
   margin-left: 0;
 }
 
-/* 隐藏手牌区 */
+/* --- 核心修复点：移除 display: none 以显示手牌区 --- */
 .my-cards-area {
-  display: none;
+  /* display: none; */ /* <--- 此行被删除 */
+  margin-top: auto;   /* 将手牌区推到底部 */
+  padding-top: 15px;  /* 增加与上方元素的间距 */
+  min-height: 140px;  /* 确保有足够的高度显示卡牌 */
+  width: 100%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* 操作按钮 & 弹窗 & 结果保留不变 */
 .actions-area {
   display: flex;
   gap: 10px;
-  margin-top: auto;
+  margin-top: 10px; /* 调整与手牌区的间距 */
   padding-top: 10px;
 }
 
