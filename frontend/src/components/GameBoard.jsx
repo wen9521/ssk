@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import { STAGES, useGameStore } from '../utils/store';
 
-// 内部排序函数
 const ranks = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
 const suits = ['diamonds','clubs','hearts','spades'];
 const sortHandInternal = (hand) => {
@@ -137,9 +136,6 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     </div>
   );
   
-  // ==========================================================
-  //  ↓↓↓ 完整的 renderResultModal 函数 ↓↓↓
-  // ==========================================================
   const renderResultModal = () => {
     if (!showResult || !players.some(p => p.score != null)) return null;
 
@@ -191,9 +187,6 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
       </div>
     );
   };
-  // ==========================================================
-  //  ↑↑↑ 完整的 renderResultModal 函数 ↑↑↑
-  // ==========================================================
 
   if (!me) return <div>加载中...</div>;
 
