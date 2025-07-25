@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, user-scalable=no" />
   <title>赛博坦指挥中心</title>
-  <link rel="icon" type="image/x-icon" href="./favicon.ico" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,7 +34,9 @@
       
       --font-family-title: 'Orbitron', sans-serif;
       --font-family-body: 'Rajdhani', sans-serif;
-      --card-width: 60px; /* 恢复为十三水适用的尺寸，斗地主CSS会覆盖 */
+
+      /* --- 关键修改：增大卡牌基础尺寸 --- */
+      --card-width: 80px;
     }
 
     * {
@@ -55,7 +57,8 @@
       font-family: var(--font-family-body);
       background-color: var(--bg-color);
       color: var(--text-color);
-      background-image: url('./img/background.jpg'); /* 确保你的背景图在 public/img/background.jpg */
+      /* Vite 会自动将 public 目录下的内容服务到根路径 */
+      background-image: url('/img/background.jpg');
       background-size: cover;
       background-position: center center;
       background-attachment: fixed;
@@ -81,6 +84,6 @@
 </head>
 <body>
   <div id="root"></div>
-  <script type="module" src="./src/index.jsx"></script>
+  <script type="module" src="/src/index.jsx"></script>
 </body>
 </html>

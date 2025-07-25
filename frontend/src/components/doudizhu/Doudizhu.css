@@ -1,79 +1,157 @@
 /* src/components/doudizhu/Doudizhu.css */
 .ddz-board-container {
-  width: 100%; height: 100%; padding: 15px;
-  display: flex; flex-direction: column;
-  background-color: var(--app-bg); color: var(--text-primary);
+  width: 100%;
+  height: 100%;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--app-bg);
+  color: var(--text-primary);
 }
+
+/* --- 顶部栏 --- */
 .ddz-top-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 0 10px; flex-shrink: 0; margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+  flex-shrink: 0;
+  margin-bottom: 20px;
 }
 .ddz-quit-btn {
-  background: var(--glass-bg); border: 1px solid var(--glass-border);
-  color: var(--text-secondary); font-size: 0.9em; padding: 8px 16px;
-  border-radius: 20px; cursor: pointer; transition: all 0.2s ease;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 .ddz-quit-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
-.landlord-cards-display { display: flex; gap: 5px; }
-.landlord-cards-display .card-container { width: 40px; }
-.room-info { font-size: 0.9em; color: var(--text-secondary); }
-.ddz-main-area {
-  flex-grow: 1; display: flex; justify-content: space-between;
-  align-items: flex-start; padding: 20px 0;
+
+.landlord-cards-display {
+  display: flex;
+  gap: 5px;
 }
+.landlord-cards-display .card-container {
+  width: 40px;
+}
+
+.room-info {
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+/* --- 主区域 --- */
+.ddz-main-area {
+  flex-grow: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 0;
+}
+
 .center-table {
-  flex-grow: 1; display: flex; justify-content: center; align-items: center;
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 .played-cards-area {
-  display: flex; justify-content: center; min-height: 120px;
+  display: flex;
+  justify-content: center;
+  min-height: 120px;
 }
+
+/* --- 玩家座位 --- */
 .ddz-player-seat {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 10px; transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
 }
 .player-avatar {
-  background: var(--glass-bg); border: 1px solid var(--glass-border);
-  padding: 10px 20px; border-radius: 12px; position: relative;
-  min-width: 80px; text-align: center;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  padding: 10px 20px;
+  border-radius: 12px;
+  position: relative;
+  min-width: 80px;
+  text-align: center;
 }
 .ddz-player-seat.is-current .player-avatar {
-  border-color: var(--action-primary); box-shadow: 0 0 15px var(--action-primary);
+  border-color: var(--action-primary);
+  box-shadow: 0 0 15px var(--action-primary);
 }
+
 .landlord-icon {
-  position: absolute; top: -10px; right: -10px;
-  background: var(--accent-orange); color: #fff; font-size: 10px;
-  padding: 2px 6px; border-radius: 5px; font-weight: bold;
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: var(--accent-orange);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-weight: bold;
 }
 .card-count {
-  font-size: 1.5em; font-weight: bold; font-family: var(--font-family-title);
+  font-size: 1.5em;
+  font-weight: bold;
+  font-family: var(--font-family-title);
 }
+
+/* --- 底部玩家区域 --- */
 .ddz-player-area {
-  flex-shrink: 0; display: flex; flex-direction: column;
-  align-items: center; gap: 15px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
 }
 .my-hand-area {
-  display: flex; justify-content: center; align-items: flex-end;
-  width: 100%; min-height: calc(var(--card-width) * 1.45 + 20px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end; /* 使选中的牌向上移动 */
+  width: 100%;
+  min-height: calc(var(--card-width) * 1.45 + 20px);
 }
 .my-hand-area .card-container {
-  margin-left: -45px;
+  /* --- 关键修改：调整斗地主手牌间距 --- */
+  margin-left: calc(var(--card-width) * -0.70); /* 100% - 30% = 70% */
 }
 .my-hand-area .card-container:first-child { margin-left: 0; }
 .my-hand-area .card-container.is-selected {
   transform: translateY(-20px);
 }
+
 .action-buttons {
-  display: flex; gap: 15px;
+  display: flex;
+  gap: 15px;
 }
 .ddz-btn {
-  font-size: 1.1em; font-weight: 500; padding: 12px 30px;
-  border-radius: 10px; border: 1px solid var(--glass-border);
-  background: var(--glass-bg); color: var(--text-secondary);
-  cursor: pointer; transition: all 0.2s ease;
+  font-size: 1.1em;
+  font-weight: 500;
+  padding: 12px 30px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
-.ddz-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+.ddz-btn:hover {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+}
 .ddz-btn.primary {
-  background: var(--accent-orange); color: #fff;
-  border: none; font-weight: bold;
+  background: var(--accent-orange);
+  color: #fff;
+  border: none;
+  font-weight: bold;
 }
-.ddz-btn.primary:hover { background: var(--accent-orange-dark); }
+.ddz-btn.primary:hover {
+  background: var(--accent-orange-dark);
+}
