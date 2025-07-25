@@ -8,6 +8,7 @@
   border-radius: 6px;
   overflow: hidden;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
 }
 
 .card-image {
@@ -15,11 +16,12 @@
   width: 100%;
   height: 100%;
   object-fit: cover; /* 保证图片填满容器 */
+  background-color: #fff; /* 为透明SVG提供白色背景 */
 }
 
 .card-container.is-selected {
   transform: translateY(-15px) scale(1.05);
-  box-shadow: 0 0 15px 5px rgba(243, 156, 18, 0.7); /* 橙色高亮 */
+  box-shadow: 0 0 15px 5px var(--accent-orange); /* 橙色高亮 */
   z-index: 100 !important;
 }
 
