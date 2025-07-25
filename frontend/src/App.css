@@ -1,77 +1,130 @@
-/* frontend/src/App.css (Glassmorphism 风格) */
+/* src/App.css (最终融合版) */
 
 /* --- App 容器通用样式 --- */
 #root .app-container {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: var(--surface-bg);
+  border: 1px solid var(--surface-border);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-radius: 20px;
-  padding: clamp(30px, 5vw, 50px);
+  border-radius: 12px;
+  padding: clamp(30px, 5vw, 40px);
   text-align: center;
   max-width: 500px;
   width: 90%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px;
+  gap: 20px;
+  clip-path: polygon(0 20px, 20px 0, calc(100% - 20px) 0, 100% 20px, 100% calc(100% - 20px), calc(100% - 20px) 100%, 20px 100%, 0 calc(100% - 20px));
 }
 
-#root h1 {
+/* --- 主界面 Lobby 的特殊样式 --- */
+#root .lobby-container {
+  background: none; border: none; box-shadow: none;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+  gap: 30px; padding: 0; clip-path: none;
+}
+
+@keyframes title-glow {
+  0%, 100% { text-shadow: 0 0 10px #fff, 0 0 20px var(--autobot-primary), 0 0 40px var(--autobot-primary); }
+  50% { text-shadow: 0 0 15px #fff, 0 0 30px var(--autobot-primary), 0 0 50px var(--autobot-primary); }
+}
+
+#root .lobby-container h1 {
+  font-family: var(--font-family-title);
+  font-weight: 900;
+  font-size: 3em;
+  margin: 0 0 20px;
+  color: var(--text-bright);
+  text-transform: uppercase;
+  animation: title-glow 3s infinite linear;
+}
+
+/* 游戏选项卡样式 */
+#root .game-section {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface-bg);
+  border: 1px solid;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 10px;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  transition: all 0.3s ease;
+}
+
+#root .game-section:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+}
+
+#root .game-section h2 {
+  font-family: var(--font-family-title);
   font-weight: 700;
-  font-size: 2.5em;
-  margin: 0 0 10px;
-  color: var(--text-primary);
-}
-
-#root h2 {
-  font-weight: 500;
   font-size: 2em;
-  margin: 0 0 15px;
-  color: var(--text-secondary);
+  margin: 0;
+  color: var(--text-bright);
 }
 
-#root .menu {
-  display: flex; flex-direction: column; gap: 20px;
-  width: 100%; max-width: 320px;
-}
+/* 不同游戏入口的颜色 */
+#root .thirteen-cards-section { border-color: var(--autobot-primary); }
+#root .thirteen-cards-section:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--autobot-primary); }
+#root .thirteen-cards-section h2 { text-shadow: 0 0 10px var(--autobot-primary); }
 
+#root .doudizhu-section { border-color: var(--action-primary); }
+#root .doudizhu-section:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--action-primary); }
+#root .doudizhu-section h2 { text-shadow: 0 0 10px var(--action-primary); }
+
+#root .eight-cards-section { border-color: var(--decepticon-primary); opacity: 0.8; }
+#root .eight-cards-section:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--decepticon-primary); }
+#root .eight-cards-section h2 { text-shadow: 0 0 10px var(--decepticon-primary); }
+
+
+/* --- 通用按钮样式 --- */
 #root .btn {
-  display: block;
-  padding: 15px 30px;
-  border-radius: 12px;
-  color: var(--text-primary);
-  font-size: 1.1em;
-  font-weight: 500;
-  cursor: pointer;
-  text-decoration: none;
-  border: none;
+  display: block; width: 100%;
+  padding: 15px 30px; border-radius: 8px;
+  color: var(--text-bright); font-size: 1.1em;
+  font-weight: 500; font-family: var(--font-family-title);
+  cursor: pointer; text-decoration: none; border: 1px solid;
   transition: all 0.2s ease-in-out;
+  text-transform: uppercase;
 }
+#root .btn:hover { transform: translateY(-2px); }
 
 #root .btn-primary {
-  background: var(--accent-blue);
-  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+  background: var(--autobot-secondary);
+  border-color: var(--autobot-primary);
+  box-shadow: 0 0 15px rgba(0, 180, 255, 0.4);
 }
 #root .btn-primary:hover {
-  background: var(--accent-blue-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.5);
+  background: var(--autobot-primary);
+  color: var(--bg-color);
+  box-shadow: 0 0 25px var(--autobot-primary);
+}
+
+#root .btn-action {
+  background: var(--action-secondary);
+  border-color: var(--action-primary);
+  box-shadow: 0 0 15px rgba(255, 196, 0, 0.4);
+}
+#root .btn-action:hover {
+  background: var(--action-primary);
+  color: var(--bg-color);
+  box-shadow: 0 0 25px var(--action-primary);
 }
 
 #root .btn-secondary {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--glass-border);
 }
 #root .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.5);
-}
-
-#root .lobby-container {
-  gap: 20px;
-}
-#root .game-section {
-  width: 100%;
 }
