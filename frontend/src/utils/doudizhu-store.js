@@ -11,7 +11,6 @@ export const DoudizhuStage = {
   FINISHED: 'FINISHED',
 };
 
-// 完整的牌组，包含大小王
 const createDoudizhuDeck = () => {
     const standardDeck = createDeck();
     standardDeck.push({ rank: JokerRanks.BLACK_JOKER, suit: 'joker' });

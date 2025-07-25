@@ -1,11 +1,9 @@
-// src/App.jsx
 import React from 'react';
 import { HashRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import Play from './components/Play';
 import DoudizhuPlay from './components/doudizhu/DoudizhuPlay';
 import './App.css';
 
-// 游戏大厅（首页），包含三个游戏
 function Lobby() {
   return (
     <div className="app-container lobby-container">
@@ -26,8 +24,7 @@ function Lobby() {
   );
 }
 
-// 敬请期待页面
-function ComingSoon({ gameName }) {
+function ComingSoon() {
   const navigate = useNavigate();
   return (
     <div className="app-container">
@@ -38,7 +35,6 @@ function ComingSoon({ gameName }) {
   );
 }
 
-// 十三张子菜单
 function ThirteenCardsMenu() {
   const navigate = useNavigate();
   return (
@@ -55,7 +51,7 @@ function ThirteenCardsMenu() {
   );
 }
 
-export default function App() {
+function App() {
   return (
     <HashRouter>
       <Routes>
@@ -63,8 +59,10 @@ export default function App() {
         <Route path="/thirteen-cards-menu" element={<ThirteenCardsMenu />} />
         <Route path="/play" element={<Play />} />
         <Route path="/doudizhu" element={<DoudizhuPlay />} /> 
-        <Route path="/coming-soon" element={<ComingSoon gameName="此模块"/>} />
+        <Route path="/coming-soon" element={<ComingSoon />} />
       </Routes>
     </HashRouter>
   );
 }
+
+export default App;
