@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, user-scalable=no" />
   <title>十三水</title>
-  <!-- Vite 会自动处理 public 目录下的资源，所以可以直接使用 / -->
+  <!-- public 目录下的文件会被直接复制到构建目录的根，所以路径依然是 /favicon.ico -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,6 +13,7 @@
   
   <style>
     :root {
+      /* 主题色板 */
       --app-bg: #1e2833;
       --glass-bg: rgba(255, 255, 255, 0.1);
       --glass-border: rgba(255, 255, 255, 0.2);
@@ -38,7 +39,7 @@
 </head>
 <body>
   <div id="root"></div>
-  <!-- 确保脚本路径是 /src/index.jsx -->
+  <!-- 脚本路径不变，Vite会正确处理 -->
   <script type="module" src="/src/index.jsx"></script>
 </body>
 </html>
