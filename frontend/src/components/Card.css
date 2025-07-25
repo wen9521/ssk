@@ -1,4 +1,10 @@
-/* frontend/src/components/Card.css (全新科技感主题) */
+/* frontend/src/components/Card.css (全新科技感主题 - 终极版) */
+
+@keyframes selected-glow {
+  0% { box-shadow: 0 0 15px var(--primary-glow), inset 0 0 5px var(--primary-glow); }
+  50% { box-shadow: 0 0 25px var(--primary-glow), inset 0 0 10px var(--primary-glow); }
+  100% { box-shadow: 0 0 15px var(--primary-glow), inset 0 0 5px var(--primary-glow); }
+}
 
 .card {
   width: clamp(50px, 18vw, 80px);
@@ -6,8 +12,8 @@
   perspective: 1000px;
   cursor: pointer;
   position: relative;
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-  -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
+  transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .card-inner {
@@ -17,21 +23,22 @@
   transform-style: preserve-3d;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
   transition: all 0.3s ease;
+  background: #0d1122; /* 卡牌深色底 */
 }
 
 .card.selected .card-inner {
-  transform: translateY(-12px) scale(1.08);
+  transform: translateY(-15px) scale(1.1) rotateZ(-2deg);
   border-color: var(--primary-glow);
-  box-shadow: 0 8px 30px rgba(0, 229, 255, 0.4);
+  animation: selected-glow 1.5s infinite ease-in-out;
 }
 
 .card.dragging .card-inner {
-  opacity: 0.6;
-  transform: scale(0.95);
-  box-shadow: 0 0 25px var(--primary-glow);
+  opacity: 0.5;
+  transform: scale(0.9) rotateZ(5deg);
+  box-shadow: 0 0 30px var(--primary-glow);
 }
 
 .card-front, .card-back {
@@ -42,26 +49,25 @@
 }
 
 .card-front {
-  background-color: #0c0d2e;
+  background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
 }
+
 .card-back {
   background-color: #f2f2f2;
   transform: rotateY(180deg);
 }
+
 .card-face-img {
   width: 100%;
   height: 100%;
   display: block;
-  filter: saturate(1.1); /* 稍微增加饱和度 */
 }
+
 .card-back-pattern {
   width: 100%;
   height: 100%;
-  background-image: repeating-linear-gradient(
-    45deg,
-    #1d2b64,
-    #1d2b64 10px,
-    #4e54c8 10px,
-    #4e54c8 20px
-  );
+  background-image: 
+    repeating-linear-gradient(45deg, rgba(78, 84, 200, 0.8) 0, rgba(78, 84, 200, 0.8) 10px, transparent 10px, transparent 20px),
+    linear-gradient(to bottom, #1d2b64, #0c0d2e);
 }
