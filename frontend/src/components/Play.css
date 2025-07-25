@@ -1,11 +1,12 @@
-/* frontend/src/components/Play.css (终极修正版 V2) */
+/* frontend/src/components/Play.css (终极修正版 V3) */
 
-/* 继承自 App.css 的变量和字体 */
+/* 变量从 App.css 的 :root 或 index.html 的 style 中继承 */
 
 /* --- 整体容器 --- */
 .play-container {
   width: 100%;
-  display: flex; /* 确保 game-wrapper 居中 */
+  height: 100%;
+  display: flex;
   align-items: center;
   justify-content: center;
 }
@@ -25,7 +26,6 @@
   box-sizing: border-box;
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
-  /* 限制最大高度以适应屏幕 */
   max-height: 95vh;
 }
 
@@ -99,7 +99,7 @@
 
 .pai-dun {
   width: 100%; border-radius: 16px; background: rgba(0, 0, 0, 0.4);
-  height: var(--pai-dun-height); margin-bottom: 15px; position: relative;
+  height: var(--pai-dun-height, clamp(100px, 28vw, 120px)); margin-bottom: 15px; position: relative;
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
   border: 1px solid var(--surface-border); display: flex;
   align-items: center; box-sizing: border-box; padding: 0 15px 0 80px;
