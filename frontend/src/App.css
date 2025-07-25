@@ -1,12 +1,10 @@
-/* frontend/src/App.css (科技感重构) */
-
-/* 全局和背景样式已移至 index.html */
+/* frontend/src/App.css (变形金刚风格重构) */
 
 /* --- App 容器通用样式 --- */
 #root .app-container {
   background: var(--surface-bg);
   border: 1px solid var(--surface-border);
-  border-radius: 24px;
+  border-radius: 8px; /* 更硬朗的边角 */
   box-shadow: 0 0 40px rgba(0, 229, 255, 0.2), inset 0 0 15px rgba(0, 229, 255, 0.1);
   padding: clamp(25px, 5vw, 40px);
   text-align: center;
@@ -17,20 +15,19 @@
   flex-direction: column;
   align-items: center;
   gap: 30px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  /* 削角效果 */
+  clip-path: polygon(0 20px, 20px 0, calc(100% - 20px) 0, 100% 20px, 100% calc(100% - 20px), calc(100% - 20px) 100%, 20px 100%, 0 calc(100% - 20px));
 }
 
 /* --- 标题样式 --- */
 @keyframes title-flicker {
   0%, 19%, 21%, 23%, 50%, 52%, 100% {
     opacity: 1;
-    text-shadow: 0 0 8px var(--text-bright), 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow);
+    text-shadow: 0 0 8px var(--text-bright), 0 0 20px var(--autobot-glow), 0 0 40px var(--autobot-glow);
   }
-  20%, 22%, 51% {
-    opacity: 0.8;
-    text-shadow: none;
-  }
+  20%, 22%, 51% { opacity: 0.8; text-shadow: none; }
 }
 
 #root h1 {
@@ -50,58 +47,41 @@
   margin-bottom: 10px;
   font-size: clamp(1.8em, 6vw, 2.5em);
   font-weight: 700;
-  text-shadow: 0 0 12px var(--primary-glow);
+  text-shadow: 0 0 12px var(--autobot-glow);
 }
 
 /* --- 菜单与按钮通用样式 --- */
 #root .menu {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  width: 100%;
-  max-width: 380px;
+  display: flex; flex-direction: column; gap: 20px;
+  width: 100%; max-width: 380px;
 }
 
 #root .btn {
   font-family: var(--font-family-title);
-  display: block;
-  padding: 15px 30px;
+  display: block; padding: 15px 30px;
   border: 2px solid;
-  border-radius: 8px;
-  color: var(--text-bright);
-  font-size: clamp(1em, 4vw, 1.2em);
-  font-weight: 700;
-  cursor: pointer;
-  text-decoration: none;
-  background: transparent;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  border-color: var(--primary-glow);
+  color: var(--text-bright); font-size: clamp(1em, 4vw, 1.2em);
+  font-weight: 700; cursor: pointer; text-decoration: none;
+  background: transparent; transition: all 0.3s ease;
+  position: relative; overflow: hidden;
+  text-transform: uppercase; letter-spacing: 2px;
+  border-color: var(--autobot-glow);
   box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.3), 0 0 10px rgba(0, 229, 255, 0.3);
+  clip-path: polygon(0 5px, 5px 0, calc(100% - 5px) 0, 100% 5px, 100% calc(100% - 5px), calc(100% - 5px) 100%, 5px 100%, 0 calc(100% - 5px));
 }
 
 #root .btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -150%;
-  width: 100%;
-  height: 100%;
+  content: ''; position: absolute; top: 0; left: -150%;
+  width: 100%; height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  transform: skewX(-30deg);
-  transition: left 0.6s ease;
+  transform: skewX(-30deg); transition: left 0.6s ease;
 }
 
 #root .btn:hover {
   transform: scale(1.05);
   box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.5), 0 0 25px rgba(0, 229, 255, 0.7);
 }
-#root .btn:hover::before {
-  left: 150%;
-}
+#root .btn:hover::before { left: 150%; }
 
 #root .btn-secondary {
   border-color: rgba(255, 255, 255, 0.4);
@@ -110,81 +90,49 @@
 }
 #root .btn-secondary:hover {
   background-color: rgba(255, 255, 255, 0.1);
-  border-color: var(--text-bright);
-  box-shadow: none;
+  border-color: var(--text-bright); box-shadow: none;
 }
 
 /* --- 游戏大厅特定样式 --- */
 #root .lobby-container {
   background: none; border: none; box-shadow: none;
   backdrop-filter: none; -webkit-backdrop-filter: none;
-  gap: 40px;
-}
-
-@keyframes scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
+  gap: 40px; clip-path: none;
 }
 
 #root .game-section {
-  width: 90%;
-  max-width: 450px;
-  border-radius: 20px;
-  padding: 30px 20px;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 25px;
-  border: 2px solid;
-  transition: all 0.3s ease-out;
-  position: relative;
-  overflow: hidden;
-}
-
-#root .game-section::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: var(--primary-glow);
-  box-shadow: 0 0 10px var(--primary-glow);
-  animation: scanline 4s linear infinite;
+  width: 90%; max-width: 450px;
+  padding: 30px 20px; color: white;
+  display: flex; flex-direction: column; justify-content: center;
+  align-items: center; gap: 25px; border: 2px solid;
+  transition: all 0.3s ease-out; position: relative; overflow: hidden;
+  background: rgba(10, 20, 45, 0.5);
+  clip-path: polygon(0 15px, 15px 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px));
 }
 
 #root .game-section:hover {
   transform: translateY(-10px) scale(1.03);
-  box-shadow: 0 0 30px var(--primary-glow), inset 0 0 20px rgba(0, 229, 255, 0.2);
+  background: rgba(10, 20, 45, 0.8);
 }
 
 #root .thirteen-cards-section {
-  border-color: var(--secondary-glow);
+  border-color: var(--autobot-glow);
 }
-#root .thirteen-cards-section:hover { box-shadow: 0 0 30px var(--secondary-glow), inset 0 0 20px rgba(255, 0, 255, 0.2); }
-#root .thirteen-cards-section::before { background: var(--secondary-glow); box-shadow: 0 0 10px var(--secondary-glow); }
+#root .thirteen-cards-section:hover { box-shadow: 0 0 30px var(--autobot-glow), inset 0 0 20px rgba(0, 229, 255, 0.2); }
+#root .thirteen-cards-section .btn { border-color: var(--autobot-glow); }
+#root .thirteen-cards-section .btn:hover { background: var(--autobot-glow); color: var(--bg-color); }
 
 #root .eight-cards-section {
-  border-color: var(--primary-glow);
+  border-color: var(--decepticon-glow);
+  opacity: 0.6; /* 尚未开放的游戏*/
 }
-#root .eight-cards-section:hover { box-shadow: 0 0 30px var(--primary-glow), inset 0 0 20px rgba(0, 229, 255, 0.2); }
-#root .eight-cards-section::before { background: var(--primary-glow); box-shadow: 0 0 10px var(--primary-glow); }
-
+#root .eight-cards-section .btn { border-color: var(--decepticon-glow); color: var(--decepticon-glow); }
+#root .eight-cards-section .btn:hover { background: var(--decepticon-glow); color: var(--bg-color); }
+#root .eight-cards-section h2 { text-shadow: 0 0 15px var(--decepticon-glow); }
 
 #root .game-section h2 { font-size: 2.5em; margin: 0; }
-#root .thirteen-cards-section h2 { text-shadow: 0 0 15px var(--secondary-glow); }
-#root .eight-cards-section h2 { text-shadow: 0 0 15px var(--primary-glow); }
-
-#root .game-section .btn { box-shadow: none; border-color: white; }
-#root .thirteen-cards-section .btn:hover { background: var(--secondary-glow); border-color: var(--secondary-glow); color: var(--bg-color); }
-#root .eight-cards-section .btn:hover { background: var(--primary-glow); border-color: var(--primary-glow); color: var(--bg-color); }
+#root .thirteen-cards-section h2 { text-shadow: 0 0 15px var(--autobot-glow); }
 
 
 /* --- "Coming Soon" 页面特定样式 --- */
 #root .coming-soon p { font-size: 1.2em; margin-bottom: 25px; opacity: 0.8; }
-
-/* --- 响应式设计 --- */
-@media (max-width: 480px) {
-  #root { padding: 10px; }
-  #root .app-container { padding: 20px; gap: 20px; }
-}
