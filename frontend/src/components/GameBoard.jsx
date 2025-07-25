@@ -1,13 +1,13 @@
 // src/components/GameBoard.jsx
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
-import { STAGES } from '../utils/store'; // STAGES 定义是通用的，可以继续使用
+// STAGES 定义是通用的，可以从任何一个 store 导入，或者单独存放
+import { STAGES } from '../utils/store'; 
 
 const ranks = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
 const suits = ['diamonds','clubs','hearts','spades'];
 
 const sortHandInternal = (hand) => {
-  // ... (此函数保持不变)
   if (!Array.isArray(hand)) return [];
   return [...hand].sort((a, b) => {
     const rA = ranks.indexOf(a.rank);
@@ -17,10 +17,8 @@ const sortHandInternal = (hand) => {
   });
 };
 
-// 1. 从 props 解构出新的 gameMode，并给一个默认值
 export default function GameBoard({ players, myPlayerId, stage, onReady, onCompare, onRestart, onQuit, onUpdateHands, gameMode = 'thirteen-cards' }) {
   const me = players.find(p => p.id === myPlayerId);
-  // autoSplitForPlayer 是十三水特有的，这里不再需要
   
   const [selectedCards, setSelectedCards] = useState([]);
   const [draggedCards, setDraggedCards] = useState(null);
@@ -30,7 +28,6 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
   const isEightCardsMode = gameMode === 'eight-cards';
 
   useEffect(() => {
-    // ... (此 effect 保持不变)
     if (stage === STAGES.FINISHED) {
       setShowResult(true);
       const timer = setTimeout(() => {
@@ -44,13 +41,11 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
   }, [stage, onRestart]);
 
   useEffect(() => {
-    // ... (此 effect 保持不变)
     if (stage !== STAGES.PLAYING) {
       setSelectedCards([]);
     }
   }, [stage]);
 
-  // ... (handleCardClick, handleDragStart, handleDrop 函数保持不变) ...
   const handleCardClick = (card, area, event) => {
     if (stage !== STAGES.PLAYING || !me || isEightCardsMode) return; // 八张模式禁用手动理牌
     const cardId = `${card.rank}_${card.suit}`;
@@ -84,50 +79,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     draggedData.forEach(dragged => {
       for (const areaName in hands) {
         hands[areaName] = hands[areaName].filter(c => !(c.rank === dragged.rank && c.suit === dragged.suit));
-      }
-    });
-
-    draggedData.forEach(dragged => {
-      hands[toArea].push({ rank: dragged.rank, suit: dragged.suit });
-    });
-    
-    hands.head = sortHandInternal(hands.head);
-    hands.middle = sortHandInternal(hands.middle);
-    hands.tail = sortHandInternal(hands.tail);
-
-    onUpdateHands(myPlayerId, hands);
-    setSelectedCards([]);
-    setDraggedCards(null);
-  };
-  
-  const renderSeat = (p) => (
-    // ... (此函数保持不变)
-     <div key={p.id} className={`player-seat ${p.id === myPlayerId ? 'player-me' : ''}`}>
-      <div className="player-name">{p.name}</div>
-      <div className={`player-status ${p.submitted || (p.isReady && stage !== STAGES.LOBBY) ? 'ready' : ''}`}>
-        {p.submitted ? '已理牌' : (p.isReady ? (p.isAI ? '已理牌' : '已准备') : '等待中')}
-      </div>
-    </div>
-  );
-
-  const renderPile = (cards, label, area) => (
-    <div
-      className={`pai-dun ${dragOverArea === area ? 'drag-over' : ''}`}
-      onDragOver={(e) => { e.preventDefault(); setDragOverArea(area); }}
-      onDragLeave={() => setDragOverArea(null)}
-      onDrop={(e) => handleDrop(e, area)}
-    >
-      <div className="card-display-area">
-        {(cards || []).map((card, i) => {
-          const cardId = `${card.rank}_${card.suit}`;
-          const isSelected = selectedCards.some(c => c.id === cardId);
-          // 在八张模式下，牌不能被拖拽
-          const isDraggable = !isEightCardsMode;
-          return (
-            <div
-              key={`${cardId}_${area}_${i}`}
-              className="card-wrapper-dun"
-              style={{ zIndex: isSelected ? 100 + i : i }}mekashi
+      }mekashi
 
 print(default_api.read_file(path="frontend/src/utils/store.js"))
 print(default_api.read_file(path="frontend/src/utils/eight-cards.store.js"))
