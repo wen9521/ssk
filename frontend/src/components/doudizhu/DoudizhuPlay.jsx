@@ -1,8 +1,9 @@
 // src/components/doudizhu/DoudizhuPlay.jsx
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDoudizhuStore } from '../../utils/doudizhu-store';
-import DoudizhuBoard from './DoudizhuBoard'; // 引入我们新创建的牌桌
+import { useDoudizhuStore } from '@/utils/doudizhu-store';
+import DoudizhuBoard from './DoudizhuBoard';
+import './Doudizhu.css';
 
 export default function DoudizhuPlay() {
   const navigate = useNavigate();

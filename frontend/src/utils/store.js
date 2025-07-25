@@ -1,9 +1,11 @@
 // src/utils/store.js
 import { create } from 'zustand';
 import { produce } from 'immer';
-import { createDeck, shuffleDeck, dealCards } from '../game-logic/deck';
-import { SmartSplit, isFoulForAI } from '../game-logic/ai-logic';
-import { calcSSSAllScores } from '../game-logic/thirteen-water-rules';
+// 使用别名路径
+import { createDeck, shuffleDeck, dealCards } from '@/game-logic/deck';
+import { SmartSplit, isFoulForAI } from '@/game-logic/ai-logic';
+// 确保这个路径正确
+import { calcSSSAllScores } from '@/game-logic/thirteen-water-rules';
 
 export const STAGES = {
   LOBBY: 'lobby',

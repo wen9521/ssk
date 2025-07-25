@@ -1,8 +1,9 @@
 // src/components/doudizhu/DoudizhuBoard.jsx
 import React, { useState } from 'react';
-import Card from '../Card'; // 复用卡牌组件
-import './Doudizhu.css'; // 斗地主专属样式
-import { useDoudizhuStore } from '../../utils/doudizhu-store';
+// 使用别名路径
+import Card from '@/components/Card';
+import './Doudizhu.css';
+import { useDoudizhuStore } from '@/utils/doudizhu-store';
 
 const PlayerPosition = {
   BOTTOM: 'bottom',
@@ -10,7 +11,6 @@ const PlayerPosition = {
   RIGHT: 'right',
 };
 
-// 玩家座位组件
 const PlayerSeat = ({ player, position, isLandlord, isCurrent }) => (
   <div className={`ddz-player-seat ${position} ${isCurrent ? 'is-current' : ''}`}>
     <div className="player-avatar">
@@ -21,7 +21,6 @@ const PlayerSeat = ({ player, position, isLandlord, isCurrent }) => (
   </div>
 );
 
-// 主面板
 export default function DoudizhuBoard({ onQuit }) {
   const { players, landlordId, landlordCards, currentPlayerId, currentHand } = useDoudizhuStore();
   const [selectedCards, setSelectedCards] = useState([]);
@@ -40,8 +39,7 @@ export default function DoudizhuBoard({ onQuit }) {
 
   if (!me || !leftPlayer || !rightPlayer) return null;
 
-  return (
-    <div className="ddz-board-container">
+  return (n    <div className="ddz-board-container">
       <div className="ddz-top-bar">
         <button className="ddz-quit-btn" onClick={onQuit}>< 返回大厅</button>
         <div className="landlord-cards-display">
@@ -55,7 +53,7 @@ export default function DoudizhuBoard({ onQuit }) {
         
         <div className="center-table">
           <div className="played-cards-area">
-            {/* 显示上家打出的牌 */}
+            {/* Logic to display played cards will be added here */}
           </div>
         </div>
         
