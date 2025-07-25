@@ -7,48 +7,34 @@ import './Play.css';
 
 export default function Play() {
   const navigate = useNavigate();
-  const {
-    players,
-    stage,
-    resetRound,
-    setPlayerReady,
-    updatePlayerHands,
-    submitHands,
-    autoSplitForPlayer
-  } = useGameStore();
+  const store = useGameStore();
 
   useEffect(() => {
-    resetRound();
-  }, [resetRound]);
+    store.resetRound();
+  }, [store.resetRound]);
 
-  const handleReady = () => {
-    setPlayerReady('player1');
-  };
-
-  const handleQuit = () => {
-    navigate('/');
-  };
-
-  const me = players.find(p => p.id === 'player1');
+  const me = store.players.find(p => p.id === 'player1');
   if (!me) {
     return <div>Loading...</div>;
   }
 
-  // --- 核心修复：重新添加 play-container ---
+  // --- 核心修改：父组件负责构建完整的布局结构 ---
   return (
     <div className="play-container">
-      <GameBoard
-        players={players}
-        myPlayerId="player1"
-        stage={stage}
-        onReady={handleReady}
-        onCompare={submitHands}
-        onRestart={resetRound}
-        onQuit={handleQuit}
-        onUpdateHands={updatePlayerHands}
-        onAutoSplit={autoSplitForPlayer}
-        gameMode="thirteen-cards"
-      />
+      <div className="game-wrapper">
+        <GameBoard
+          players={store.players}
+          myPlayerId="player1"
+          stage={store.stage}
+          onReady={() => store.setPlayerReady('player1')}
+          onCompare={store.submitHands}
+          onRestart={store.resetRound}
+          onQuit={() => navigate('/')}
+          onUpdateHands={store.updatePlayerHands}
+          onAutoSplit={store.autoSplitForPlayer}
+          gameMode="thirteen-cards"
+        />
+      </div>
     </div>
   );
 }
