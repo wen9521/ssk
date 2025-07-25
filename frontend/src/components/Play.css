@@ -1,43 +1,19 @@
-/* frontend/src/components/Play.css (全新科技感主题 - 终极修正版) */
+/* frontend/src/components/Play.css (终极修正版 V2) */
 
-/* 引入外部字体 (也可以只在 App.css 中引入一次) */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-
-/* --- 变量 (从 App.css 继承) --- */
-:root {
-  --bg-color: #02041b;
-  --primary-glow: #00e5ff;
-  --secondary-glow: #ff00ff;
-  --surface-bg: rgba(13, 17, 43, 0.75);
-  --surface-border: rgba(0, 229, 255, 0.25);
-  --text-color: #c0c8ff;
-  --text-bright: #ffffff;
-  --ready-color: #00ffab;
-  --foul-color: #ff4d6d;
-  --font-family: 'Orbitron', sans-serif;
-  --card-offset: -40px;
-  --outer-max-width: 460px;
-  --pai-dun-height: clamp(100px, 28vw, 120px);
-}
-
+/* 继承自 App.css 的变量和字体 */
 
 /* --- 整体容器 --- */
 .play-container {
   width: 100%;
-  min-height: 100vh;
-  padding: 15px 0;
-  box-sizing: border-box;
-  font-family: var(--font-family), sans-serif;
-  display: flex;
+  display: flex; /* 确保 game-wrapper 居中 */
   align-items: center;
   justify-content: center;
 }
 
 /* --- 游戏主面板 --- */
 .game-wrapper {
-  max-width: var(--outer-max-width);
-  width: 95%;
-  margin: auto;
+  max-width: var(--outer-max-width, 460px);
+  width: 100%;
   background: var(--surface-bg);
   border: 1px solid var(--surface-border);
   border-radius: 24px;
@@ -46,11 +22,11 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 50px);
-  max-height: 95vh;
   box-sizing: border-box;
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
+  /* 限制最大高度以适应屏幕 */
+  max-height: 95vh;
 }
 
 /* --- 顶部 Header --- */
@@ -204,7 +180,7 @@
   text-shadow: 0 0 5px var(--secondary-glow);
 }
 .btn-compare::before { background: linear-gradient(90deg, transparent, var(--secondary-glow), transparent); }
-.btn-compare:hover { box-shadow: 0 0 20px var(--secondary-glow), 0 0 30px var(--secondary-glow); }
+.btn-compare:hover { box-shadow: 0 0 20px var(--secondary-glow); }
 
 /* --- 结果弹窗 --- */
 .modal-overlay { background: rgba(13, 15, 26, 0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
