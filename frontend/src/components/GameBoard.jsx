@@ -199,9 +199,9 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     <div className="play-container">
       <div className="game-wrapper">
         <div className="game-header">
-          {/* ========== 核心修复 ========== */}
-          <button className="btn-quit" onClick={onQuit}>< 退出房间</button>
-          {/* ============================= */}
+          <button className="btn-quit" onClick={onQuit}>
+            {'< 退出房间'}
+          </button>
           <div className="score-display">
             <div className="coin-icon">1</div>
             积分: {me.points}
