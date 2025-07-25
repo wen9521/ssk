@@ -1,74 +1,9 @@
-/* frontend/src/App.css (终极修正版 V2) */
+/* frontend/src/App.css (终极修正版 V3) */
 
-/* --- 变量定义 --- */
-:root {
-  --bg-color: #02041b;
-  --primary-glow: #00e5ff;
-  --secondary-glow: #ff00ff;
-  --surface-bg: rgba(13, 17, 43, 0.75);
-  --surface-border: rgba(0, 229, 255, 0.25);
-  --text-color: #c0c8ff;
-  --text-bright: #ffffff;
-  --font-family-tech: 'Orbitron', sans-serif; /* 仅作为备用，我们先用系统字体确保能加载 */
-  --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-}
-
-/* --- 全局与背景 (安全实现) --- */
-html {
-  height: 100%;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family: var(--font-family-sans);
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  min-height: 100%;
-  position: relative;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* 使用固定定位的伪元素作为背景，确保不遮挡内容 */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -2;
-  background-image: radial-gradient(circle at 20% 20%, rgba(78, 84, 200, 0.3), transparent 40%),
-                    radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.2), transparent 40%);
-}
-
-body::after {
-  content: '';
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1;
-  background-image: 
-    linear-gradient(rgba(0, 229, 255, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 229, 255, 0.07) 1px, transparent 1px);
-  background-size: 30px 30px;
-}
-
-/* 强制 #root 元素撑满并居中 */
-#root {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
+/* 全局和背景样式已移至 index.html，这里只负责组件样式 */
 
 /* --- App 容器通用样式 --- */
-.app-container {
+#root .app-container {
   background: var(--surface-bg);
   border: 1px solid var(--surface-border);
   border-radius: 24px;
@@ -92,7 +27,7 @@ body::after {
   50% { opacity: 0.9; }
 }
 
-h1 {
+#root h1 {
   color: var(--text-bright);
   margin: 0 0 20px 0;
   font-size: clamp(2.5em, 8vw, 3.8em);
@@ -105,7 +40,7 @@ h1 {
   padding: 0 20px;
 }
 
-h1::before, h1::after {
+#root h1::before, #root h1::after {
   content: '[';
   position: absolute;
   top: 50%;
@@ -114,11 +49,10 @@ h1::before, h1::after {
   color: var(--primary-glow);
   opacity: 0.7;
 }
+#root h1::before { left: 0; }
+#root h1::after { content: ']'; right: 0; }
 
-h1::before { left: 0; }
-h1::after { content: ']'; right: 0; }
-
-h2 {
+#root h2 {
   color: var(--text-bright);
   margin-bottom: 15px;
   font-size: clamp(1.8em, 6vw, 2.5em);
@@ -127,7 +61,7 @@ h2 {
 }
 
 /* --- 菜单与按钮通用样式 --- */
-.menu {
+#root .menu {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -135,7 +69,7 @@ h2 {
   max-width: 350px;
 }
 
-.btn {
+#root .btn {
   display: block;
   padding: 16px 30px;
   border: 2px solid var(--primary-glow);
@@ -153,7 +87,7 @@ h2 {
   letter-spacing: 1px;
 }
 
-.btn::before {
+#root .btn::before {
   content: '';
   position: absolute;
   top: 0;
@@ -164,26 +98,20 @@ h2 {
   transition: left 0.4s ease;
 }
 
-.btn:hover::before {
-  left: 100%;
-}
+#root .btn:hover::before { left: 100%; }
+#root .btn:hover { box-shadow: 0 0 15px var(--primary-glow), 0 0 25px var(--primary-glow); }
 
-.btn:hover {
-  box-shadow: 0 0 15px var(--primary-glow), 0 0 25px var(--primary-glow);
-}
-
-.btn-secondary {
+#root .btn-secondary {
   border-color: rgba(255, 255, 255, 0.4);
   color: rgba(255, 255, 255, 0.8);
 }
-
-.btn-secondary:hover {
+#root .btn-secondary:hover {
   background-color: rgba(255, 255, 255, 0.1);
   border-color: var(--text-bright);
 }
 
 /* --- 游戏大厅特定样式 --- */
-.lobby-container {
+#root .lobby-container {
   background: none;
   border: none;
   box-shadow: none;
@@ -198,7 +126,7 @@ h2 {
   100% { background-position: 0 100%; }
 }
 
-.game-section {
+#root .game-section {
   width: 90%;
   max-width: 420px;
   border-radius: 20px;
@@ -217,7 +145,7 @@ h2 {
   transform: rotateX(10deg) rotateY(-5deg);
 }
 
-.game-section::after { /* Scanline effect */
+#root .game-section::after {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -228,45 +156,34 @@ h2 {
   transition: opacity 0.3s ease;
 }
 
-.game-section:hover {
-  transform: translateY(-15px) rotateX(0deg) rotateY(0deg) scale(1.05);
-}
-.game-section:hover::after {
-  opacity: 0.1;
-}
+#root .game-section:hover { transform: translateY(-15px) rotateX(0deg) rotateY(0deg) scale(1.05); }
+#root .game-section:hover::after { opacity: 0.1; }
 
-.thirteen-cards-section {
-  border-color: var(--secondary-glow);
-  box-shadow: 0 0 20px var(--secondary-glow), inset 0 0 20px var(--secondary-glow);
-}
-.eight-cards-section {
-  border-color: var(--primary-glow);
-  box-shadow: 0 0 20px var(--primary-glow), inset 0 0 20px var(--primary-glow);
-}
-.thirteen-cards-section::after { background-image: linear-gradient(to bottom, transparent 0%, var(--secondary-glow) 50%, transparent 100%); }
-.eight-cards-section::after { background-image: linear-gradient(to bottom, transparent 0%, var(--primary-glow) 50%, transparent 100%); }
+#root .thirteen-cards-section { border-color: var(--secondary-glow); box-shadow: 0 0 20px var(--secondary-glow), inset 0 0 20px var(--secondary-glow); }
+#root .eight-cards-section { border-color: var(--primary-glow); box-shadow: 0 0 20px var(--primary-glow), inset 0 0 20px var(--primary-glow); }
+#root .thirteen-cards-section::after { background-image: linear-gradient(to bottom, transparent 0%, var(--secondary-glow) 50%, transparent 100%); }
+#root .eight-cards-section::after { background-image: linear-gradient(to bottom, transparent 0%, var(--primary-glow) 50%, transparent 100%); }
 
-.game-section h2 { font-size: 2.8em; margin-bottom: 0; font-weight: 900; }
-.thirteen-cards-section h2 { text-shadow: 0 0 15px var(--secondary-glow); }
-.eight-cards-section h2 { text-shadow: 0 0 15px var(--primary-glow); }
+#root .game-section h2 { font-size: 2.8em; margin-bottom: 0; font-weight: 900; }
+#root .thirteen-cards-section h2 { text-shadow: 0 0 15px var(--secondary-glow); }
+#root .eight-cards-section h2 { text-shadow: 0 0 15px var(--primary-glow); }
 
-.game-section .btn.btn-primary {
+#root .game-section .btn.btn-primary {
   border-width: 2px; font-size: 1.1em;
   padding: 12px 25px;
 }
-.thirteen-cards-section .btn.btn-primary { border-color: white; color: white; box-shadow: none; text-shadow: none; }
-.eight-cards-section .btn.btn-primary { border-color: white; color: white; box-shadow: none; text-shadow: none; }
-.thirteen-cards-section .btn.btn-primary:hover { background-color: var(--secondary-glow); color: var(--bg-color); border-color: var(--secondary-glow); }
-.eight-cards-section .btn.btn-primary:hover { background-color: var(--primary-glow); color: var(--bg-color); border-color: var(--primary-glow); }
-
+#root .thirteen-cards-section .btn.btn-primary { border-color: white; color: white; box-shadow: none; text-shadow: none; }
+#root .eight-cards-section .btn.btn-primary { border-color: white; color: white; box-shadow: none; text-shadow: none; }
+#root .thirteen-cards-section .btn.btn-primary:hover { background-color: var(--secondary-glow); color: var(--bg-color); border-color: var(--secondary-glow); }
+#root .eight-cards-section .btn.btn-primary:hover { background-color: var(--primary-glow); color: var(--bg-color); border-color: var(--primary-glow); }
 
 /* --- "Coming Soon" 页面特定样式 --- */
-.coming-soon p { font-size: 1.2em; margin-bottom: 25px; opacity: 0.8; }
+#root .coming-soon p { font-size: 1.2em; margin-bottom: 25px; opacity: 0.8; }
 
 /* --- 响应式设计 --- */
 @media (max-width: 480px) {
   #root { padding: 10px; }
-  .app-container { padding: 25px; gap: 20px; }
-  .game-section { transform: none; }
-  .game-section:hover { transform: translateY(-10px) scale(1.03); }
+  #root .app-container { padding: 25px; gap: 20px; }
+  #root .game-section { transform: none; }
+  #root .game-section:hover { transform: translateY(-10px) scale(1.03); }
 }
