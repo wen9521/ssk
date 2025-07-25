@@ -1,3 +1,5 @@
+// frontend/src/components/Hand.jsx
+
 import React from 'react';
 import Card from './Card';
 import './Hand.css';
@@ -12,16 +14,16 @@ function Hand({ cards, selectedCards = [], onCardSelect }) {
   return (
     <div className="hand-display-container">
       {cards.length > 0 ? (
-        <div className="hand">
+        <div className="hand" style={{'--total-cards': cards.length}}>
           {cards.map((card, index) => (
             <div 
               className="card-wrapper" 
               key={`${card.rank}-${card.suit}`}
               style={{'--card-index': index}} /* 用于CSS动画 */
             >
+              {/* --- FIX: 将 props 从 rank={...} suit={...} 修改为 card={...} --- */}
               <Card
-                suit={card.suit}
-                rank={card.rank}
+                card={card}
                 isSelected={isCardSelected(card)}
                 onClick={() => onCardSelect(card)}
               />
@@ -29,7 +31,7 @@ function Hand({ cards, selectedCards = [], onCardSelect }) {
           ))}
         </div>
       ) : (
-        <p className="empty-hand-message">你已经出完所有牌了！</p>
+        <p className="empty-hand-message">你的牌已全部放入牌墩！</p>
       )}
     </div>
   );
