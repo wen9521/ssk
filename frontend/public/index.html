@@ -13,6 +13,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#000000" />
 
+  <!-- 引入科技感字体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
   <!-- SEO & Sharing -->
   <title>扑克王 - 十三水</title>
   <meta name="description" content="一个基于React的在线十三水纸牌游戏，专为 Web 和 Android WebView 设计。" />
@@ -25,14 +30,12 @@
   
 </head>
 <body>
-  <!-- Fallback for users with JavaScript disabled -->
   <noscript>您需要启用 JavaScript 才能运行此应用。</noscript>
   
-  <!--
-    This is the root DOM node where the React application will be mounted.
-    The content of this div is managed entirely by React.
-  -->
   <div id="root"></div>
 
+  <!-- --- 核心修复点：添加专用的背景容器 --- -->
+  <div id="app-background"></div>
+  
 </body>
 </html>
