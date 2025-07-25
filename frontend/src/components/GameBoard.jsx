@@ -1,4 +1,4 @@
-// frontend/src/components/GameBoard.jsx (功能增强版)
+// frontend/src/components/GameBoard.jsx (主题化文本增强版)
 
 import React, { useState, useEffect, useRef } from 'react';
 import Card from './Card';
@@ -53,20 +53,18 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     }
   }, [stage]);
 
-  // --- 交互逻辑 ---
+  // --- 交互逻辑 (保持不变) ---
   const handleCardClick = (card, area, event) => {
     if (stage !== STAGES.PLAYING) return;
-
     const cardId = `${card.rank}_${card.suit}`;
     const isSelected = selectedCards.some(c => c.id === cardId);
-
-    if (event.shiftKey) { // Shift多选
+    if (event.shiftKey) {
       if (isSelected) {
         setSelectedCards(selectedCards.filter(c => c.id !== cardId));
       } else {
         setSelectedCards([...selectedCards, { ...card, area, id: cardId }]);
       }
-    } else { // 单选
+    } else {
       if (isSelected && selectedCards.length === 1) {
         setSelectedCards([]);
       } else {
@@ -78,18 +76,14 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
   const handleDragStart = (e, card, area) => {
     if (stage !== STAGES.PLAYING) return;
     const cardId = `${card.rank}_${card.suit}`;
-    
-    // 如果拖拽的牌未被选中，则清空其他选中，只选中当前牌
     if (!selectedCards.some(c => c.id === cardId)) {
       setSelectedCards([{ ...card, area, id: cardId }]);
       setDraggedCard([{ ...card, area, id: cardId }]);
       e.dataTransfer.setData("text/plain", JSON.stringify([{ ...card, area, id: cardId }]));
     } else {
-      // 否则拖拽所有选中的牌
       setDraggedCard(selectedCards);
       e.dataTransfer.setData("text/plain", JSON.stringify(selectedCards));
     }
-    
     setTimeout(() => e.target.closest('.card-wrapper-dun').style.opacity = '0.5', 0);
   };
   
@@ -102,24 +96,17 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     if (stage !== STAGES.PLAYING || !draggedCard) return;
     setDragOverArea(null);
     const draggedCards = JSON.parse(e.dataTransfer.getData("text/plain"));
-    
     let hands = { head: [...me.head], middle: [...me.middle], tail: [...me.tail] };
-    
     draggedCards.forEach(dragged => {
       const fromArea = dragged.area;
       if (fromArea !== toArea) {
-        // 从原数组移除
         hands[fromArea] = hands[fromArea].filter(c => !(c.rank === dragged.rank && c.suit === dragged.suit));
-        // 添加到新数组
         hands[toArea].push({ rank: dragged.rank, suit: dragged.suit });
       }
     });
-
-    // 排序并更新状态
     hands.head = sortHand(hands.head);
     hands.middle = sortHand(hands.middle);
     hands.tail = sortHand(hands.tail);
-    
     onUpdateHands(hands);
     setSelectedCards([]);
   };
@@ -130,7 +117,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     <div key={p.id} className={`player-seat ${p.id === myPlayerId ? 'player-me' : ''}`}>
       <div>{p.name}</div>
       <div className={`player-status ${p.isReady || p.submitted ? 'ready' : ''}`}>
-        {p.submitted ? '已比牌' : p.isReady ? '已准备' : '等待中'}
+        {p.submitted ? '已出牌' : p.isReady ? '已就绪' : '分析中...'}
       </div>
     </div>
   );
@@ -165,7 +152,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
               </div>
             );
           }) : (
-            <div className="pai-dun-placeholder">{stage === STAGES.LOBBY ? '等待准备' : '空'}</div>
+            <div className="pai-dun-placeholder">{stage === STAGES.LOBBY ? '等待部署' : '空'}</div>
           )
         }
       </div>
@@ -178,7 +165,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
      
      const renderResultPile = (cards, score, rank) => (
         <div className="result-hand">
-            <div className="hand-score">{rank} ({score || 0} 分)</div>
+            <div className="hand-score">{rank} (得分: {score || 0})</div>
             {(cards || []).map((card, i) => (
                 <div key={`${card.rank}_${card.suit}_${i}`} className="card-wrapper-dun" style={{'--card-index': i, zIndex: i }}>
                     <Card card={card} />
@@ -191,13 +178,13 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
         <div className="modal-overlay" onClick={onRestart}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <button className="modal-close-btn" onClick={onRestart}>×</button>
-                <h2>对局结果</h2>
+                <h2>BATTLE REPORT</h2>
                 {players.map(p => (
                     <div key={p.id} className="result-player">
                         <div className={`result-player-header ${p.id === myPlayerId ? 'me' : ''}`}>
                             <span className="player-name">{p.name}</span>
-                            {p.isFoul && <span className="foul-tag"> (倒水)</span>}
-                            <span className="player-score">总分: {p.score > 0 ? '+' : ''}{p.score || 0}</span>
+                            {p.isFoul && <span className="foul-tag">(阵型溃败)</span>}
+                            <span className="player-score" data-positive={p.score > 0}>总分: {p.score > 0 ? '+' : ''}{p.score || 0}</span>
                         </div>
                         {p.handDetails && (
                             <>
@@ -208,7 +195,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
                         )}
                     </div>
                 ))}
-                <button className="btn-action btn-ready" onClick={onRestart} style={{gridColumn: '1 / -1', marginTop: '20px'}}>再来一局</button>
+                <button className="btn-action btn-ready" onClick={onRestart} style={{gridColumn: '1 / -1', marginTop: '20px'}}>再战一场</button>
             </div>
         </div>
     );
@@ -218,30 +205,30 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     <div className="play-container">
       <div className="game-wrapper">
         <div className="game-header">
-          <button className="btn-quit" onClick={onQuit}>{'< 退出'}</button>
+          <button className="btn-quit" onClick={onQuit}>{'< 撤退'}</button>
           <div className="score-display">
-            <span role="img" aria-label="coin">🪙</span> 积分: {me.points || 0}
+            <span role="img" aria-label="coin">⭐</span> 战绩: {me.points || 0}
           </div>
         </div>
         <div className="players-area">{players.map(renderSeat)}</div>
 
-        {renderPile(me.head, '头道', 'head')}
-        {renderPile(me.middle, '中道', 'middle')}
-        {renderPile(me.tail, '尾道', 'tail')}
+        {renderPile(me.head, '前锋部队', 'head')}
+        {renderPile(me.middle, '核心主力', 'middle')}
+        {renderPile(me.tail, '后备支援', 'tail')}
 
         <div className="actions-area">
           {stage === STAGES.LOBBY && !me.isReady && (
             <button className="btn-action btn-ready" onClick={onReady}>
-              {stage === STAGES.DEALING ? '发牌中...' : '准备'}
+              {stage === STAGES.DEALING ? '正在部署...' : '部署就绪'}
             </button>
           )}
           {stage === STAGES.PLAYING && (
             <button className="btn-action btn-compare" onClick={onCompare} disabled={me.isFoul}>
-              {me.isFoul ? '牌型错误' : '开始比牌'}
+              {me.isFoul ? '阵型错误' : '发动总攻'}
             </button>
           )}
           {stage === STAGES.SUBMITTING && (
-            <button className="btn-action btn-compare" disabled>等待结果...</button>
+            <button className="btn-action btn-compare" disabled>战况分析中...</button>
           )}
         </div>
         
