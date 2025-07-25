@@ -1,11 +1,11 @@
-// src/components/GameBoard.jsx
+// frontend/src/components/GameBoard.jsx
 
 import React, { useState, useEffect } from 'react';
 import { SmartSplit } from '../game-logic/ai-logic';
 import Card from './Card';
-import Hand from './Hand'; // --- 核心修复点：引入 Hand 组件 ---
+import Hand from './Hand';
 import './Play.css';
-import './Hand.css'; // --- 核心修复点：引入 Hand 组件的样式 ---
+import './Hand.css';
 
 // 定义牌的点数和花色顺序，用于排序
 const ranks = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
@@ -157,22 +157,20 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   // 卡牌移动
   const moveTo = (dest) => {
     if (submitted || !selected.cards.length) return;
-    // --- 核心修复点：确保是从手牌区 'hand' 移动过来的 ---
-    if (selected.area !== 'hand') return;
+    if (selected.area !== 'hand') return; // 只允许从手牌移动
+    
     const src = selected.area;
     const cardSet = new Set(selected.cards.map(c => c.rank+'_'+c.suit));
 
     const areas = { hand: myCards, head, middle, tail };
-    // 从源区域移除
     areas[src] = areas[src].filter(c => !cardSet.has(c.rank+'_'+c.suit));
-    // 添加到目标
     areas[dest] = [...areas[dest], ...selected.cards];
 
     setMyCards(sortHand(areas.hand));
     setHead(sortHand(areas.head));
     setMiddle(sortHand(areas.middle));
     setTail(sortHand(areas.tail));
-    setSelected({ area:dest, cards:[] });
+    setSelected({ area: dest, cards: [] });
     setSubmitMsg('');
   };
 
@@ -210,6 +208,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
                 <div key={card.rank+'_'+card.suit+'_'+area+'_'+i}
                      className="card-wrapper-dun"
                      style={{ '--card-index': i, zIndex:i }}>
+                  {/* --- FIX: 统一使用 card prop --- */}
                   <Card
                     card={card}
                     isSelected={isSel}
@@ -227,12 +226,13 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   // 渲染结果弹窗
   const renderModal = () => {
     if (!showResult || !resultData) return null;
-    
+
     // Helper to render piles in modal without click handlers
     const renderResultPile = (cards) => (
         <div className="result-hand">
             {(cards || []).map((card, i) => (
                 <div key={`${card.rank}_${card.suit}_${i}`} className="card-wrapper-dun" style={{ '--card-index': i, zIndex: i }}>
+                    {/* --- FIX: 统一使用 card prop --- */}
                     <Card card={card} />
                 </div>
             ))}
@@ -281,7 +281,6 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
         {renderPile(middle, '中道', 'middle')}
         {renderPile(tail, '尾道', 'tail')}
         
-        {/* --- 核心修复点：添加 Hand 组件以显示玩家手牌 --- */}
         <div className="my-cards-area">
           <Hand
             cards={myCards}
