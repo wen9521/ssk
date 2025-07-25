@@ -1,37 +1,48 @@
-// frontend/src/components/Hand.jsx
-
+// frontend/src/components/Hand.jsx (新组件)
 import React from 'react';
 import Card from './Card';
 import './Hand.css';
 
-function Hand({ cards, selectedCards = [], onCardSelect }) {
+function Hand({ cards, selectedCards, draggedCards, onCardClick, onDragStart, onDragEnd, onDrop }) {
   
-  // 检查一张牌是否被选中
   const isCardSelected = (card) => {
     return selectedCards.some(selected => selected.rank === card.rank && selected.suit === card.suit);
   };
+  
+  const isCardDragging = (card) => {
+    return draggedCards?.some(dragged => dragged.rank === card.rank && dragged.suit === card.suit) ?? false;
+  };
 
   return (
-    <div className="hand-display-container">
+    <div 
+      className="hand-container"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={onDrop}
+    >
       {cards.length > 0 ? (
         <div className="hand" style={{'--total-cards': cards.length}}>
           {cards.map((card, index) => (
             <div 
               className="card-wrapper" 
               key={`${card.rank}-${card.suit}`}
-              style={{'--card-index': index}} /* 用于CSS动画 */
+              style={{'--card-index': index}}
+              draggable="true"
+              onDragStart={(e) => onDragStart(e, card, 'hand')}
+              onDragEnd={onDragEnd}
             >
-              {/* --- FIX: 将 props 从 rank={...} suit={...} 修改为 card={...} --- */}
               <Card
                 card={card}
                 isSelected={isCardSelected(card)}
-                onClick={() => onCardSelect(card)}
+                isDragging={isCardDragging(card)}
+                onClick={(e) => onCardClick(card, 'hand', e)}
               />
             </div>
           ))}
         </div>
       ) : (
-        <p className="empty-hand-message">你的牌已全部放入牌墩！</p>
+        <div className="empty-hand-message">
+          <span>所有单位已部署</span>
+        </div>
       )}
     </div>
   );
