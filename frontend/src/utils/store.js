@@ -1,11 +1,10 @@
 // src/utils/store.js
 import { create } from 'zustand';
 import { produce } from 'immer';
-// 使用别名路径
 import { createDeck, shuffleDeck, dealCards } from '@/game-logic/deck';
-import { SmartSplit, isFoulForAI } from '@/game-logic/ai-logic';
-// 确保这个路径正确
-import { calcSSSAllScores } from '@/game-logic/thirteen-water-rules';
+import { SmartSplit } from '@/game-logic/ai-logic';
+// 1. 导入新的规则文件
+import { calcSSSAllScores, isFoul } from '@/game-logic/thirteen-water-rules';
 
 export const STAGES = {
   LOBBY: 'lobby',
@@ -38,6 +37,7 @@ const toHandStrings = (hand) => ({
 });
 
 const useGameStore = create((set, get) => ({
+  // ... (初始状态不变) ...
   stage: STAGES.LOBBY,
   players: [
     { id: 'player1', name: '你', submitted: false, isReady: false, points: 100, isFoul: false },
@@ -52,15 +52,16 @@ const useGameStore = create((set, get) => ({
       p.submitted = false;
       p.isReady = !!p.isAI;
       p.isFoul = false;
-      delete p.head;
-      delete p.middle;
-      delete p.tail;
+      p.head = [];
+      p.middle = [];
+      p.tail = [];
       delete p.score;
       delete p.handDetails;
     });
   })),
   
   startGame: () => {
+    // ... (此函数不变) ...
     set({ stage: STAGES.DEALING });
     setTimeout(() => {
       const deck = createDeck();
@@ -68,15 +69,20 @@ const useGameStore = create((set, get) => ({
       const hands = dealCards(shuffled, 13, 4);
       set(produce(state => {
         state.players.forEach((player, index) => {
-          const playerHandObjects = hands[index];
-          const playerHandStrings = playerHandObjects.map(toCardString);
-          const splitResult = SmartSplit(playerHandStrings)[0];
-          if (splitResult) {
-            player.head = splitResult.head.map(toCardObject).filter(Boolean);
-            player.middle = splitResult.middle.map(toCardObject).filter(Boolean);
-            player.tail = splitResult.tail.map(toCardObject).filter(Boolean);
-            player.isFoul = isFoulForAI(splitResult.head, splitResult.middle, splitResult.tail);
-          }
+            const playerHandObjects = hands[index];
+            if (player.isAI) {
+                const playerHandStrings = playerHandObjects.map(toCardString);
+                const splitResult = SmartSplit(playerHandStrings)[0];
+                player.head = splitResult.head.map(toCardObject).filter(Boolean);
+                player.middle = splitResult.middle.map(toCardObject).filter(Boolean);
+                player.tail = splitResult.tail.map(toCardObject).filter(Boolean);
+            } else {
+                // 将所有牌默认放入尾道，让玩家自己理牌
+                player.head = [];
+                player.middle = [];
+                player.tail = playerHandObjects;
+            }
+            player.isFoul = true; // 初始状态牌数不对，肯定是倒水
         });
         state.stage = STAGES.PLAYING;
       }));
@@ -94,6 +100,7 @@ const useGameStore = create((set, get) => ({
     }
   })),
 
+  // 2. 增强 updatePlayerHands
   updatePlayerHands: (playerId, newHands) => set(produce(state => {
     const player = state.players.find(p => p.id === playerId);
     if (player) {
@@ -101,42 +108,49 @@ const useGameStore = create((set, get) => ({
       player.middle = newHands.middle;
       player.tail = newHands.tail;
       const handStrings = toHandStrings(newHands);
-      player.isFoul = isFoulForAI(handStrings.head, handStrings.middle, handStrings.tail);
+      // 使用新的 isFoul 函数进行实时判断
+      player.isFoul = isFoul(handStrings.head, handStrings.middle, handStrings.tail);
     }
   })),
   
   autoSplitForPlayer: (playerId) => set(produce(state => {
       const player = state.players.find(p => p.id === playerId);
       if (player && player.head && player.middle && player.tail) {
-        const allCards = [
-          ...player.head.map(toCardString),
-          ...player.middle.map(toCardString),
-          ...player.tail.map(toCardString),
-        ].filter(Boolean);
+        const allCards = [ ...player.head, ...player.middle, ...player.tail ].map(toCardString);
         if (allCards.length === 13) {
             const splitResult = SmartSplit(allCards)[0];
             if (splitResult) {
               player.head = splitResult.head.map(toCardObject).filter(Boolean);
               player.middle = splitResult.middle.map(toCardObject).filter(Boolean);
               player.tail = splitResult.tail.map(toCardObject).filter(Boolean);
-              player.isFoul = isFoulForAI(splitResult.head, splitResult.middle, splitResult.tail);
+              player.isFoul = isFoul(splitResult.head, splitResult.middle, splitResult.tail);
             }
         }
       }
   })),
 
+  // 3. 增强 submitHands
   submitHands: () => {
     const { players } = get();
     const me = players.find(p => p.id === 'player1');
-    if (me && me.isFoul) {
-      if (!window.confirm("当前牌型为倒水，确定要提交吗？")) {
-        return;
-      }
+    if (me.isFoul) {
+      if (!window.confirm("当前牌型为倒水，确定要提交吗？")) return;
     }
-    set({ stage: STAGES.SUBMITTING });
+
     set(produce(state => {
-      state.players.forEach(p => p.submitted = true);
+        const player = state.players.find(p => p.id === 'player1');
+        player.submitted = true;
     }));
+
+    set({ stage: STAGES.SUBMITTING });
+    
+    // AI 玩家自动提交
+    set(produce(state => {
+      state.players.forEach(p => {
+        if(p.isAI) p.submitted = true;
+      });
+    }));
+
     setTimeout(() => {
       const handsForScoring = players.map(p => ({
         ...toHandStrings(p),
