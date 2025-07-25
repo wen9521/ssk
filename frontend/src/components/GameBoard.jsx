@@ -1,16 +1,13 @@
 // frontend/src/components/GameBoard.jsx
 
-import React, { useState, useEffect } from 'react';
-import { SmartSplit } from '../game-logic/ai-logic';
+import React, { useState, useEffect, useRef } from 'react';
 import Card from './Card';
-import Hand from './Hand';
+import { STAGES } from '../utils/store';
 import './Play.css';
-import './Hand.css';
 
-// 定义牌的点数和花色顺序，用于排序
+// 排序函数（保持不变）
 const ranks = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
 const suits = ['diamonds','clubs','hearts','spades'];
-
 const sortHand = (hand) => {
   if (!Array.isArray(hand)) return [];
   return [...hand].sort((a, b) => {
@@ -21,293 +18,226 @@ const sortHand = (hand) => {
   });
 };
 
-const toCardString = (card) => {
-  const map = { A:'ace', K:'king', Q:'queen', J:'jack', T:'10' };
-  const rank = map[card.rank] || card.rank.toLowerCase();
-  return rank + '_of_' + card.suit;
-};
-
-const toCardObject = (str) => {
-  const parts = str.split('_of_');
-  const rev = { ace:'A', king:'K', queen:'Q', jack:'J', '10':'T' };
-  const rank = rev[parts[0]] || parts[0].toUpperCase();
-  return { rank, suit: parts[1] };
-};
-
-export default function GameBoard({ players, myPlayerId, onCompare, onRestart, onQuit }) {
-  // Guard clauses
-  if (!players || players.length === 0) {
-    return (
-      <div className="play-container">
-        <div className="game-wrapper">
-          <div>Loading Game...</div>
-        </div>
-      </div>
-    );
-  }
+export default function GameBoard({ players, myPlayerId, stage, onReady, onCompare, onRestart, onQuit, onUpdateHands }) {
   const me = players.find(p => p.id === myPlayerId);
-  if (!me) {
-    return (
-      <div className="play-container">
-        <div className="game-wrapper">
-          <div>Initializing player...</div>
-        </div>
-      </div>
-    );
-  }
 
-  // 初始状态分配
-  const getInitialState = (player) => {
-    const cards = player.cards13 || player.hand || [];
-    const head = player.head || [];
-    const middle = player.middle || [];
-    const tail = player.tail || [];
-    const myCards = head.length||middle.length||tail.length ? [] : cards;
-    return {
-      myCards: sortHand(myCards),
-      head: sortHand(head),
-      middle: sortHand(middle),
-      tail: sortHand(tail),
-      submitted: player.submitted || false
-    };
-  };
-
-  const init = getInitialState(me);
-
-  // State
-  const [myCards, setMyCards] = useState(init.myCards);
-  const [head, setHead] = useState(init.head);
-  const [middle, setMiddle] = useState(init.middle);
-  const [tail, setTail] = useState(init.tail);
-  const [selected, setSelected] = useState({ area:'', cards:[] });
-  const [submitMsg, setSubmitMsg] = useState('');
-  const [submitted, setSubmitted] = useState(init.submitted);
+  // State for interaction
+  const [selectedCards, setSelectedCards] = useState([]);
+  const [draggedCard, setDraggedCard] = useState(null);
+  const [dragOverArea, setDragOverArea] = useState(null);
   const [showResult, setShowResult] = useState(false);
-  const [resultData, setResultData] = useState(null);
 
-  // 新牌局或刷新时重置
-  useEffect(() => {
-    const p = players.find(p => p.id === myPlayerId);
-    if (!p) return;
-    const s = getInitialState(p);
-    setMyCards(s.myCards);
-    setHead(s.head);
-    setMiddle(s.middle);
-    setTail(s.tail);
-    setSelected({ area:'', cards:[] });
-    setSubmitMsg('');
-    setSubmitted(s.submitted);
-    setShowResult(false);
-    setResultData(null);
-  }, [players, myPlayerId]);
+  const playerHands = useRef({ head: [], middle: [], tail: [] });
 
-  // 当所有玩家都有 score 时显示结果
   useEffect(() => {
-    if (players.some(p => typeof p.score === 'number')) {
-      setResultData(players);
+    if (me && me.head) {
+      playerHands.current = { head: me.head, middle: me.middle, tail: me.tail };
+    }
+  }, [me]);
+
+  useEffect(() => {
+    if (stage === STAGES.FINISHED) {
       setShowResult(true);
-    }
-  }, [players]);
-
-  // 结果弹窗自动关闭并 restart
-  useEffect(() => {
-    if (!showResult) return;
-    const t = setTimeout(() => {
-      setShowResult(false);
-      typeof onRestart === 'function' && onRestart();
-    }, 8000);
-    return () => clearTimeout(t);
-  }, [showResult, onRestart]);
-
-  // 智能分牌
-  const handleSmartSplit = () => {
-    if (myCards.length !== 13) return;
-    const deck = myCards.map(toCardString);
-    const hands = SmartSplit(deck);
-    if (hands && hands.length) {
-      const best = hands[0];
-      setHead(sortHand(best.head.map(toCardObject)));
-      setMiddle(sortHand(best.middle.map(toCardObject)));
-      setTail(sortHand(best.tail.map(toCardObject)));
-      setMyCards([]);
-    }
-  };
-
-  // 点击选卡
-  const handleCardClick = (card, area) => {
-    if (submitted) return;
-    if (selected.area !== area) {
-      setSelected({ area, cards:[card] });
+      const timer = setTimeout(() => {
+        setShowResult(false);
+        onRestart();
+      }, 8000);
+      return () => clearTimeout(timer);
     } else {
-      const exists = selected.cards.find(c => c.rank===card.rank && c.suit===card.suit);
-      if (exists) {
-        setSelected({
-          area,
-          cards: selected.cards.filter(c => !(c.rank===card.rank && c.suit===card.suit))
-        });
+      setShowResult(false);
+    }
+  }, [stage, onRestart]);
+  
+  useEffect(() => {
+    if (stage !== STAGES.PLAYING) {
+        setSelectedCards([]);
+    }
+  }, [stage]);
+
+  // --- 交互逻辑 ---
+  const handleCardClick = (card, area, event) => {
+    if (stage !== STAGES.PLAYING) return;
+
+    const cardId = `${card.rank}_${card.suit}`;
+    const isSelected = selectedCards.some(c => c.id === cardId);
+
+    if (event.shiftKey) { // Shift多选
+      if (isSelected) {
+        setSelectedCards(selectedCards.filter(c => c.id !== cardId));
       } else {
-        setSelected({
-          area,
-          cards: [...selected.cards, card]
-        });
+        setSelectedCards([...selectedCards, { ...card, area, id: cardId }]);
+      }
+    } else { // 单选
+      if (isSelected && selectedCards.length === 1) {
+        setSelectedCards([]);
+      } else {
+        setSelectedCards([{ ...card, area, id: cardId }]);
       }
     }
   };
 
-  // 卡牌移动
-  const moveTo = (dest) => {
-    if (submitted || !selected.cards.length) return;
-    if (selected.area !== 'hand') return; // 只允许从手牌移动
+  const handleDragStart = (e, card, area) => {
+    if (stage !== STAGES.PLAYING) return;
+    const cardId = `${card.rank}_${card.suit}`;
     
-    const src = selected.area;
-    const cardSet = new Set(selected.cards.map(c => c.rank+'_'+c.suit));
-
-    const areas = { hand: myCards, head, middle, tail };
-    areas[src] = areas[src].filter(c => !cardSet.has(c.rank+'_'+c.suit));
-    areas[dest] = [...areas[dest], ...selected.cards];
-
-    setMyCards(sortHand(areas.hand));
-    setHead(sortHand(areas.head));
-    setMiddle(sortHand(areas.middle));
-    setTail(sortHand(areas.tail));
-    setSelected({ area: dest, cards: [] });
-    setSubmitMsg('');
-  };
-
-  // 开始比牌
-  const handleCompare = () => {
-    if (submitted) return;
-    if (head.length!==3 || middle.length!==5 || tail.length!==5) {
-      setSubmitMsg('请按 3-5-5 张牌分配');
-      return;
+    // 如果拖拽的牌未被选中，则清空其他选中，只选中当前牌
+    if (!selectedCards.some(c => c.id === cardId)) {
+      setSelectedCards([{ ...card, area, id: cardId }]);
+      setDraggedCard([{ ...card, area, id: cardId }]);
+      e.dataTransfer.setData("text/plain", JSON.stringify([{ ...card, area, id: cardId }]));
+    } else {
+      // 否则拖拽所有选中的牌
+      setDraggedCard(selectedCards);
+      e.dataTransfer.setData("text/plain", JSON.stringify(selectedCards));
     }
-    setSubmitted(true);
-    typeof onCompare === 'function' && onCompare({ head, middle, tail });
+    
+    setTimeout(() => e.target.closest('.card-wrapper-dun').style.opacity = '0.5', 0);
+  };
+  
+  const handleDragEnd = (e) => {
+     e.target.closest('.card-wrapper-dun').style.opacity = '1';
+     setDraggedCard(null);
   };
 
-  // 渲染座位
+  const handleDrop = (e, toArea) => {
+    if (stage !== STAGES.PLAYING || !draggedCard) return;
+    setDragOverArea(null);
+    const draggedCards = JSON.parse(e.dataTransfer.getData("text/plain"));
+    
+    let hands = { head: [...me.head], middle: [...me.middle], tail: [...me.tail] };
+    
+    draggedCards.forEach(dragged => {
+      const fromArea = dragged.area;
+      if (fromArea !== toArea) {
+        // 从原数组移除
+        hands[fromArea] = hands[fromArea].filter(c => !(c.rank === dragged.rank && c.suit === dragged.suit));
+        // 添加到新数组
+        hands[toArea].push({ rank: dragged.rank, suit: dragged.suit });
+      }
+    });
+
+    // 排序并更新状态
+    hands.head = sortHand(hands.head);
+    hands.middle = sortHand(hands.middle);
+    hands.tail = sortHand(hands.tail);
+    
+    onUpdateHands(hands);
+    setSelectedCards([]);
+  };
+
+  // --- 渲染逻辑 ---
+
   const renderSeat = (p) => (
-    <div key={p.id} className={`player-seat ${p.id===myPlayerId?'player-me':''}`}>
+    <div key={p.id} className={`player-seat ${p.id === myPlayerId ? 'player-me' : ''}`}>
       <div>{p.name}</div>
-      <div className={`player-status ${p.submitted?'ready':''}`}>
-        {p.submitted ? '已准备' : '等待中'}
+      <div className={`player-status ${p.isReady || p.submitted ? 'ready' : ''}`}>
+        {p.submitted ? '已比牌' : p.isReady ? '已准备' : '等待中'}
       </div>
     </div>
   );
 
-  // 渲染牌堆
-  const renderPile = (arr, label, area) => (
-    <div className="pai-dun" onClick={() => moveTo(area)}>
+  const renderPile = (cards, label, area) => (
+    <div
+      className={`pai-dun ${dragOverArea === area ? 'drag-over' : ''}`}
+      onDragOver={(e) => { e.preventDefault(); setDragOverArea(area); }}
+      onDragLeave={() => setDragOverArea(null)}
+      onDrop={(e) => handleDrop(e, area)}
+    >
       <div className="pai-dun-content">
-        {arr.length === 0
-          ? <div className="pai-dun-placeholder">请放置</div>
-          : arr.map((card, i) => {
-              const isSel = selected.area===area &&
-                            selected.cards.some(c=>c.rank===card.rank && c.suit===card.suit);
-              return (
-                <div key={card.rank+'_'+card.suit+'_'+area+'_'+i}
-                     className="card-wrapper-dun"
-                     style={{ '--card-index': i, zIndex:i }}>
-                  {/* --- FIX: 统一使用 card prop --- */}
-                  <Card
-                    card={card}
-                    isSelected={isSel}
-                    onClick={() => handleCardClick(card, area)}
-                  />
-                </div>
-              );
-            })
+        {(cards && cards.length > 0) ? cards.map((card, i) => {
+            const cardId = `${card.rank}_${card.suit}`;
+            const isSelected = selectedCards.some(c => c.id === cardId);
+            const isDragging = draggedCard?.some(c => c.id === cardId) ?? false;
+            return (
+              <div
+                key={cardId + '_' + area}
+                className="card-wrapper-dun"
+                style={{ '--card-index': i, zIndex: isSelected ? 100 + i : i }}
+                draggable="true"
+                onDragStart={(e) => handleDragStart(e, card, area)}
+                onDragEnd={handleDragEnd}
+              >
+                <Card
+                  card={card}
+                  isSelected={isSelected}
+                  isDragging={isDragging}
+                  onClick={(e) => handleCardClick(card, area, e)}
+                />
+              </div>
+            );
+          }) : (
+            <div className="pai-dun-placeholder">{stage === STAGES.LOBBY ? '等待准备' : '空'}</div>
+          )
         }
       </div>
-      <div className="pai-dun-label">{label} ({arr.length})</div>
+      <div className="pai-dun-label">{label} ({cards?.length || 0})</div>
     </div>
   );
-
-  // 渲染结果弹窗
-  const renderModal = () => {
-    if (!showResult || !resultData) return null;
-
-    // Helper to render piles in modal without click handlers
-    const renderResultPile = (cards) => (
+  
+  const renderResultModal = () => {
+     if (!showResult || !players.some(p => p.score != null)) return null;
+     
+     const renderResultPile = (cards) => (
         <div className="result-hand">
             {(cards || []).map((card, i) => (
-                <div key={`${card.rank}_${card.suit}_${i}`} className="card-wrapper-dun" style={{ '--card-index': i, zIndex: i }}>
-                    {/* --- FIX: 统一使用 card prop --- */}
+                <div key={`${card.rank}_${card.suit}_${i}`} className="card-wrapper-dun" style={{'--card-index': i, zIndex: i }}>
                     <Card card={card} />
                 </div>
             ))}
         </div>
     );
-
+    
     return (
-      <div className="modal-overlay" onClick={() => onRestart && onRestart()}>
-        <div className="modal-content" onClick={e=>e.stopPropagation()}>
-          <button className="modal-close-btn" onClick={() => onRestart && onRestart()}>×</button>
-          {resultData.map(p => (
-            <div key={p.id} className="result-player">
-              <div className={`result-player-header ${p.id===myPlayerId?'me':''}`}>
-                <span className="player-name">{p.name}</span>
-                {p.isFoul && <span className="foul-tag"> (倒水)</span>}
-                <span className="player-score"> ({p.score||0}分)</span>
-              </div>
-              {renderResultPile(p.head)}
-              {renderResultPile(p.middle)}
-              {renderResultPile(p.tail)}
+        <div className="modal-overlay" onClick={onRestart}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <button className="modal-close-btn" onClick={onRestart}>×</button>
+                {players.map(p => (
+                    <div key={p.id} className="result-player">
+                        <div className={`result-player-header ${p.id === myPlayerId ? 'me' : ''}`}>
+                            <span className="player-name">{p.name}</span>
+                            {p.isFoul && <span className="foul-tag"> (倒水)</span>}
+                            <span className="player-score">({p.score > 0 ? '+' : ''}{p.score || 0}分)</span>
+                        </div>
+                        {renderResultPile(p.head)}
+                        {renderResultPile(p.middle)}
+                        {renderResultPile(p.tail)}
+                    </div>
+                ))}
             </div>
-          ))}
         </div>
-      </div>
     );
   };
-
+  
   return (
     <div className="play-container">
       <div className="game-wrapper">
         <div className="game-header">
-          <button className="btn-quit" onClick={onQuit}>
-            {'< 退出房间'}
-          </button>
+          <button className="btn-quit" onClick={onQuit}>{'< 退出'}</button>
           <div className="score-display">
-            <span role="img" aria-label="coin" className="coin-icon">🪙</span>
-            积分: {me.points || 0}
+            <span role="img" aria-label="coin">🪙</span> 积分: {me.points || 0}
           </div>
         </div>
+        <div className="players-area">{players.map(renderSeat)}</div>
 
-        <div className="players-area">
-          {players.map(renderSeat)}
-        </div>
+        {renderPile(me.head, '头道', 'head')}
+        {renderPile(me.middle, '中道', 'middle')}
+        {renderPile(me.tail, '尾道', 'tail')}
 
-        {renderPile(head, '头道', 'head')}
-        {renderPile(middle, '中道', 'middle')}
-        {renderPile(tail, '尾道', 'tail')}
-        
-        <div className="my-cards-area">
-          <Hand
-            cards={myCards}
-            selectedCards={selected.area === 'hand' ? selected.cards : []}
-            onCardSelect={(card) => handleCardClick(card, 'hand')}
-          />
-        </div>
-        
         <div className="actions-area">
-          <button
-            className="btn-action btn-smart-split"
-            onClick={handleSmartSplit}
-            disabled={submitted || myCards.length!==13}
-          >
-            智能分牌
-          </button>
-          <button
-            className="btn-action btn-compare"
-            onClick={handleCompare}
-            disabled={submitted}
-          >
-            {submitted ? '等待比牌' : '开始比牌'}
-          </button>
+          {stage === STAGES.LOBBY && !me.isReady && (
+            <button className="btn-action btn-ready" onClick={onReady}>
+              {stage === STAGES.DEALING ? '发牌中...' : '准备'}
+            </button>
+          )}
+          {stage === STAGES.PLAYING && (
+            <button className="btn-action btn-compare" onClick={onCompare}>开始比牌</button>
+          )}
+          {stage === STAGES.SUBMITTING && (
+            <button className="btn-action btn-compare" disabled>等待结果...</button>
+          )}
         </div>
-
-        <div className="message-area">{submitMsg}</div>
-        {renderModal()}
+        
+        {renderResultModal()}
       </div>
     </div>
   );
