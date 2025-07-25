@@ -9,7 +9,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#080a18" />
+  <meta name="theme-color" content="#02041b" />
 
   <title>赛博坦指挥中心 - 十三水战役</title>
   <meta name="description" content="一个基于React的在线十三水纸牌游戏。" />
@@ -18,44 +18,39 @@
   <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
   <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
-  <!-- 引入机械感字体 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      /* --- 变形金刚主题色板 --- */
-      --bg-color: #080a18; /* 深邃星空/金属黑 */
-      --surface-bg: rgba(10, 20, 45, 0.85); /* 半透明深蓝金属板 */
-      --surface-border: rgba(0, 229, 255, 0.35); /* 赛博坦蓝边框 */
+      /* --- 变形金刚主题色板 V2 (火力全开版) --- */
+      --bg-color: #02041b;
+      --surface-bg: rgba(13, 22, 58, 0.85);
+      --surface-border: rgba(0, 229, 255, 0.4);
       
-      /* 阵营色 */
-      --autobot-glow: #00e5ff;       /* 汽车人-赛博坦蓝辉光 */
-      --decepticon-glow: #ff00ff;     /* 霸天虎-毁灭紫辉光 */
+      --autobot-glow: #00e5ff;
+      --autobot-glow-deep: #008c9e;
+      --decepticon-glow: #e400ff;
+      --decepticon-glow-deep: #8f00a3;
       
-      /* 行为/能量色 */
-      --action-glow: #faff00;       /* 行动/能量块-亮黄辉光 */
-      --ready-color: #00ffab;         /* 就绪/胜利-能量绿 */
-      --foul-color: #ff4d6d;         /* 倒水/警告-警戒红 */
+      --action-glow: #faff00;
+      --ready-color: #00ffab;
+      --foul-color: #ff386a;
 
       --text-color: #c0c8ff;
       --text-bright: #ffffff;
       
-      /* 字体 */
-      --font-family-title: 'Orbitron', sans-serif; /* 机械/标题字体 */
-      --font-family-body: 'Rajdhani', sans-serif;  /* 正文/数据字体 */
+      --font-family-title: 'Orbitron', sans-serif;
+      --font-family-body: 'Rajdhani', sans-serif;
 
-      /* 卡牌尺寸 */
       --card-aspect-ratio: 1.45;
-      --card-width: clamp(50px, 12vw, 70px);
+      --card-width: clamp(50px, 12vw, 75px);
     }
 
     html, body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      padding: 0;
+      width: 100%; height: 100%;
+      margin: 0; padding: 0;
       overflow: hidden;
     }
 
@@ -65,20 +60,23 @@
       color: var(--text-color);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      background-image: url('%PUBLIC_URL%/img/background.jpg');
+      background-size: cover;
+      background-position: center center;
+      background-attachment: fixed;
     }
     
+    /* 背景覆盖层 */
     body::before {
       content: '';
       position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
+      inset: 0;
       z-index: -1;
+      background-color: rgba(2, 4, 27, 0.7);
       background-image: 
-        radial-gradient(circle at 15% 85%, rgba(0, 229, 255, 0.25), transparent 40%),
-        radial-gradient(circle at 85% 15%, rgba(255, 0, 255, 0.2), transparent 40%),
-        linear-gradient(rgba(0, 229, 255, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 229, 255, 0.1) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+        linear-gradient(rgba(0, 229, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 229, 255, 0.08) 1px, transparent 1px);
+      background-size: 50px 50px;
       animation: background-pan 60s linear infinite;
     }
 
@@ -88,19 +86,23 @@
     }
     
     #root {
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 15px;
       box-sizing: border-box;
     }
+
+    /* 全局滚动条美化 */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+    ::-webkit-scrollbar-thumb { background: var(--autobot-glow); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-bright); }
   </style>
-  
 </head>
 <body>
-  <noscript>您需要启用 JavaScript 才能运行此应用。</noscript>
+  <noscript>你需要启用JavaScript来运行此应用。</noscript>
   <div id="root"></div>
 </body>
 </html>
