@@ -1,107 +1,77 @@
-/* frontend/src/App.css (电影渐变风格重构 V3) */
+/* frontend/src/App.css (Glassmorphism 风格) */
 
 /* --- App 容器通用样式 --- */
 #root .app-container {
-  background: var(--surface-bg);
-  border: 1px solid transparent; /* 边框设置为透明 */
-  /* 使用 border-image 创建渐变色边框 */
-  border-image: linear-gradient(135deg, var(--autobot-primary), var(--decepticon-primary)) 1;
-  box-shadow: 0 0 30px rgba(0, 180, 255, 0.3), inset 0 0 20px rgba(18, 25, 60, 0.5);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px;
   padding: clamp(30px, 5vw, 50px);
   text-align: center;
-  max-width: 600px;
-  width: 100%;
-  box-sizing: border-box;
+  max-width: 500px;
+  width: 90%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 35px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  gap: 30px;
 }
 
-/* 移除了 h1 样式，因为标题被删除了 */
+#root h1 {
+  font-weight: 700;
+  font-size: 2.5em;
+  margin: 0 0 10px;
+  color: var(--text-primary);
+}
 
 #root h2 {
-  font-family: var(--font-family-title);
-  color: var(--text-bright);
-  margin: 0 0 10px 0;
-  font-size: clamp(2.2em, 7vw, 3.2em);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 2px;
+  font-weight: 500;
+  font-size: 2em;
+  margin: 0 0 15px;
+  color: var(--text-secondary);
 }
 
-/* --- 菜单与按钮通用样式 --- */
 #root .menu {
-  display: flex; flex-direction: column; gap: 25px;
-  width: 100%; max-width: 400px;
+  display: flex; flex-direction: column; gap: 20px;
+  width: 100%; max-width: 320px;
 }
 
 #root .btn {
-  font-family: var(--font-family-title);
-  display: block; padding: 18px 30px;
+  display: block;
+  padding: 15px 30px;
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 1.1em;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
   border: none;
-  color: var(--text-bright); font-size: clamp(1.1em, 4vw, 1.3em);
-  font-weight: 700; cursor: pointer; text-decoration: none;
-  transition: all 0.3s ease;
-  position: relative;
-  text-transform: uppercase; letter-spacing: 2px;
-  background-size: 200% 100%;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease-in-out;
 }
 
-#root .btn.btn-primary {
-  background-image: linear-gradient(90deg, var(--autobot-primary) 0%, var(--autobot-secondary) 50%, var(--autobot-primary) 100%);
+#root .btn-primary {
+  background: var(--accent-blue);
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
 }
-#root .btn.btn-primary:hover {
-  background-position: right center; /* 渐变色流动效果 */
-  box-shadow: 0 0 20px var(--autobot-primary), 0 0 30px var(--autobot-primary);
+#root .btn-primary:hover {
+  background: var(--accent-blue-dark);
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.5);
 }
 
-#root .btn.btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--surface-border);
+#root .btn-secondary {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
 }
-#root .btn.btn-secondary:hover {
+#root .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.2);
-  border-color: var(--text-bright);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
-/* --- 游戏大厅特定样式 --- */
 #root .lobby-container {
-  background: transparent; border: none; box-shadow: none;
-  backdrop-filter: none; -webkit-backdrop-filter: none;
-  gap: 50px;
+  gap: 20px;
 }
-
 #root .game-section {
-  width: 90%; max-width: 450px;
-  padding: 30px 20px;
-  border: none;
-  background: rgba(18, 25, 60, 0.7);
-  backdrop-filter: blur(8px);
-  transition: all 0.3s ease-out; position: relative;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-#root .game-section:hover {
-  transform: translateY(-10px) scale(1.05);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-}
-
-#root .thirteen-cards-section:hover {
-  box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 30px var(--autobot-primary);
-}
-
-#root .eight-cards-section { opacity: 0.7; }
-#root .eight-cards-section:hover {
-  box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 30px var(--decepticon-primary);
-}
-#root .eight-cards-section h2 {
-  color: var(--decepticon-primary);
-  text-shadow: 0 0 10px var(--decepticon-primary);
-}
-#root .eight-cards-section .btn {
-  background-image: linear-gradient(90deg, var(--decepticon-primary) 0%, var(--decepticon-secondary) 50%, var(--decepticon-primary) 100%);
+  width: 100%;
 }
