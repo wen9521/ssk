@@ -14,7 +14,7 @@ export default function Play() {
     setPlayerReady,
     updatePlayerHands,
     submitHands,
-    autoSplitForPlayer // 确保解构了 autoSplitForPlayer
+    autoSplitForPlayer
   } = useGameStore();
 
   useEffect(() => {
@@ -33,18 +33,22 @@ export default function Play() {
   if (!me) {
     return <div>Loading...</div>;
   }
+
+  // --- 核心修复：重新添加 play-container ---
   return (
-    <GameBoard
-      players={players}
-      myPlayerId="player1"
-      stage={stage}
-      onReady={handleReady}
-      onCompare={submitHands}
-      onRestart={resetRound}
-      onQuit={handleQuit}
-      onUpdateHands={updatePlayerHands}
-      onAutoSplit={autoSplitForPlayer} // <-- 传递 onAutoSplit prop
-      gameMode="thirteen-cards"
-    />
+    <div className="play-container">
+      <GameBoard
+        players={players}
+        myPlayerId="player1"
+        stage={stage}
+        onReady={handleReady}
+        onCompare={submitHands}
+        onRestart={resetRound}
+        onQuit={handleQuit}
+        onUpdateHands={updatePlayerHands}
+        onAutoSplit={autoSplitForPlayer}
+        gameMode="thirteen-cards"
+      />
+    </div>
   );
 }
