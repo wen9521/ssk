@@ -1,9 +1,7 @@
 // src/components/GameBoard.jsx
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
-import { STAGES } from '../utils/store';
-
-// ... (顶部代码保持不变) ...
+import { STAGES } from '../utils/store'; 
 
 const ranks = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
 const suits = ['diamonds','clubs','hearts','spades'];
@@ -20,14 +18,15 @@ const sortHandInternal = (hand) => {
 
 export default function GameBoard({ players, myPlayerId, stage, onReady, onCompare, onRestart, onQuit, onUpdateHands, onAutoSplit, gameMode = 'thirteen-cards' }) {
     const me = players.find(p => p.id === myPlayerId);
-
-    // ... (useState hooks 不变) ...
+    
     const [selectedCards, setSelectedCards] = useState([]);
     const [draggedCards, setDraggedCards] = useState(null);
     const [dragOverArea, setDragOverArea] = useState(null);
     const [showResult, setShowResult] = useState(false);
 
-    // ... (useEffect hooks 不变) ...
+    const isEightCardsMode = gameMode === 'eight-cards';
+    const canManualSplit = !isEightCardsMode && stage === STAGES.PLAYING;
+
     useEffect(() => {
         if (stage === STAGES.FINISHED) {
           setShowResult(true);
@@ -47,9 +46,8 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
         }
     }, [stage]);
 
-    // ... (拖拽逻辑 handleCardClick, handleDragStart, handleDrop 保持不变) ...
     const handleCardClick = (card, area, event) => {
-        if (stage !== STAGES.PLAYING || !me) return;
+        if (!canManualSplit || !me) return;
         const cardId = `${card.rank}_${card.suit}`;
         const isSelected = selectedCards.some(c => c.id === cardId);
         if (event.shiftKey) {
@@ -60,7 +58,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     };
     
     const handleDragStart = (e, card, area) => {
-        if (stage !== STAGES.PLAYING) return;
+        if (!canManualSplit) return;
         const cardId = `${card.rank}_${card.suit}`;
         let cardsToDrag = selectedCards.some(c => c.id === cardId) ? selectedCards : [{ ...card, area, id: cardId }];
         if (!selectedCards.some(c => c.id === cardId)) {
@@ -71,7 +69,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     };
     
     const handleDrop = (e, toArea) => {
-        if (stage !== STAGES.PLAYING || !draggedCards) return;
+        if (!canManualSplit || !draggedCards) return;
         e.preventDefault();
         setDragOverArea(null);
         const draggedData = JSON.parse(e.dataTransfer.getData("text/plain"));
@@ -97,7 +95,6 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
         setDraggedCards(null);
     };
 
-    // ... (renderSeat 不变) ...
     const renderSeat = (p) => (
         <div key={p.id} className={`player-seat ${p.id === myPlayerId ? 'player-me' : ''}`}>
           <div className="player-name">{p.name}</div>
@@ -108,17 +105,16 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
       );
 
     const renderPile = (cards, label, area) => {
-        // 1. 增加倒水状态的class
-        const isFoulPile = me.isFoul && (area === 'head' || area === 'middle');
+        const isFoulPile = me?.isFoul && (area === 'head' || area === 'middle');
         return (
             <div
-                className={`pai-dun ${dragOverArea === area ? 'drag-over' : ''} ${isFoulPile ? 'foul' : ''}`}
-                onDragOver={(e) => { e.preventDefault(); setDragOverArea(area); }}
+                className={`pai-dun ${dragOverArea === area && canManualSplit ? 'drag-over' : ''} ${isFoulPile ? 'foul' : ''}`}
+                onDragOver={(e) => { if (canManualSplit) { e.preventDefault(); setDragOverArea(area); } }}
                 onDragLeave={() => setDragOverArea(null)}
                 onDrop={(e) => handleDrop(e, area)}
             >
                 <div className="card-display-area">
-                    {cards?.map((card, i) => {
+                    {(cards || []).map((card, i) => {
                         const cardId = `${card.rank}_${card.suit}`;
                         const isSelected = selectedCards.some(c => c.id === cardId);
                         const isDragging = draggedCards?.some(c => c.id === cardId) ?? false;
@@ -127,7 +123,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
                                 key={`${cardId}_${area}_${i}`}
                                 className="card-wrapper-dun"
                                 style={{ zIndex: isSelected ? 100 + i : i }}
-                                draggable="true"
+                                draggable={canManualSplit}
                                 onDragStart={(e) => handleDragStart(e, card, area)}
                                 onDragEnd={() => setDraggedCards(null)}
                             >
@@ -146,24 +142,28 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
         );
     };
 
-    // ... (renderResultModal 不变) ...
-    const renderResultModal = () => { /* ... */ };
+    const renderResultModal = () => { /* ... (保持不变) ... */ };
     
     if (!me) {
         return <div>加载中...</div>;
     }
 
-    // 2. 增强比牌按钮的禁用逻辑
     const isReadyForCompare = stage === STAGES.PLAYING &&
         !me.submitted &&
         me.head?.length === 3 &&
         me.middle?.length === 5 &&
         me.tail?.length === 5;
 
+    // --- 核心修改：根元素是一个无样式的 Fragment ---
     return (
-        <div className={`play-container game-wrapper ${gameMode === 'eight-cards' ? 'six-players' : ''}`}>
+        <>
             <div className="game-header">
-                {/* ... */}
+                <button className="btn-quit" onClick={onQuit}>
+                    {'< 退出房间'}
+                </button>
+                <div className="score-display">
+                    积分: {me.points}
+                </div>
             </div>
 
             <div className="players-area">{players.map(renderSeat)}</div>
@@ -187,7 +187,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
                     className="btn-action" 
                     data-type="smart"
                     onClick={() => onAutoSplit(myPlayerId)}
-                    disabled={stage !== STAGES.PLAYING || me.submitted}
+                    disabled={!canManualSplit || !onAutoSplit}
                 >
                     智能分牌
                 </button>
@@ -195,13 +195,13 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
                     className="btn-action" 
                     data-type="compare" 
                     onClick={onCompare} 
-                    disabled={!isReadyForCompare} // <-- 使用新的禁用逻辑
+                    disabled={!isReadyForCompare}
                 >
                     开始比牌
                 </button>
             </div>
             
             {renderResultModal()}
-        </div>
+        </>
     );
 }
