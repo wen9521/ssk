@@ -307,17 +307,3 @@
   width: calc(var(--card-width) * 0.8); /* 结果牌小一点 */
   cursor: default;
 }
-/* src/components/Play.css */
-
-/* ... (文件所有其他内容保持不变) ... */
-
-/* --- 新增：倒水状态样式 --- */
-.pai-dun.foul {
-  border-color: var(--foul-color);
-  box-shadow: 0 0 10px var(--foul-color);
-}
-
-.pai-dun.foul .pai-dun-label {
-  color: var(--foul-color);
-  font-weight: bold;
-}
