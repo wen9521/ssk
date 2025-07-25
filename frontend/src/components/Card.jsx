@@ -3,10 +3,8 @@
 import React from 'react';
 import './Card.css';
 
-function Card({ card, isSelected, onClick, onDragStart, isDragging }) {
-  // --- FIX: 添加一个安全检查，防止 card prop 为 undefined 时程序崩溃 ---
+function Card({ card, isSelected, onClick, isDragging }) {
   if (!card || typeof card.rank === 'undefined' || typeof card.suit === 'undefined') {
-    // 这种情况不应该发生，但作为保护措施可以防止应用崩溃
     console.error('Card component received invalid props:', { card });
     return <div className="card"><div className="card-inner">?</div></div>;
   }
@@ -27,12 +25,11 @@ function Card({ card, isSelected, onClick, onDragStart, isDragging }) {
 
   const className = `card ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''}`;
 
+  // onClick 现在传递 event 对象
   return (
     <div 
       className={className} 
       onClick={onClick}
-      draggable="true"
-      onDragStart={onDragStart}
     >
       <div className="card-inner">
         <div className="card-front">
