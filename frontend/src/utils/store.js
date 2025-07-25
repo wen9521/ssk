@@ -68,20 +68,21 @@ const useGameStore = create((set, get) => ({
         state.players.forEach((player, index) => {
             const playerHandObjects = hands[index];
             if (player.isAI) {
-                // AI 自动理牌并提交
+                // --- 核心修复：在这里转换卡牌格式 ---
                 const playerHandStrings = playerHandObjects.map(toCardString);
+                // 现在传递给 SmartSplit 的是正确的字符串数组
                 const splitResult = SmartSplit(playerHandStrings)[0];
+                
                 player.head = splitResult.head.map(toCardObject).filter(Boolean);
                 player.middle = splitResult.middle.map(toCardObject).filter(Boolean);
                 player.tail = splitResult.tail.map(toCardObject).filter(Boolean);
                 player.isFoul = isFoul(splitResult.head, splitResult.middle, splitResult.tail);
-                player.submitted = true; // AI 默认直接提交
+                player.submitted = true;
             } else {
-                // 核心修复：将所有13张牌放在玩家的尾道，让玩家自己理牌
                 player.head = [];
                 player.middle = [];
                 player.tail = playerHandObjects;
-                player.isFoul = true; // 初始状态牌数不对，肯定是倒水
+                player.isFoul = true;
             }
         });
         state.stage = STAGES.PLAYING;
@@ -114,7 +115,6 @@ const useGameStore = create((set, get) => ({
   autoSplitForPlayer: (playerId) => set(produce(state => {
       const player = state.players.find(p => p.id === playerId);
       if (player) {
-        // 合并所有牌墩的牌
         const allCards = [
           ...(player.head || []),
           ...(player.middle || []),
@@ -140,17 +140,14 @@ const useGameStore = create((set, get) => ({
       if (!window.confirm("当前牌型为倒水，确定要提交吗？")) return;
     }
 
-    // 标记玩家已提交
     set(produce(state => {
         const player = state.players.find(p => p.id === 'player1');
         if (player) player.submitted = true;
     }));
 
-    // 检查是否所有玩家都已提交
     const allSubmitted = get().players.every(p => p.submitted);
     if (allSubmitted) {
         set({ stage: STAGES.SUBMITTING });
-        // 延迟一段时间进行结算，模拟比牌过程
         setTimeout(() => {
           const handsForScoring = get().players.map(p => ({
             ...toHandStrings(p),
