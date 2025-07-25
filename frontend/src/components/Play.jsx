@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GameBoard from './GameBoard';
 import { useGameStore } from '../utils/store';
-import './Play.css'; // <--- **添加这一行，加载样式！**
+import './Play.css';
 
 export default function Play() {
   const navigate = useNavigate();
@@ -13,10 +13,10 @@ export default function Play() {
     resetRound,
     setPlayerReady,
     updatePlayerHands,
-    submitHands
+    submitHands,
+    autoSplitForPlayer // 确保解构了 autoSplitForPlayer
   } = useGameStore();
 
-  // 组件加载时重置牌局
   useEffect(() => {
     resetRound();
   }, [resetRound]);
@@ -42,7 +42,9 @@ export default function Play() {
       onCompare={submitHands}
       onRestart={resetRound}
       onQuit={handleQuit}
-      onUpdateHands={(playerId, newHands) => updatePlayerHands(playerId, newHands)}
+      onUpdateHands={updatePlayerHands}
+      onAutoSplit={autoSplitForPlayer} // <-- 传递 onAutoSplit prop
+      gameMode="thirteen-cards"
     />
   );
 }
