@@ -1,4 +1,5 @@
-// src/game-logic/doudizhu-rules.js
+// src/game-logic/doudizhu.rules.js
+
 const Ranks = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
 export const JokerRanks = { BLACK_JOKER: 'Black Joker', RED_JOKER: 'Red Joker' };
 
@@ -45,34 +46,34 @@ export function parseHand(cards) {
   const fours = getRanksByCount(counts, 4);
 
   if (len === 2 && singles.length === 2 && singles.includes(valueMap[JokerRanks.BLACK_JOKER]) && singles.includes(valueMap[JokerRanks.RED_JOKER]))
-    return { type: HandType.ROCKET, value: Infinity, cards };
+    return { type: HandType.ROCKET, value: Infinity, length: 2, cards };
   if (len === 4 && fours.length === 1)
-    return { type: HandType.BOMB, value: mainValue(fours), cards };
+    return { type: HandType.BOMB, value: mainValue(fours), length: 4, cards };
   if (len === 1)
-    return { type: HandType.SINGLE, value: mainValue(singles), cards };
+    return { type: HandType.SINGLE, value: mainValue(singles), length: 1, cards };
   if (len === 2 && pairs.length === 1)
-    return { type: HandType.PAIR, value: mainValue(pairs), cards };
+    return { type: HandType.PAIR, value: mainValue(pairs), length: 2, cards };
   if (len === 3 && trios.length === 1)
-    return { type: HandType.TRIO, value: mainValue(trios), cards };
+    return { type: HandType.TRIO, value: mainValue(trios), length: 3, cards };
   if (len === 4 && trios.length === 1 && singles.length === 1)
-    return { type: HandType.TRIO_WITH_SINGLE, value: mainValue(trios), cards };
+    return { type: HandType.TRIO_WITH_SINGLE, value: mainValue(trios), length: 4, cards };
   if (len === 5 && trios.length === 1 && pairs.length === 1)
-    return { type: HandType.TRIO_WITH_PAIR, value: mainValue(trios), cards };
+    return { type: HandType.TRIO_WITH_PAIR, value: mainValue(trios), length: 5, cards };
   if (len === 6 && fours.length === 1 && singles.length === 2)
-    return { type: HandType.FOUR_WITH_TWO_SINGLES, value: mainValue(fours), cards };
+    return { type: HandType.FOUR_WITH_TWO_SINGLES, value: mainValue(fours), length: 6, cards };
   if (len === 8 && fours.length === 1 && pairs.length === 2)
-    return { type: HandType.FOUR_WITH_TWO_PAIRS, value: mainValue(fours), cards };
+    return { type: HandType.FOUR_WITH_TWO_PAIRS, value: mainValue(fours), length: 8, cards };
   if (len >= 5 && singles.length === len && isContinuous(singles))
     return { type: HandType.STRAIGHT, value: mainValue(singles), length: len, cards };
   if (len >= 6 && len % 2 === 0 && pairs.length === len / 2 && isContinuous(pairs))
     return { type: HandType.DOUBLE_STRAIGHT, value: mainValue(pairs), length: len / 2, cards };
   if (len >= 6 && len % 3 === 0 && trios.length === len / 3 && isContinuous(trios))
-    return { type: HandType.AIRPLANE, value: mainValue(trios), length: len/3, cards};
+    return { type: HandType.AIRPLANE, value: mainValue(trios), length: len / 3, cards};
   if (len >= 8 && len % 4 === 0 && trios.length === len / 4 && singles.length === len / 4 && isContinuous(trios))
     return { type: HandType.AIRPLANE_WITH_SINGLES, value: mainValue(trios), length: len / 4, cards };
   if (len >= 10 && len % 5 === 0 && trios.length === len / 5 && pairs.length === len / 5 && isContinuous(trios))
     return { type: HandType.AIRPLANE_WITH_PAIRS, value: mainValue(trios), length: len / 5, cards };
-
+  
   return { type: HandType.INVALID, value: 0, cards };
 }
 export function canPlay(newHand, currentHand) {

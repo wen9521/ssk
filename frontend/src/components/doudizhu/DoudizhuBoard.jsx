@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Card from '@/components/Card';
 import './Doudizhu.css';
-import { useDoudizhuStore, DoudizhuStage } from '@/utils/doudizhu-store';
+import { useDoudizhuStore, DoudizhuStage } from '@/utils/doudizhu.store.js'; // 更新导入路径
 
 const PlayerPosition = {
   BOTTOM: 'bottom',
