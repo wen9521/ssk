@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#02041b" />
 
-  <title>赛博坦指挥中心 - 十三水战役</title>
+  <title>扑克王 - 十三水</title>
   <meta name="description" content="一个基于React的在线十三水纸牌游戏。" />
 
   <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
@@ -24,21 +24,24 @@
 
   <style>
     :root {
-      /* --- 变形金刚主题色板 V2 (火力全开版) --- */
-      --bg-color: #02041b;
-      --surface-bg: rgba(13, 22, 58, 0.85);
-      --surface-border: rgba(0, 229, 255, 0.4);
+      /* --- 变形金刚主题色板 V3 (电影渐变风格) --- */
+      --bg-color: #0c0f21;
+      --surface-bg: rgba(18, 25, 60, 0.8);
+      --surface-border: rgba(127, 199, 255, 0.5);
       
-      --autobot-glow: #00e5ff;
-      --autobot-glow-deep: #008c9e;
-      --decepticon-glow: #e400ff;
-      --decepticon-glow-deep: #8f00a3;
+      --autobot-primary: #00b4ff;
+      --autobot-secondary: #0076a3;
       
-      --action-glow: #faff00;
+      --decepticon-primary: #a941ff;
+      --decepticon-secondary: #67269b;
+      
+      --action-primary: #ffee00;
+      --action-secondary: #ffc400;
+
       --ready-color: #00ffab;
       --foul-color: #ff386a;
 
-      --text-color: #c0c8ff;
+      --text-color: #d1d9ff;
       --text-bright: #ffffff;
       
       --font-family-title: 'Orbitron', sans-serif;
@@ -66,23 +69,15 @@
       background-attachment: fixed;
     }
     
-    /* 背景覆盖层 */
+    /* 背景覆盖层 - 关键修改 */
     body::before {
       content: '';
       position: fixed;
       inset: 0;
       z-index: -1;
-      background-color: rgba(2, 4, 27, 0.7);
-      background-image: 
-        linear-gradient(rgba(0, 229, 255, 0.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 229, 255, 0.08) 1px, transparent 1px);
-      background-size: 50px 50px;
-      animation: background-pan 60s linear infinite;
-    }
-
-    @keyframes background-pan {
-      0% { background-position: 0% 0%; }
-      100% { background-position: 100% 100%; }
+      /* 顶部和底部的柔和暗角，让中间区域更亮 */
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(2, 4, 27, 0.8)),
+                  linear-gradient(to bottom, rgba(2, 4, 27, 0.5) 0%, transparent 30%, transparent 70%, rgba(2, 4, 27, 0.5) 100%);
     }
     
     #root {
@@ -97,7 +92,7 @@
     /* 全局滚动条美化 */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
-    ::-webkit-scrollbar-thumb { background: var(--autobot-glow); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: var(--autobot-primary); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--text-bright); }
   </style>
 </head>
