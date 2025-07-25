@@ -1,9 +1,8 @@
-// frontend/src/components/GameBoard.jsx
+// frontend/src/components/GameBoard.jsx (功能增强版)
 
 import React, { useState, useEffect, useRef } from 'react';
 import Card from './Card';
 import { STAGES } from '../utils/store';
-import './Play.css';
 
 // 排序函数（保持不变）
 const ranks = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
@@ -138,7 +137,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
 
   const renderPile = (cards, label, area) => (
     <div
-      className={`pai-dun ${dragOverArea === area ? 'drag-over' : ''}`}
+      className={`pai-dun ${dragOverArea === area ? 'drag-over' : ''} ${me.isFoul && (area === 'head' || area === 'middle' || area === 'tail') ? 'is-foul' : ''}`}
       onDragOver={(e) => { e.preventDefault(); setDragOverArea(area); }}
       onDragLeave={() => setDragOverArea(null)}
       onDrop={(e) => handleDrop(e, area)}
@@ -177,8 +176,9 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
   const renderResultModal = () => {
      if (!showResult || !players.some(p => p.score != null)) return null;
      
-     const renderResultPile = (cards) => (
+     const renderResultPile = (cards, score, rank) => (
         <div className="result-hand">
+            <div className="hand-score">{rank} ({score || 0} 分)</div>
             {(cards || []).map((card, i) => (
                 <div key={`${card.rank}_${card.suit}_${i}`} className="card-wrapper-dun" style={{'--card-index': i, zIndex: i }}>
                     <Card card={card} />
@@ -191,18 +191,24 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
         <div className="modal-overlay" onClick={onRestart}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <button className="modal-close-btn" onClick={onRestart}>×</button>
+                <h2>对局结果</h2>
                 {players.map(p => (
                     <div key={p.id} className="result-player">
                         <div className={`result-player-header ${p.id === myPlayerId ? 'me' : ''}`}>
                             <span className="player-name">{p.name}</span>
                             {p.isFoul && <span className="foul-tag"> (倒水)</span>}
-                            <span className="player-score">({p.score > 0 ? '+' : ''}{p.score || 0}分)</span>
+                            <span className="player-score">总分: {p.score > 0 ? '+' : ''}{p.score || 0}</span>
                         </div>
-                        {renderResultPile(p.head)}
-                        {renderResultPile(p.middle)}
-                        {renderResultPile(p.tail)}
+                        {p.handDetails && (
+                            <>
+                                {renderResultPile(p.head, p.handDetails.head.score, p.handDetails.head.rank)}
+                                {renderResultPile(p.middle, p.handDetails.middle.score, p.handDetails.middle.rank)}
+                                {renderResultPile(p.tail, p.handDetails.tail.score, p.handDetails.tail.rank)}
+                            </>
+                        )}
                     </div>
                 ))}
+                <button className="btn-action btn-ready" onClick={onRestart} style={{gridColumn: '1 / -1', marginTop: '20px'}}>再来一局</button>
             </div>
         </div>
     );
@@ -230,7 +236,9 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
             </button>
           )}
           {stage === STAGES.PLAYING && (
-            <button className="btn-action btn-compare" onClick={onCompare}>开始比牌</button>
+            <button className="btn-action btn-compare" onClick={onCompare} disabled={me.isFoul}>
+              {me.isFoul ? '牌型错误' : '开始比牌'}
+            </button>
           )}
           {stage === STAGES.SUBMITTING && (
             <button className="btn-action btn-compare" disabled>等待结果...</button>

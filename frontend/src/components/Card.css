@@ -1,73 +1,91 @@
-/* frontend/src/components/Card.css (全新科技感主题) */
+/* frontend/src/components/Card.css (科技感重构) */
 
-@keyframes selected-glow {
-  0% { box-shadow: 0 0 15px var(--primary-glow), inset 0 0 5px var(--primary-glow); }
-  50% { box-shadow: 0 0 25px var(--primary-glow), inset 0 0 10px var(--primary-glow); }
-  100% { box-shadow: 0 0 15px var(--primary-glow), inset 0 0 5px var(--primary-glow); }
-}
-
-.card {
-  width: clamp(50px, 18vw, 80px);
-  height: clamp(70px, 25.2vw, 112px);
-  perspective: 1000px;
-  cursor: pointer;
+.card-container {
+  width: var(--card-width);
+  aspect-ratio: var(--card-aspect-ratio);
   position: relative;
-  transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
-  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
+  will-change: transform;
 }
 
-.card-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid rgba(0, 229, 255, 0.2);
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
-  transition: all 0.3s ease;
-  background: #0d1122; /* 卡牌深色底 */
+.card-container.is-selected {
+  transform: translateY(-20px) scale(1.08);
+  box-shadow: 0 0 15px var(--action-glow), 0 15px 30px rgba(0,0,0,0.4);
+  z-index: 100 !important;
 }
 
-.card.selected .card-inner {
-  transform: translateY(-15px) scale(1.1) rotateZ(-2deg);
-  border-color: var(--primary-glow);
-  animation: selected-glow 1.5s infinite ease-in-out;
-}
-
-.card.dragging .card-inner {
+.card-container.is-dragging {
   opacity: 0.5;
-  transform: scale(0.9) rotateZ(5deg);
-  box-shadow: 0 0 30px var(--primary-glow);
+  transform: scale(0.9);
 }
 
-.card-front, .card-back {
+.card-border {
   position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 10px;
+  background-color: rgba(13, 17, 43, 0.6);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  overflow: hidden;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
 }
 
-.card-front {
-  background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+.card-container:hover .card-border {
+  border-color: var(--primary-glow);
+  transform: scale(1.05);
 }
 
-.card-back {
-  background-color: #f2f2f2;
-  transform: rotateY(180deg);
+.card-glow {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(0, 229, 255, 0.15), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.card-face-img {
-  width: 100%;
-  height: 100%;
-  display: block;
+.card-container:hover .card-glow {
+  opacity: 1;
 }
 
-.card-back-pattern {
-  width: 100%;
-  height: 100%;
-  background-image: 
-    repeating-linear-gradient(45deg, rgba(78, 84, 200, 0.8) 0, rgba(78, 84, 200, 0.8) 10px, transparent 10px, transparent 20px),
-    linear-gradient(to bottom, #1d2b64, #0c0d2e);
+.card-content {
+  position: relative;
+  width: 100%; height: 100%;
+}
+
+.card-corner {
+  font-family: var(--font-family-title);
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: clamp(14px, 4vw, 18px);
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 0 5px currentColor;
+}
+
+.top-left { top: 8px; left: 8px; }
+.bottom-right { bottom: 8px; right: 8px; transform: rotate(180deg); }
+
+.suit-icon-small {
+  width: 0.8em;
+  height: 0.8em;
+  margin-top: 2px;
+}
+
+.card-center-suit {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(30px, 10vw, 45px);
+  opacity: 0.2;
+}
+.card-center-suit .suit-icon-large {
+    width: 1em;
+    height: 1em;
+}
+
+.card-center-suit svg {
+  filter: drop-shadow(0 0 5px currentColor);
 }

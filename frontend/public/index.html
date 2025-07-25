@@ -18,64 +18,76 @@
   <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
   <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
-  <!-- --- 核心修复点：将基础和背景样式直接内联 --- -->
+  <!-- 引入科技感字体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+
   <style>
     :root {
       --bg-color: #02041b;
-      --primary-glow: #00e5ff;
-      --secondary-glow: #ff00ff;
+      --primary-glow: #00e5ff;       /* 主辉光色: 青色 */
+      --secondary-glow: #ff00ff;     /* 副辉光色: 品红 */
+      --action-glow: #faff00;       /* 行为辉光色: 黄色 */
       --surface-bg: rgba(13, 17, 43, 0.75);
       --surface-border: rgba(0, 229, 255, 0.25);
       --text-color: #c0c8ff;
       --text-bright: #ffffff;
       --ready-color: #00ffab;
       --foul-color: #ff4d6d;
-      --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      
+      /* 引入新字体 */
+      --font-family-title: 'Orbitron', sans-serif; /* 标题字体 */
+      --font-family-body: 'Rajdhani', sans-serif;  /* 正文字体 */
+
+      /* 卡片尺寸 */
+      --card-aspect-ratio: 1.4;
+      --card-width: clamp(45px, 12vw, 65px);
     }
 
-    /* 确保 html 和 body 占满全屏 */
     html, body {
       width: 100%;
       height: 100%;
       margin: 0;
       padding: 0;
-      overflow: hidden; /* 防止任何溢出 */
+      overflow: hidden;
     }
 
     body {
-      font-family: var(--font-family-sans);
+      font-family: var(--font-family-body); /* 默认使用正文字体 */
       background-color: var(--bg-color);
       color: var(--text-color);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
     
-    /* 
-      使用一个单独的、固定的背景元素，确保它在最底层，
-      这样就不会有任何东西覆盖在 #root 之上，保证点击事件正常。
-    */
     body::before {
       content: '';
       position: fixed;
       top: 0; left: 0;
       width: 100vw; height: 100vh;
-      z-index: -1; /* 绝对保证在最底层 */
+      z-index: -1;
       background-image: 
-        radial-gradient(circle at 20% 20%, rgba(78, 84, 200, 0.3), transparent 40%),
-        radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.2), transparent 40%),
-        linear-gradient(rgba(0, 229, 255, 0.07) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 229, 255, 0.07) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 30px 30px, 30px 30px;
+        radial-gradient(circle at 20% 20%, rgba(78, 84, 200, 0.4), transparent 45%),
+        radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.3), transparent 50%),
+        linear-gradient(rgba(0, 229, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 229, 255, 0.1) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 35px 35px, 35px 35px;
+      animation: background-pan 60s linear infinite;
+    }
+
+    @keyframes background-pan {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 100% 100%; }
     }
     
-    /* 强制 #root 元素撑满并作为 flex 容器居中其内容 */
     #root {
       width: 100%;
       height: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 20px;
+      padding: 15px;
       box-sizing: border-box;
     }
   </style>
