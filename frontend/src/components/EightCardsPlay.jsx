@@ -12,8 +12,8 @@ export default function EightCardsPlay() {
     stage,
     resetRound,
     setPlayerReady,
-    updatePlayerHands,
     submitHands
+    // 八张游戏没有 updatePlayerHands 和 onAutoSplit
   } = useEightCardsStore();
 
   useEffect(() => {
@@ -33,17 +33,20 @@ export default function EightCardsPlay() {
     return <div>正在加载八张游戏...</div>;
   }
 
+  // --- 核心修复：重新添加 play-container ---
   return (
-    <GameBoard
-      players={players}
-      myPlayerId="player1"
-      stage={stage}
-      onReady={handleReady}
-      onCompare={submitHands}
-      onRestart={resetRound}
-      onQuit={handleQuit}
-      onUpdateHands={updatePlayerHands}
-      gameMode="eight-cards" // <-- 传入特殊的游戏模式标识
-    />
+    <div className="play-container">
+      <GameBoard
+        players={players}
+        myPlayerId="player1"
+        stage={stage}
+        onReady={handleReady}
+        onCompare={submitHands}
+        onRestart={resetRound}
+        onQuit={handleQuit}
+        // 八张模式不传递 onUpdateHands 和 onAutoSplit
+        gameMode="eight-cards"
+      />
+    </div>
   );
 }
