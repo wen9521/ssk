@@ -1,5 +1,4 @@
-// src/components/GameBoard.jsx (兼容性与健壮性最终版)
-
+// src/components/GameBoard.jsx
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import { STAGES, useGameStore } from '../utils/store';
@@ -49,7 +48,6 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     if (stage !== STAGES.PLAYING || !me) return;
     const cardId = `${card.rank}_${card.suit}`;
     const isSelected = selectedCards.some(c => c.id === cardId);
-
     if (event.shiftKey) {
       setSelectedCards(prev => isSelected ? prev.filter(c => c.id !== cardId) : [...prev, { ...card, area, id: cardId }]);
     } else {
@@ -62,7 +60,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     const cardId = `${card.rank}_${card.suit}`;
     let cardsToDrag = selectedCards.some(c => c.id === cardId) ? selectedCards : [{ ...card, area, id: cardId }];
     if (!selectedCards.some(c => c.id === cardId)) {
-      setSelectedCards(cardsToDrag);
+        setSelectedCards(cardsToDrag);
     }
     setDraggedCards(cardsToDrag);
     e.dataTransfer.setData("text/plain", JSON.stringify(cardsToDrag));
@@ -118,7 +116,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
           const isDragging = draggedCards?.some(c => c.id === cardId) ?? false;
           return (
             <div
-              key={`${cardId}_${area}_${i}`} // 使用更唯一的key
+              key={`${cardId}_${area}_${i}`}
               className="card-wrapper-dun"
               style={{ zIndex: isSelected ? 100 + i : i }}
               draggable="true"
@@ -139,6 +137,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     </div>
   );
   
+  // --- 完整的结果弹窗函数 ---
   const renderResultModal = () => {
     if (!showResult || !players.some(p => p.score != null)) return null;
 
