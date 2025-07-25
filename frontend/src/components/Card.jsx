@@ -3,8 +3,14 @@
 import React from 'react';
 import './Card.css';
 
-// 添加了 onDragStart, draggable 和 isDragging 属性
 function Card({ card, isSelected, onClick, onDragStart, isDragging }) {
+  // --- FIX: 添加一个安全检查，防止 card prop 为 undefined 时程序崩溃 ---
+  if (!card || typeof card.rank === 'undefined' || typeof card.suit === 'undefined') {
+    // 这种情况不应该发生，但作为保护措施可以防止应用崩溃
+    console.error('Card component received invalid props:', { card });
+    return <div className="card"><div className="card-inner">?</div></div>;
+  }
+  
   const getDisplayRank = (rank) => {
     switch (rank) {
       case 'A': return 'ace';
@@ -25,8 +31,8 @@ function Card({ card, isSelected, onClick, onDragStart, isDragging }) {
     <div 
       className={className} 
       onClick={onClick}
-      draggable="true" // 使卡片可拖拽
-      onDragStart={onDragStart} // 绑定拖拽开始事件
+      draggable="true"
+      onDragStart={onDragStart}
     >
       <div className="card-inner">
         <div className="card-front">
