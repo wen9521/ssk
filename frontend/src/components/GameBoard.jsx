@@ -76,7 +76,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     
     draggedData.forEach(dragged => {
       for (const areaName in hands) {
-        hands[areaName] = hands[areaName].filter(c => !(c.rank === dragged.rank && c.suit === dragged.suit));
+        hands[areaName] = hands[areaName].filter(c => !(c.rank === dragged.rank && dragged.suit === c.suit));
       }
     });
 
@@ -169,82 +169,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
                   总分: {p.score > 0 ? '+' : ''}{p.score || 0}
                 </span>
               </div>
-              {p.handDetails && (
-                <>
-                  {renderResultPile(p.head, p.handDetails.head.score, p.handDetails.head.rank, 'head')}
-                  {renderResultPile(p.middle, p.handDetails.middle.score, p.handDetails.middle.rank, 'middle')}
-                  {renderResultPile(p.tail, p.handDetails.tail.score, p.handDetails.tail.rank, 'tail')}
-                </>
-              )}
-            </div>
-          ))}
-          <button 
-            className="btn-action" 
-            data-type="smart" 
-            onClick={onRestart} 
-            style={{gridColumn: '1 / -1', marginTop: '20px'}}
-          >
-            再来一局
-          </button>
-        </div>
-      </div>
-    );
-  };
+              {p.handDetails && (mekashi
 
-  if (!me) {
-    return <div>加载中...</div>;
-  }
-
-  return (
-    <div className="play-container">
-      <div className="game-wrapper">
-        <div className="game-header">
-          <button className="btn-quit" onClick={onQuit}>
-            {'< 退出房间'}
-          </button>
-          <div className="score-display">
-            <div className="coin-icon">1</div>
-            积分: {me.points}
-          </div>
-        </div>
-
-        <div className="players-area">{players.map(renderSeat)}</div>
-
-        <div className="deployment-slots">
-          {renderPile(me.head, '头道', 'head')}
-          {renderPile(me.middle, '中道', 'middle')}
-          {renderPile(me.tail, '尾道', 'tail')}
-        </div>
-
-        <div className="actions-area">
-          <button 
-            className="btn-action" 
-            data-type="cancel" 
-            onClick={() => onReady('player1')}
-            disabled={stage !== STAGES.LOBBY}
-          >
-            {me.isReady ? '取消准备' : '准备'}
-          </button>
-          <button 
-            className="btn-action" 
-            data-type="smart"
-            onClick={() => autoSplitForPlayer('player1')}
-            disabled={stage !== STAGES.PLAYING}
-          >
-            智能分牌
-          </button>
-          <button 
-            className="btn-action" 
-            data-type="compare" 
-            onClick={onCompare} 
-            disabled={stage !== STAGES.PLAYING || !me.isReady}
-          >
-            开始比牌
-          </button>
-        </div>
-        
-        {renderResultModal()}
-      </div>
-    </div>
-  );
-}
+print(default_api.read_file(path="frontend/src/utils/store.js"))
+mekashi
