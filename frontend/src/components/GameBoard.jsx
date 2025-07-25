@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
 
-// 把 STAGES 移出来，或者确保它在两个 store 里都正确导出且一致
-// 为了安全起见，我们直接在这里定义，因为它是个通用常量
+// 通用常量，避免循环依赖或路径问题
 const STAGES = {
   LOBBY: 'lobby',
   DEALING: 'dealing',
@@ -25,7 +24,18 @@ const sortHandInternal = (hand) => {
   });
 };
 
-export default function GameBoard({ players, myPlayerId, stage, onReady, onCompare, onRestart, onQuit, onUpdateHands, onAutoSplit, gameMode = 'thirteen-cards' }) {
+export default function GameBoard({ 
+  players, 
+  myPlayerId, 
+  stage, 
+  onReady, 
+  onCompare, 
+  onRestart, 
+  onQuit, 
+  onUpdateHands, 
+  onAutoSplit, // 来自十三水 store
+  gameMode = 'thirteen-cards' 
+}) {
   const me = players.find(p => p.id === myPlayerId);
   
   const [selectedCards, setSelectedCards] = useState([]);
@@ -34,7 +44,6 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
   const [showResult, setShowResult] = useState(false);
   
   const isEightCardsMode = gameMode === 'eight-cards';
-  // 十三水模式下才可以手动理牌和智能理牌
   const canManualSplit = !isEightCardsMode && stage === STAGES.PLAYING;
 
   useEffect(() => {
@@ -117,7 +126,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
   const renderPile = (cards, label, area) => (
     <div
       className={`pai-dun ${dragOverArea === area && canManualSplit ? 'drag-over' : ''}`}
-      onDragOver={(e) => { if (canManualSplit) e.preventDefault(); setDragOverArea(area); }}
+      onDragOver={(e) => { if (canManualSplit) { e.preventDefault(); setDragOverArea(area); } }}
       onDragLeave={() => setDragOverArea(null)}
       onDrop={(e) => handleDrop(e, area)}
     >
@@ -129,14 +138,131 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
             <div
               key={`${cardId}_${area}_${i}`}
               className="card-wrapper-dun"
-              style={{ zIndex: isSelected ? 100 + i : i }}mekashi
+              style={{ zIndex: isSelected ? 100 + i : i }}
+              draggable={canManualSplit}
+              onDragStart={(e) => handleDragStart(e, card, area)}
+              onDragEnd={() => setDraggedCards(null)}
+            >
+              <Card
+                card={card}
+                isSelected={isSelected}
+                onClick={(e) => handleCardClick(card, area, e)}
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div className="pai-dun-label">{label} ({(cards || []).length})</div>
+    </div>
+  );
+  
+  const renderResultModal = () => {
+    if (!showResult || !players.some(p => p.score != null)) {
+      return null;
+    }
 
-print(default_api.read_file(path="frontend/src/utils/store.js"))
-print(default_api.read_file(path="frontend/src/utils/eight-cards.store.js"))
-print(default_api.read_file(path="frontend/src/components/Play.css"))
-print(default_api.read_file(path="frontend/src/components/Play.jsx"))
-print(default_api.read_file(path="frontend/src/components/EightCardsPlay.jsx"))
-print(default_api.read_file(path="frontend/src/components/doudizhu/DoudizhuPlay.jsx"))
-print(default_api.read_file(path="frontend/src/components/doudizhu/DoudizhuBoard.jsx"))
-print(default_api.read_file(path="frontend/src/components/doudizhu/Doudizhu.css"))
-mekashi
+    const renderResultPile = (pCards, score, rank, areaName) => (
+      <div className="result-hand">
+        <div className="hand-score">{rank} (得分: {score || 0})</div>
+        <div className="hand-cards-display">
+          {(pCards || []).map((card, i) => (
+            <div key={`${card.rank}_${card.suit}_${areaName}_${i}`} className="card-wrapper-dun">
+              <Card card={card} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+    return (
+      <div className="modal-overlay" onClick={onRestart}>
+        <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <button className="modal-close-btn" onClick={onRestart}>×</button>
+          <h2>对局结果</h2>
+          {players.map(p => (
+            <div key={p.id} className="result-player">
+              <div className={`result-player-header ${p.id === myPlayerId ? 'me' : ''}`}>
+                <span className="player-name">{p.name}</span>
+                {p.isFoul && <span className="foul-tag">(倒水)</span>}
+                <span className="player-score" data-positive={p.score > 0}>
+                  总分: {p.score > 0 ? '+' : ''}{p.score || 0}
+                </span>
+              </div>
+              {p.handDetails && (
+                <>
+                  {renderResultPile(p.head, p.handDetails.head.score, p.handDetails.head.rank, 'head')}
+                  {renderResultPile(p.middle, p.handDetails.middle.score, p.handDetails.middle.rank, 'middle')}
+                  {renderResultPile(p.tail, p.handDetails.tail.score, p.handDetails.tail.rank, 'tail')}
+                </>
+              )}
+            </div>
+          ))}
+          <button 
+            className="btn-action" 
+            data-type="smart" 
+            onClick={onRestart} 
+            style={{gridColumn: '1 / -1', marginTop: '20px'}}
+          >
+            再来一局
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  if (!me) {
+    return <div>加载中...</div>;
+  }
+  
+  const wrapperClass = `game-wrapper ${isEightCardsMode ? 'six-players' : ''}`;
+
+  return (
+    <div className={wrapperClass}>
+      <div className="game-header">
+        <button className="btn-quit" onClick={onQuit}>
+          {'< 退出房间'}
+        </button>
+        <div className="score-display">
+          积分: {me.points}
+        </div>
+      </div>
+
+      <div className="players-area">{players.map(renderSeat)}</div>
+
+      <div className="deployment-slots">
+        {renderPile(me.head, '头道', 'head')}
+        {renderPile(me.middle, '中道', 'middle')}
+        {renderPile(me.tail, '尾道', 'tail')}
+      </div>
+
+      <div className="actions-area">
+        <button 
+          className="btn-action" 
+          data-type="cancel" 
+          onClick={onReady}
+          disabled={stage !== STAGES.LOBBY}
+        >
+          {me.isReady ? '取消准备' : '准备'}
+        </button>
+        <button 
+          className="btn-action" 
+          data-type="smart"
+          onClick={onAutoSplit ? () => onAutoSplit(myPlayerId) : undefined}
+          disabled={!canManualSplit || !onAutoSplit}
+        >
+          智能分牌
+        </button>
+        <button 
+          className="btn-action" 
+          data-type="compare" 
+          onClick={onCompare} 
+          disabled={stage !== STAGES.PLAYING || !me.isReady || isEightCardsMode}
+        >
+          开始比牌
+        </button>
+      </div>
+      
+      {renderResultModal()}
+    </div>
+  );
+}
