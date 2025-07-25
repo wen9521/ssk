@@ -1,12 +1,11 @@
-/* frontend/src/App.css (变形金刚风格重构) */
+/* frontend/src/App.css (变形金刚风格重构 V2) */
 
 /* --- App 容器通用样式 --- */
 #root .app-container {
   background: var(--surface-bg);
   border: 1px solid var(--surface-border);
-  border-radius: 8px; /* 更硬朗的边角 */
-  box-shadow: 0 0 40px rgba(0, 229, 255, 0.2), inset 0 0 15px rgba(0, 229, 255, 0.1);
-  padding: clamp(25px, 5vw, 40px);
+  box-shadow: 0 0 60px rgba(0, 229, 255, 0.25), inset 0 0 25px rgba(0, 229, 255, 0.15);
+  padding: clamp(30px, 5vw, 50px);
   text-align: center;
   max-width: 700px;
   width: 100%;
@@ -15,37 +14,53 @@
   flex-direction: column;
   align-items: center;
   gap: 30px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  /* 削角效果 */
-  clip-path: polygon(0 20px, 20px 0, calc(100% - 20px) 0, 100% 20px, 100% calc(100% - 20px), calc(100% - 20px) 100%, 20px 100%, 0 calc(100% - 20px));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  position: relative;
+}
+
+/* HUD 边角 */
+#root .app-container::before,
+#root .app-container::after {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-style: solid;
+  border-color: var(--autobot-glow);
+  transition: all 0.3s ease;
+}
+#root .app-container::before {
+  top: 10px; left: 10px;
+  border-width: 2px 0 0 2px;
+}
+#root .app-container::after {
+  bottom: 10px; right: 10px;
+  border-width: 0 2px 2px 0;
 }
 
 /* --- 标题样式 --- */
-@keyframes title-flicker {
-  0%, 19%, 21%, 23%, 50%, 52%, 100% {
-    opacity: 1;
-    text-shadow: 0 0 8px var(--text-bright), 0 0 20px var(--autobot-glow), 0 0 40px var(--autobot-glow);
-  }
-  20%, 22%, 51% { opacity: 0.8; text-shadow: none; }
+@keyframes title-glow {
+  0%, 100% { text-shadow: 0 0 10px var(--autobot-glow), 0 0 20px var(--autobot-glow), 0 0 40px var(--autobot-glow-deep); }
+  50% { text-shadow: 0 0 15px var(--autobot-glow), 0 0 30px var(--autobot-glow), 0 0 50px var(--text-bright); }
 }
 
 #root h1 {
   font-family: var(--font-family-title);
   color: var(--text-bright);
   margin: 0 0 10px 0;
-  font-size: clamp(2.2em, 8vw, 3.5em);
+  font-size: clamp(2.5em, 8vw, 4em);
   font-weight: 900;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  animation: title-flicker 3s infinite linear;
+  animation: title-glow 2.5s infinite linear;
 }
 
 #root h2 {
   font-family: var(--font-family-title);
   color: var(--text-bright);
   margin-bottom: 10px;
-  font-size: clamp(1.8em, 6vw, 2.5em);
+  font-size: clamp(1.8em, 6vw, 2.8em);
   font-weight: 700;
   text-shadow: 0 0 12px var(--autobot-glow);
 }
@@ -53,86 +68,70 @@
 /* --- 菜单与按钮通用样式 --- */
 #root .menu {
   display: flex; flex-direction: column; gap: 20px;
-  width: 100%; max-width: 380px;
+  width: 100%; max-width: 420px;
 }
 
 #root .btn {
   font-family: var(--font-family-title);
-  display: block; padding: 15px 30px;
+  display: block; padding: 18px 30px;
   border: 2px solid;
-  color: var(--text-bright); font-size: clamp(1em, 4vw, 1.2em);
+  color: var(--text-bright); font-size: clamp(1.1em, 4vw, 1.3em);
   font-weight: 700; cursor: pointer; text-decoration: none;
-  background: transparent; transition: all 0.3s ease;
+  background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+  transition: all 0.3s ease;
   position: relative; overflow: hidden;
-  text-transform: uppercase; letter-spacing: 2px;
-  border-color: var(--autobot-glow);
-  box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.3), 0 0 10px rgba(0, 229, 255, 0.3);
-  clip-path: polygon(0 5px, 5px 0, calc(100% - 5px) 0, 100% 5px, 100% calc(100% - 5px), calc(100% - 5px) 100%, 5px 100%, 0 calc(100% - 5px));
-}
-
-#root .btn::before {
-  content: ''; position: absolute; top: 0; left: -150%;
-  width: 100%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  transform: skewX(-30deg); transition: left 0.6s ease;
+  text-transform: uppercase; letter-spacing: 3px;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
 
 #root .btn:hover {
-  transform: scale(1.05);
-  box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.5), 0 0 25px rgba(0, 229, 255, 0.7);
+  transform: translateY(-3px);
+  background: rgba(255,255,255,0.15);
 }
-#root .btn:hover::before { left: 150%; }
 
-#root .btn-secondary {
-  border-color: rgba(255, 255, 255, 0.4);
-  color: rgba(255, 255, 255, 0.8);
-  box-shadow: none;
+#root .btn::before { /* 能量扫描动画 */
+  content: ''; position: absolute; top: 0; left: -100%;
+  width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4));
+  transform: skewX(-30deg);
+  transition: left 0.8s ease;
 }
-#root .btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-color: var(--text-bright); box-shadow: none;
-}
+#root .btn:hover::before { animation: btn-flare 1.5s infinite linear; }
+@keyframes btn-flare { 0% { left: -150%; } 100% { left: 150%; } }
+
+#root .btn.btn-primary { border-color: var(--autobot-glow); box-shadow: 0 0 15px var(--autobot-glow); }
+#root .btn.btn-primary:hover { box-shadow: 0 0 25px var(--autobot-glow), 0 0 35px var(--text-bright); }
+
+#root .btn.btn-secondary { border-color: var(--surface-border); box-shadow: none; color: var(--text-color); }
+#root .btn.btn-secondary:hover { border-color: var(--text-bright); box-shadow: 0 0 10px var(--text-bright); }
+
 
 /* --- 游戏大厅特定样式 --- */
 #root .lobby-container {
   background: none; border: none; box-shadow: none;
   backdrop-filter: none; -webkit-backdrop-filter: none;
-  gap: 40px; clip-path: none;
+  gap: 40px;
 }
 
 #root .game-section {
-  width: 90%; max-width: 450px;
-  padding: 30px 20px; color: white;
-  display: flex; flex-direction: column; justify-content: center;
-  align-items: center; gap: 25px; border: 2px solid;
-  transition: all 0.3s ease-out; position: relative; overflow: hidden;
-  background: rgba(10, 20, 45, 0.5);
-  clip-path: polygon(0 15px, 15px 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px));
+  width: 90%; max-width: 480px;
+  padding: 30px 20px;
+  border: 2px solid;
+  transition: all 0.3s ease-out; position: relative;
+  background: var(--surface-bg);
+  backdrop-filter: blur(5px);
+  clip-path: polygon(0 20px, 20px 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
 }
 
 #root .game-section:hover {
   transform: translateY(-10px) scale(1.03);
-  background: rgba(10, 20, 45, 0.8);
+  background: rgba(13, 22, 58, 0.95);
 }
 
-#root .thirteen-cards-section {
-  border-color: var(--autobot-glow);
-}
-#root .thirteen-cards-section:hover { box-shadow: 0 0 30px var(--autobot-glow), inset 0 0 20px rgba(0, 229, 255, 0.2); }
-#root .thirteen-cards-section .btn { border-color: var(--autobot-glow); }
-#root .thirteen-cards-section .btn:hover { background: var(--autobot-glow); color: var(--bg-color); }
+#root .thirteen-cards-section { border-color: var(--autobot-glow); }
+#root .thirteen-cards-section:hover { box-shadow: 0 0 30px var(--autobot-glow); }
 
-#root .eight-cards-section {
-  border-color: var(--decepticon-glow);
-  opacity: 0.6; /* 尚未开放的游戏*/
-}
+#root .eight-cards-section { border-color: var(--decepticon-glow); opacity: 0.7; }
+#root .eight-cards-section:hover { box-shadow: 0 0 30px var(--decepticon-glow); }
 #root .eight-cards-section .btn { border-color: var(--decepticon-glow); color: var(--decepticon-glow); }
 #root .eight-cards-section .btn:hover { background: var(--decepticon-glow); color: var(--bg-color); }
-#root .eight-cards-section h2 { text-shadow: 0 0 15px var(--decepticon-glow); }
-
-#root .game-section h2 { font-size: 2.5em; margin: 0; }
-#root .thirteen-cards-section h2 { text-shadow: 0 0 15px var(--autobot-glow); }
-
-
-/* --- "Coming Soon" 页面特定样式 --- */
-#root .coming-soon p { font-size: 1.2em; margin-bottom: 25px; opacity: 0.8; }
