@@ -1,12 +1,12 @@
 // src/components/doudizhu/DoudizhuPlay.jsx
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DoudizhuStage, useDoudizhuStore } from '../../utils/doudizhu-store';
-// import DoudizhuBoard from './DoudizhuBoard'; // 我们稍后会创建这个组件
+import { useDoudizhuStore } from '../../utils/doudizhu-store';
+import DoudizhuBoard from './DoudizhuBoard'; // 引入我们新创建的牌桌
 
 export default function DoudizhuPlay() {
   const navigate = useNavigate();
-  const { startGame } = useDoudizhuStore();
+  const startGame = useDoudizhuStore(state => state.startGame);
 
   useEffect(() => {
     startGame();
@@ -16,12 +16,5 @@ export default function DoudizhuPlay() {
     navigate('/');
   };
 
-  return (
-    <div>
-      <h1>斗地主开发中...</h1>
-      <button onClick={handleQuit}>返回大厅</button>
-      {/* 游戏主面板将在这里渲染 */}
-      {/* <DoudizhuBoard /> */}
-    </div>
-  );
+  return <DoudizhuBoard onQuit={handleQuit} />;
 }
