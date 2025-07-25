@@ -1,137 +1,107 @@
-/* frontend/src/App.css (变形金刚风格重构 V2) */
+/* frontend/src/App.css (电影渐变风格重构 V3) */
 
 /* --- App 容器通用样式 --- */
 #root .app-container {
   background: var(--surface-bg);
-  border: 1px solid var(--surface-border);
-  box-shadow: 0 0 60px rgba(0, 229, 255, 0.25), inset 0 0 25px rgba(0, 229, 255, 0.15);
+  border: 1px solid transparent; /* 边框设置为透明 */
+  /* 使用 border-image 创建渐变色边框 */
+  border-image: linear-gradient(135deg, var(--autobot-primary), var(--decepticon-primary)) 1;
+  box-shadow: 0 0 30px rgba(0, 180, 255, 0.3), inset 0 0 20px rgba(18, 25, 60, 0.5);
   padding: clamp(30px, 5vw, 50px);
   text-align: center;
-  max-width: 700px;
+  max-width: 600px;
   width: 100%;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  position: relative;
+  gap: 35px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-/* HUD 边角 */
-#root .app-container::before,
-#root .app-container::after {
-  content: '';
-  position: absolute;
-  width: 30px;
-  height: 30px;
-  border-style: solid;
-  border-color: var(--autobot-glow);
-  transition: all 0.3s ease;
-}
-#root .app-container::before {
-  top: 10px; left: 10px;
-  border-width: 2px 0 0 2px;
-}
-#root .app-container::after {
-  bottom: 10px; right: 10px;
-  border-width: 0 2px 2px 0;
-}
-
-/* --- 标题样式 --- */
-@keyframes title-glow {
-  0%, 100% { text-shadow: 0 0 10px var(--autobot-glow), 0 0 20px var(--autobot-glow), 0 0 40px var(--autobot-glow-deep); }
-  50% { text-shadow: 0 0 15px var(--autobot-glow), 0 0 30px var(--autobot-glow), 0 0 50px var(--text-bright); }
-}
-
-#root h1 {
-  font-family: var(--font-family-title);
-  color: var(--text-bright);
-  margin: 0 0 10px 0;
-  font-size: clamp(2.5em, 8vw, 4em);
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  animation: title-glow 2.5s infinite linear;
-}
+/* 移除了 h1 样式，因为标题被删除了 */
 
 #root h2 {
   font-family: var(--font-family-title);
   color: var(--text-bright);
-  margin-bottom: 10px;
-  font-size: clamp(1.8em, 6vw, 2.8em);
+  margin: 0 0 10px 0;
+  font-size: clamp(2.2em, 7vw, 3.2em);
   font-weight: 700;
-  text-shadow: 0 0 12px var(--autobot-glow);
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
 /* --- 菜单与按钮通用样式 --- */
 #root .menu {
-  display: flex; flex-direction: column; gap: 20px;
-  width: 100%; max-width: 420px;
+  display: flex; flex-direction: column; gap: 25px;
+  width: 100%; max-width: 400px;
 }
 
 #root .btn {
   font-family: var(--font-family-title);
   display: block; padding: 18px 30px;
-  border: 2px solid;
+  border: none;
   color: var(--text-bright); font-size: clamp(1.1em, 4vw, 1.3em);
   font-weight: 700; cursor: pointer; text-decoration: none;
-  background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
   transition: all 0.3s ease;
-  position: relative; overflow: hidden;
-  text-transform: uppercase; letter-spacing: 3px;
-  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  position: relative;
+  text-transform: uppercase; letter-spacing: 2px;
+  background-size: 200% 100%;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
 }
 
-#root .btn:hover {
-  transform: translateY(-3px);
-  background: rgba(255,255,255,0.15);
+#root .btn.btn-primary {
+  background-image: linear-gradient(90deg, var(--autobot-primary) 0%, var(--autobot-secondary) 50%, var(--autobot-primary) 100%);
+}
+#root .btn.btn-primary:hover {
+  background-position: right center; /* 渐变色流动效果 */
+  box-shadow: 0 0 20px var(--autobot-primary), 0 0 30px var(--autobot-primary);
+  transform: translateY(-2px);
 }
 
-#root .btn::before { /* 能量扫描动画 */
-  content: ''; position: absolute; top: 0; left: -100%;
-  width: 50%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4));
-  transform: skewX(-30deg);
-  transition: left 0.8s ease;
+#root .btn.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--surface-border);
 }
-#root .btn:hover::before { animation: btn-flare 1.5s infinite linear; }
-@keyframes btn-flare { 0% { left: -150%; } 100% { left: 150%; } }
-
-#root .btn.btn-primary { border-color: var(--autobot-glow); box-shadow: 0 0 15px var(--autobot-glow); }
-#root .btn.btn-primary:hover { box-shadow: 0 0 25px var(--autobot-glow), 0 0 35px var(--text-bright); }
-
-#root .btn.btn-secondary { border-color: var(--surface-border); box-shadow: none; color: var(--text-color); }
-#root .btn.btn-secondary:hover { border-color: var(--text-bright); box-shadow: 0 0 10px var(--text-bright); }
-
+#root .btn.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--text-bright);
+}
 
 /* --- 游戏大厅特定样式 --- */
 #root .lobby-container {
-  background: none; border: none; box-shadow: none;
+  background: transparent; border: none; box-shadow: none;
   backdrop-filter: none; -webkit-backdrop-filter: none;
-  gap: 40px;
+  gap: 50px;
 }
 
 #root .game-section {
-  width: 90%; max-width: 480px;
+  width: 90%; max-width: 450px;
   padding: 30px 20px;
-  border: 2px solid;
+  border: none;
+  background: rgba(18, 25, 60, 0.7);
+  backdrop-filter: blur(8px);
   transition: all 0.3s ease-out; position: relative;
-  background: var(--surface-bg);
-  backdrop-filter: blur(5px);
-  clip-path: polygon(0 20px, 20px 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
-
 #root .game-section:hover {
-  transform: translateY(-10px) scale(1.03);
-  background: rgba(13, 22, 58, 0.95);
+  transform: translateY(-10px) scale(1.05);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
 }
 
-#root .thirteen-cards-section { border-color: var(--autobot-glow); }
-#root .thirteen-cards-section:hover { box-shadow: 0 0 30px var(--autobot-glow); }
+#root .thirteen-cards-section:hover {
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 30px var(--autobot-primary);
+}
 
-#root .eight-cards-section { border-color: var(--decepticon-glow); opacity: 0.7; }
-#root .eight-cards-section:hover { box-shadow: 0 0 30px var(--decepticon-glow); }
-#root .eight-cards-section .btn { border-color: var(--decepticon-glow); color: var(--decepticon-glow); }
-#root .eight-cards-section .btn:hover { background: var(--decepticon-glow); color: var(--bg-color); }
+#root .eight-cards-section { opacity: 0.7; }
+#root .eight-cards-section:hover {
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 30px var(--decepticon-primary);
+}
+#root .eight-cards-section h2 {
+  color: var(--decepticon-primary);
+  text-shadow: 0 0 10px var(--decepticon-primary);
+}
+#root .eight-cards-section .btn {
+  background-image: linear-gradient(90deg, var(--decepticon-primary) 0%, var(--decepticon-secondary) 50%, var(--decepticon-primary) 100%);
+}
