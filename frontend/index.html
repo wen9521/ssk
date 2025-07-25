@@ -1,15 +1,16 @@
 <!DOCTYPE html>
+
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, user-scalable=no" />
   <title>赛博坦指挥中心</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
-  
+
   <style>
     :root {
       /* --- 变形金刚主题色板 V3 (电影渐变风格) --- */
@@ -17,29 +18,24 @@
       --surface-bg: rgba(18, 25, 60, 0.8);
       --surface-border: rgba(127, 199, 255, 0.5);
       
-      /* 阵营色 */
       --autobot-primary: #00b4ff;
       --autobot-secondary: #0076a3;
       
       --decepticon-primary: #a941ff;
       --decepticon-secondary: #67269b;
       
-      /* 行为/高光色 */
       --action-primary: #ffee00;
       --action-secondary: #ffc400;
 
-      /* 状态色 */
       --ready-color: #00ffab;
       --foul-color: #ff386a;
 
-      /* 文本色 */
       --text-color: #d1d9ff;
       --text-bright: #ffffff;
       
-      /* 字体 */
       --font-family-title: 'Orbitron', sans-serif;
       --font-family-body: 'Rajdhani', sans-serif;
-      --card-width: 60px;
+      --card-width: 60px; /* 恢复为十三水适用的尺寸，斗地主CSS会覆盖 */
     }
 
     * {
@@ -60,7 +56,7 @@
       font-family: var(--font-family-body);
       background-color: var(--bg-color);
       color: var(--text-color);
-      background-image: url('/img/background.jpg');
+      background-image: url('/img/background.jpg'); /* 确保你的背景图在 public/img/background.jpg */
       background-size: cover;
       background-position: center center;
       background-attachment: fixed;
@@ -83,6 +79,7 @@
       padding: 15px;
     }
   </style>
+
 </head>
 <body>
   <div id="root"></div>

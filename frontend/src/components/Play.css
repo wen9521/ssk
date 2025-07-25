@@ -186,8 +186,17 @@
 }
 .btn-action[data-type="smart"] {
   background: var(--accent-blue);
-  border: none;
-  box-shadow: 0 4mekashi
-
-  print(default_api.read_file(path="frontend/src/game-logic/doudizhu-rules.js"))
-mekashi
+  border: none; /* 实色按钮不需要边框 */
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+}
+.btn-action[data-type="compare"] {
+  background: linear-gradient(45deg, var(--accent-orange), var(--accent-orange-dark));
+  border: none; /* 实色按钮不需要边框 */
+  box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);
+}
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
