@@ -10,8 +10,6 @@ const Card = React.memo(({ card, isSelected, isDragging, onClick }) => {
 
   const imageName = cardToImageName(card);
   const displayName = cardToDisplayName(card);
-  
-  // 确保图片路径正确
   const imageUrl = `${process.env.PUBLIC_URL}/assets/cards/${imageName}`;
 
   const containerClasses = [
