@@ -1,4 +1,4 @@
-// src/utils/doudizhu.store.js
+// frontend/src/utils/doudizhu.store.js
 import { create } from 'zustand';
 import { produce } from 'immer';
 import { createDeck, shuffleDeck } from '@/game-logic/deck';

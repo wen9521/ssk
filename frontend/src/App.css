@@ -83,15 +83,7 @@
 
 /* 不同游戏入口的颜色 */
 #root .thirteen-cards-section { border-color: var(--autobot-primary); }
-#root .thirteen-cards-section:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--autobot-primary); }
-#root .thirteen-cards-section h2 { text-shadow: 0 0 10px var(--autobot-primary); }
+#root .thirteen-cards-section:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--autobot-primary); }mekashi
 
-#root .doudizhu-section { border-color: var(--action-primary); }
-#root .doudizhu-section:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--action-primary); }
-#root .doudizhu-section h2 { text-shadow: 0 0 10px var(--action-primary); }
-
-#root .eight-cards-section { border-color: var(--decepticon-primary); opacity: 0.8; }
-#root .eight-cards-section:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--decepticon-primary); }mekashi
-
-print(default_api.read_file(path="frontend/src/utils/doudizhu-store.js"))
+print(default_api.read_file(path="frontend/src/utils/doudizhu.store.js"))
 mekashi

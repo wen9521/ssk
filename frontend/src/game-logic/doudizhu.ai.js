@@ -1,4 +1,4 @@
-// src/game-logic/doudizhu.ai.js
+// frontend/src/game-logic/doudizhu.ai.js
 import { parseHand, canPlay, valueMap, JokerRanks } from './doudizhu.rules.js';
 
 export function decideBid(hand, currentBid) {
@@ -31,7 +31,6 @@ function findPossibleHands(hand) {
         acc[card.rank] = (acc[card.rank] || 0) + 1;
         return acc;
     }, {});
-
     for (const rank in counts) {
         const cardsOfRank = hand.filter(c => c.rank === rank);
         if (counts[rank] >= 1) {
