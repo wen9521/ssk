@@ -1,85 +1,48 @@
-/* frontend/src/components/Hand.css */
-
-.hand-display-container {
+/* frontend/src/components/Hand.css (新样式文件) */
+.hand-container {
   width: 100%;
-  min-height: 140px; /* 保证有足够空间展示卡牌 */
+  min-height: calc(var(--card-width) * var(--card-aspect-ratio) + 40px);
   display: flex;
   justify-content: center;
   align-items: center;
-  /* 新增：允许在极端情况下横向滚动，防止页面布局破坏 */
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch; /* iOS 滚动优化 */
-  scrollbar-width: none; /* Firefox 隐藏滚动条 */
+  padding: 20px 0;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid var(--surface-border);
+  box-shadow: inset 0 5px 15px rgba(0,0,0,0.4);
+  position: relative;
 }
-.hand-display-container::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, etc. 隐藏滚动条 */
-}
-
 
 .hand {
   display: flex;
   justify-content: center;
-  /* 使用 padding 来防止卡牌在边缘时被截断 */
-  padding: 0 40px; 
+  padding: 0 40px;
 }
 
 .card-wrapper {
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  /* 初始重叠边距 */
-  margin-left: -50px;
-  animation: fan-out 0.5s ease-out forwards;
-  animation-delay: calc(var(--card-index) * 0.05s);
+  margin-left: calc(var(--card-width) * -0.65);
   transform-origin: bottom center;
 }
 
+.card-wrapper:first-child {
+  margin-left: 0;
+}
+
 .hand:hover .card-wrapper {
-  /* 鼠标悬浮时稍微展开 */
-  margin-left: -40px;
-  transform: translateY(-10px) rotate(calc(var(--card-index) * 2deg - (var(--total-cards, 13) - 1) * 1deg));
+  margin-left: calc(var(--card-width) * -0.5);
+  transform: translateY(-10px);
 }
 
 .card-wrapper:hover {
-  transform: translateY(-25px) scale(1.1) !important; /* 突出显示悬浮的卡牌 */
+  transform: translateY(-30px) scale(1.1) !important;
   z-index: 100;
 }
 
 .empty-hand-message {
-  color: #ccc;
-  font-style: italic;
-}
-
-/* 定义卡牌展开动画 */
-@keyframes fan-out {
-  from {
-    opacity: 0;
-    transform: translateY(50px) rotate(0deg);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) rotate(0deg);
-  }
-}
-
-/* 响应式调整：针对小屏幕 */
-@media (max-width: 480px) {
-  .card-wrapper {
-    /* 减小重叠边距，让手牌在小屏幕上更紧凑 */
-    margin-left: -35px;
-  }
-
-  .hand:hover .card-wrapper {
-    /* 悬浮时也相应调整 */
-    margin-left: -30px;
-  }
-}
-
-@media (max-width: 380px) {
-  .card-wrapper {
-    margin-left: -40px; /* 进一步压缩 */
-  }
-
-  .hand:hover .card-wrapper {
-    margin-left: -35px;
-  }
+  color: var(--ready-color);
+  font-family: var(--font-family-title);
+  font-size: 1.5em;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px var(--ready-color);
 }
