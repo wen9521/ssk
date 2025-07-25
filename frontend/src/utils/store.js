@@ -63,14 +63,16 @@ const useGameStore = create((set, get) => ({
     setTimeout(() => {
       const deck = createDeck();
       const shuffled = shuffleDeck(deck);
-      const hands = dealCards(shuffled, 13, 4);
+      
+      // --- 核心修复：正确解构 dealCards 的返回结果 ---
+      // dealCards 返回的是一个数组，第一个元素是手牌数组，第二个是剩余牌堆
+      const playerHands = dealCards(shuffled, 13, 4)[0]; // 我们只需要手牌数组
+
       set(produce(state => {
         state.players.forEach((player, index) => {
-            const playerHandObjects = hands[index];
+            const playerHandObjects = playerHands[index];
             if (player.isAI) {
-                // --- 核心修复：在这里转换卡牌格式 ---
                 const playerHandStrings = playerHandObjects.map(toCardString);
-                // 现在传递给 SmartSplit 的是正确的字符串数组
                 const splitResult = SmartSplit(playerHandStrings)[0];
                 
                 player.head = splitResult.head.map(toCardObject).filter(Boolean);
