@@ -19,7 +19,7 @@
   margin-bottom: 20px;
 }
 .ddz-quit-btn {
-  background: var(--glass-bg);
+  background: rgba(255, 255, 255, 0.1);
   border: 1px solid var(--glass-border);
   color: var(--text-secondary);
   font-size: 0.9em;
@@ -117,10 +117,17 @@
   align-items: flex-end; /* 使选中的牌向上移动 */
   width: 100%;
   min-height: calc(var(--card-width) * 1.45 + 20px);
+  padding: 0 20px; /* 给手牌留出一些边缘空间 */
+  overflow-x: auto; /* 如果牌太多，允许水平滚动 */
+  scrollbar-width: none; /* 隐藏滚动条 for Firefox */
+}
+.my-hand-area::-webkit-scrollbar {
+  display: none; /* 隐藏滚动条 for Chrome, Safari */
 }
 .my-hand-area .card-container {
-  /* --- 关键修改：调整斗地主手牌间距 --- */
-  margin-left: calc(var(--card-width) * -0.70); /* 100% - 30% = 70% */
+  /* --- 关键修复：确保卡牌水平排列 --- */
+  flex-shrink: 0; /* 防止卡牌在空间不足时被压缩 */
+  margin-left: -55px; /* 使用之前调整好的间距 */
 }
 .my-hand-area .card-container:first-child { margin-left: 0; }
 .my-hand-area .card-container.is-selected {
