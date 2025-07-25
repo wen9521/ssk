@@ -1,7 +1,25 @@
-/* frontend/src/components/Play.css (全新科技感主题 - 终极版) */
+/* frontend/src/components/Play.css (全新科技感主题 - 终极修正版) */
 
-/* 继承自 App.css 的变量 */
+/* 引入外部字体 (也可以只在 App.css 中引入一次) */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+/* --- 变量 (从 App.css 继承) --- */
+:root {
+  --bg-color: #02041b;
+  --primary-glow: #00e5ff;
+  --secondary-glow: #ff00ff;
+  --surface-bg: rgba(13, 17, 43, 0.75);
+  --surface-border: rgba(0, 229, 255, 0.25);
+  --text-color: #c0c8ff;
+  --text-bright: #ffffff;
+  --ready-color: #00ffab;
+  --foul-color: #ff4d6d;
+  --font-family: 'Orbitron', sans-serif;
+  --card-offset: -40px;
+  --outer-max-width: 460px;
+  --pai-dun-height: clamp(100px, 28vw, 120px);
+}
+
 
 /* --- 整体容器 --- */
 .play-container {
@@ -9,7 +27,6 @@
   min-height: 100vh;
   padding: 15px 0;
   box-sizing: border-box;
-  background-color: transparent; /* 背景由 body 提供 */
   font-family: var(--font-family), sans-serif;
   display: flex;
   align-items: center;
@@ -18,7 +35,7 @@
 
 /* --- 游戏主面板 --- */
 .game-wrapper {
-  max-width: var(--outer-max-width, 460px);
+  max-width: var(--outer-max-width);
   width: 95%;
   margin: auto;
   background: var(--surface-bg);
@@ -94,9 +111,9 @@
 
 /* --- 牌墩区域 --- */
 @keyframes border-flow {
-  0% { border-color: var(--surface-border); }
-  50% { border-color: var(--primary-glow); }
-  100% { border-color: var(--surface-border); }
+  0% { border-color: var(--surface-border); box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6); }
+  50% { border-color: var(--primary-glow); box-shadow: inset 0 0 25px var(--primary-glow); }
+  100% { border-color: var(--surface-border); box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6); }
 }
 
 @keyframes placeholder-flicker {
@@ -115,7 +132,6 @@
 
 .pai-dun.drag-over {
   background-color: rgba(0, 229, 255, 0.15);
-  box-shadow: inset 0 0 25px var(--primary-glow);
   animation: border-flow 1.5s infinite;
 }
 
@@ -180,7 +196,7 @@
   text-shadow: 0 0 5px var(--ready-color);
 }
 .btn-ready::before { background: linear-gradient(90deg, transparent, var(--ready-color), transparent); }
-.btn-ready:hover { box-shadow: 0 0 20px var(--ready-color); }
+.btn-ready:hover { box-shadow: 0 0 20px var(--ready-color), 0 0 30px var(--ready-color); }
 
 .btn-compare {
   border-color: var(--secondary-glow); color: var(--secondary-glow);
@@ -188,13 +204,10 @@
   text-shadow: 0 0 5px var(--secondary-glow);
 }
 .btn-compare::before { background: linear-gradient(90deg, transparent, var(--secondary-glow), transparent); }
-.btn-compare:hover { box-shadow: 0 0 20px var(--secondary-glow); }
+.btn-compare:hover { box-shadow: 0 0 20px var(--secondary-glow), 0 0 30px var(--secondary-glow); }
 
 /* --- 结果弹窗 --- */
-.modal-overlay {
-  background: rgba(13, 15, 26, 0.7); backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
+.modal-overlay { background: rgba(13, 15, 26, 0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .modal-content {
   background: var(--surface-bg); border: 1px solid var(--surface-border);
   border-radius: 20px; padding: 25px; max-width: 600px;
@@ -203,21 +216,12 @@
 }
 .modal-close-btn:hover { color: #fff; transform: rotate(180deg) scale(1.2); }
 .result-player {
-  padding: 15px;
-  border: 1px solid var(--surface-border);
-  border-radius: 12px;
-  background: rgba(0,0,0,0.2);
+  padding: 15px; border: 1px solid var(--surface-border);
+  border-radius: 12px; background: rgba(0,0,0,0.2);
 }
-.result-player-header {
-  color: var(--primary-glow); font-size: 16px;
-}
-.result-player-header.me {
-  color: var(--text-bright); font-size: 18px;
-  text-shadow: 0 0 10px var(--primary-glow);
-}
-.result-player-header .foul-tag {
-  color: var(--foul-color); text-shadow: 0 0 8px var(--foul-color);
-}
+.result-player-header { color: var(--primary-glow); font-size: 16px; }
+.result-player-header.me { color: var(--text-bright); font-size: 18px; text-shadow: 0 0 10px var(--primary-glow); }
+.result-player-header .foul-tag { color: var(--foul-color); text-shadow: 0 0 8px var(--foul-color); }
 .result-hand .card { width: 34px; height: 48px; }
 .result-hand .card-wrapper-dun { --card-offset: -22px; }
 
