@@ -22,7 +22,7 @@ const getNextPlayerId = (currentId) => {
   const numId = parseInt(currentId.replace('player', ''), 10);
   const nextNum = numId === 3 ? 1 : numId + 1;
   return `player${nextNum}`;
-}; // <-- 已确保函数正确闭合
+};
 
 const sortHand = (hand) => {
   if (!Array.isArray(hand)) return [];
@@ -42,7 +42,12 @@ export const useDoudizhuStore = create((set, get) => ({
   currentHandOnTable: null,
   lastPlayerId: null,
   winnerId: null,
-  biddingState: { highestBid: 0, highestBidderId: null, passedBidders: [], bidTurn: 0 },
+  biddingState: {
+    highestBid: 0,
+    highestBidderId: null,
+    passedBidders: [],
+    bidTurn: 0,
+  },
 
   startGame: () => {
     const fullDeck = createDoudizhuDeck();
@@ -67,14 +72,12 @@ export const useDoudizhuStore = create((set, get) => ({
   playerBid: (playerId, bid) => {
     const { biddingState, currentPlayerId } = get();
     if (playerId !== currentPlayerId || bid <= biddingState.highestBid) return;
-
     set(produce(state => {
       state.biddingState.highestBid = bid;
       state.biddingState.highestBidderId = playerId;
       state.biddingState.bidTurn++;
       state.currentPlayerId = getNextPlayerId(playerId);
     }));
-
     if (bid === 3 || get().biddingState.bidTurn >= get().players.length) {
       get().finalizeBidding();
     } else {
@@ -84,7 +87,6 @@ export const useDoudizhuStore = create((set, get) => ({
 
   playerPassBid: (playerId) => {
     if (playerId !== get().currentPlayerId) return;
-
     set(produce(state => {
       if (!state.biddingState.passedBidders.includes(playerId)) {
         state.biddingState.passedBidders.push(playerId);
@@ -92,7 +94,6 @@ export const useDoudizhuStore = create((set, get) => ({
       state.biddingState.bidTurn++;
       state.currentPlayerId = getNextPlayerId(playerId);
     }));
-
     const { biddingState, players } = get();
     if (players.length - biddingState.passedBidders.length === 1 && biddingState.highestBidderId) {
         get().finalizeBidding();
@@ -120,13 +121,62 @@ export const useDoudizhuStore = create((set, get) => ({
 
   playCards: (playerId, cards) => {
     if (playerId !== get().currentPlayerId) return false;
-
     const newHand = parseHand(cards);
     const isMyTurnToStart = get().currentPlayerId === get().lastPlayerId || !get().lastPlayerId;
-    
     if (!canPlay(newHand, isMyTurnToStart ? null : get().currentHandOnTable)) {
-      if(playerId === 'player1') {mekashi
+      if(playerId === 'player1') alert("出牌不符合规则！");
+      return false;
+    }
+    set(produce(state => {
+      const player = state.players.find(p => p.id === playerId);
+      if (player) {
+          player.hand = player.hand.filter(cInHand => !cards.find(cToPlay => cToPlay.rank === cInHand.rank && cToPlay.suit === cInHand.suit));
+      }
+      state.currentHandOnTable = newHand;
+      state.lastPlayerId = playerId;
+      state.currentPlayerId = getNextPlayerId(playerId);
+      if (player && player.hand.length === 0) {
+        state.winnerId = playerId;
+        state.stage = DoudizhuStage.FINISHED;
+      }
+    }));
+    if (get().stage === DoudizhuStage.PLAYING) get().triggerAITurn();
+    return true;
+  },
 
-print(default_api.read_file(path="frontend/src/game-logic/doudizhu.rules.js"))
-print(default_api.read_file(path="frontend/src/game-logic/doudizhu.ai.js"))
-mekashi
+  passTurn: (playerId) => {
+    const { currentPlayerId, lastPlayerId } = get();
+    if (playerId !== currentPlayerId || !lastPlayerId || currentPlayerId === lastPlayerId) return;
+    set(produce(state => {
+        state.currentPlayerId = getNextPlayerId(playerId);
+        if (state.currentPlayerId === state.lastPlayerId) {
+            state.currentHandOnTable = null;
+        }
+    }));
+    if (get().stage === DoudizhuStage.PLAYING) get().triggerAITurn();
+  },
+
+  triggerAITurn: () => {
+    setTimeout(() => {
+      const { stage, currentPlayerId, players, biddingState, currentHandOnTable, lastPlayerId } = get();
+      const currentPlayer = players.find(p => p.id === currentPlayerId);
+      if (!currentPlayer || !currentPlayer.isAI || stage === DoudizhuStage.FINISHED) return;
+      if (stage === DoudizhuStage.BIDDING) {
+        const bid = decideBid(currentPlayer.hand, biddingState.highestBid);
+        if (bid > biddingState.highestBid && bid > 0) {
+          get().playerBid(currentPlayerId, bid);
+        } else {
+          get().playerPassBid(currentPlayerId);
+        }
+      } else if (stage === DoudizhuStage.PLAYING) {
+        const isAITurnToStart = currentPlayerId === lastPlayerId || !lastPlayerId;
+        const cardsToPlay = decidePlay(currentPlayer.hand, isAITurnToStart ? null : currentHandOnTable);
+        if (cardsToPlay) {
+          get().playCards(currentPlayerId, cardsToPlay);
+        } else if (!isAITurnToStart) {
+          get().passTurn(currentPlayerId);
+        }
+      }
+    }, 1000 + Math.random() * 500);
+  }
+}));
