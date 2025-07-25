@@ -1,8 +1,8 @@
-// frontend/src/components/Card.jsx (科技感重构)
+// frontend/src/components/Card.jsx (恢复SVG并适配新风格)
 import React from 'react';
 import './Card.css';
 
-// SVG 符号, 极具科技感
+// SVG 符号, 您的原始SVG代码
 const SUIT_SYMBOLS = {
   spades: (props) => <path d="M60 20 L75 40 L60 100 L45 40 Z M60 80 L90 110 L30 110 Z" {...props} />,
   hearts: (props) => <path d="M60 40 A20 20 0 0 1 90 60 A20 20 0 0 1 60 100 A20 20 0 0 1 30 60 A20 20 0 0 1 60 40" {...props} />,
@@ -14,7 +14,7 @@ const Card = React.memo(({ card, isSelected, isDragging, onClick }) => {
   if (!card) return <div className="card-container empty"></div>;
 
   const { rank, suit } = card;
-  const suitColor = (suit === 'hearts' || suit === 'diamonds') ? 'var(--secondary-glow)' : 'var(--primary-glow)';
+  const suitColor = (suit === 'hearts' || suit === 'diamonds') ? 'var(--decepticon-primary)' : 'var(--autobot-primary)';
   const SuitIcon = SUIT_SYMBOLS[suit];
 
   const containerClasses = [
@@ -25,25 +25,27 @@ const Card = React.memo(({ card, isSelected, isDragging, onClick }) => {
 
   return (
     <div className={containerClasses} onClick={onClick}>
-      <div className="card-border">
-        <div className="card-glow"></div>
-        <div className="card-content">
-          <div className="card-corner top-left" style={{ color: suitColor }}>
-            <span className="rank">{rank}</span>
-            <svg className="suit-icon-small" viewBox="0 0 120 120">
-              <SuitIcon fill={suitColor} />
-            </svg>
-          </div>
-          <div className="card-corner bottom-right" style={{ color: suitColor }}>
-            <span className="rank">{rank}</span>
-            <svg className="suit-icon-small" viewBox="0 0 120 120">
-              <SuitIcon fill={suitColor} />
-            </svg>
-          </div>
-          <div className="card-center-suit" style={{ color: suitColor }}>
-            <svg className="suit-icon-large" viewBox="0 0 120 120">
-                <SuitIcon fill="none" stroke={suitColor} strokeWidth="5" />
-            </svg>
+      <div className="card-border-outer">
+        <div className="card-border-inner">
+          <div className="card-glow"></div>
+          <div className="card-content">
+            <div className="card-corner top-left" style={{ color: suitColor }}>
+              <span className="rank">{rank}</span>
+              <svg className="suit-icon-small" viewBox="0 0 120 120">
+                <SuitIcon fill={suitColor} />
+              </svg>
+            </div>
+            <div className="card-corner bottom-right" style={{ color: suitColor }}>
+              <span className="rank">{rank}</span>
+              <svg className="suit-icon-small" viewBox="0 0 120 120">
+                <SuitIcon fill={suitColor} />
+              </svg>
+            </div>
+            <div className="card-center-suit" style={{ color: suitColor }}>
+              <svg className="suit-icon-large" viewBox="0 0 120 120">
+                  <SuitIcon fill="none" stroke={suitColor} strokeWidth="5" />
+              </svg>
+            </div>
           </div>
         </div>
       </div>
