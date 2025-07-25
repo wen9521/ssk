@@ -1,25 +1,88 @@
-/* src/App.css (最终修复版) */
+/* src/App.css */
 
 /* --- App 容器通用样式 (用于子菜单等) --- */
 #root .app-container {
-background: var(--surface-bg);
-border: 1px solid var(--surface-border);
-box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-backdrop-filter: blur(12px);
--webkit-backdrop-filter: blur(12px);
-border-radius: 12px;
-padding: clamp(30px, 5vw, 40px);
-text-align: center;
-max-width: 500px;
-width: 90%;
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 20px;
-clip-path: polygon(0 20px, 20px 0, calc(100% - 20px) 0, 100% 20px, 100% calc(100% - 20px), calc(100% - 20px) 100%, 20px 100%, 0 calc(100% - 20px));
+  background: var(--surface-bg);
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  padding: clamp(30px, 5vw, 40px);
+  text-align: center;
+  max-width: 500px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  clip-path: polygon(0 20px, 20px 0, calc(100% - 20px) 0, 100% 20px, 100% calc(100% - 20px), calc(100% - 20px) 100%, 20px 100%, 0 calc(100% - 20px));
 }
 
-/* --- 主界面 Lobby 的特殊样式 --- /mekashi
+/* --- 主界面 Lobby 的特殊样式 --- */
+#root .lobby-container {
+  background: none;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  gap: 30px;
+  padding: 0;
+  clip-path: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes title-glow {
+  0%, 100% { text-shadow: 0 0 10px #fff, 0 0 20px var(--autobot-primary), 0 0 40px var(--autobot-primary); }
+  50% { text-shadow: 0 0 15px #fff, 0 0 30px var(--autobot-primary), 0 0 50px var(--autobot-primary); }
+}
+
+#root .lobby-container h1 {
+  font-family: var(--font-family-title);
+  font-weight: 900;
+  font-size: 3em;
+  margin: 0 0 20px;
+  color: var(--text-bright);
+  text-transform: uppercase;
+  animation: title-glow 3s infinite linear;
+}
+
+/* 游戏选项卡样式 */
+#root .game-section {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface-bg);
+  border: 1px solid;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 10px;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  transition: all 0.3s ease;
+}
+
+#root .game-section:hover {
+  transform: translateY(-8px) scale(1.03);
+}
+
+#root .game-section h2 {
+  font-family: var(--font-family-title);
+  font-weight: 700;
+  font-size: 2em;
+  margin: 0;
+  color: var(--text-bright);
+}
+
+/* 不同游戏入口的颜色 */
+#root .thirteen-cards-section { border-color: var(--autobot-primary); }
+#root .thirteen-cards-section:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--autobot-primary); }mekashi
 
 print(default_api.read_file(path="frontend/src/utils/doudizhu.store.js"))
 mekashi
