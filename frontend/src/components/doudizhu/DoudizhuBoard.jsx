@@ -1,6 +1,5 @@
 // src/components/doudizhu/DoudizhuBoard.jsx
 import React, { useState } from 'react';
-// 使用别名路径
 import Card from '@/components/Card';
 import './Doudizhu.css';
 import { useDoudizhuStore } from '@/utils/doudizhu-store';
@@ -11,6 +10,7 @@ const PlayerPosition = {
   RIGHT: 'right',
 };
 
+// 玩家座位组件
 const PlayerSeat = ({ player, position, isLandlord, isCurrent }) => (
   <div className={`ddz-player-seat ${position} ${isCurrent ? 'is-current' : ''}`}>
     <div className="player-avatar">
@@ -21,6 +21,7 @@ const PlayerSeat = ({ player, position, isLandlord, isCurrent }) => (
   </div>
 );
 
+// 主面板
 export default function DoudizhuBoard({ onQuit }) {
   const { players, landlordId, landlordCards, currentPlayerId, currentHand } = useDoudizhuStore();
   const [selectedCards, setSelectedCards] = useState([]);
@@ -39,9 +40,11 @@ export default function DoudizhuBoard({ onQuit }) {
 
   if (!me || !leftPlayer || !rightPlayer) return null;
 
-  return (n    <div className="ddz-board-container">
+  // --- 核心修复：移除了多余的 'n' ---
+  return (
+    <div className="ddz-board-container">
       <div className="ddz-top-bar">
-        <button className="ddz-quit-btn" onClick={onQuit}>< 返回大厅</button>
+        <button className="ddz-quit-btn" onClick={onQuit}>{'< 返回大厅'}</button>
         <div className="landlord-cards-display">
           {landlordCards.map((card, i) => <Card key={i} card={card} />)}
         </div>
