@@ -2,98 +2,60 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no" />
-  
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#02041b" />
-
-  <title>扑克王 - 十三水</title>
-  <meta name="description" content="一个基于React的在线十三水纸牌游戏。" />
-
+  <title>十三水</title>
   <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-  <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
   <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
+  <!-- 引入字体 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      /* --- 变形金刚主题色板 V3 (电影渐变风格) --- */
-      --bg-color: #0c0f21;
-      --surface-bg: rgba(18, 25, 60, 0.8);
-      --surface-border: rgba(127, 199, 255, 0.5);
-      
-      --autobot-primary: #00b4ff;
-      --autobot-secondary: #0076a3;
-      
-      --decepticon-primary: #a941ff;
-      --decepticon-secondary: #67269b;
-      
-      --action-primary: #ffee00;
-      --action-secondary: #ffc400;
+      /* --- 毛玻璃 (Glassmorphism) 主题色板 --- */
+      --app-bg: #1e2833;
+      --glass-bg: rgba(255, 255, 255, 0.1);
+      --glass-border: rgba(255, 255, 255, 0.2);
 
-      --ready-color: #00ffab;
-      --foul-color: #ff386a;
+      --text-primary: #ffffff;
+      --text-secondary: #c0c8d1;
 
-      --text-color: #d1d9ff;
-      --text-bright: #ffffff;
+      --accent-green: #2ecc71;
+      --accent-green-dark: #27ae60;
       
-      --font-family-title: 'Orbitron', sans-serif;
-      --font-family-body: 'Rajdhani', sans-serif;
+      --accent-blue: #3498db;
+      --accent-blue-dark: #2980b9;
 
-      --card-aspect-ratio: 1.45;
-      --card-width: clamp(50px, 12vw, 75px);
+      --accent-orange: #f39c12;
+      --accent-orange-dark: #e67e22;
+
+      --accent-red-gradient: linear-gradient(45deg, #e74c3c, #c0392b);
+      
+      --font-family-main: 'Noto Sans SC', sans-serif;
     }
 
-    html, body {
-      width: 100%; height: 100%;
-      margin: 0; padding: 0;
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    html, body, #root {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
       overflow: hidden;
     }
 
     body {
-      font-family: var(--font-family-body);
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      background-image: url('%PUBLIC_URL%/img/background.jpg');
-      background-size: cover;
-      background-position: center center;
-      background-attachment: fixed;
+      font-family: var(--font-family-main);
+      background: var(--app-bg);
+      background-image: linear-gradient(135deg, #2c3e50 0%, #1a222b 100%);
+      color: var(--text-primary);
     }
-    
-    /* 背景覆盖层 - 关键修改 */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      z-index: -1;
-      /* 顶部和底部的柔和暗角，让中间区域更亮 */
-      background: radial-gradient(ellipse at center, transparent 40%, rgba(2, 4, 27, 0.8)),
-                  linear-gradient(to bottom, rgba(2, 4, 27, 0.5) 0%, transparent 30%, transparent 70%, rgba(2, 4, 27, 0.5) 100%);
-    }
-    
-    #root {
-      width: 100%; height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 15px;
-      box-sizing: border-box;
-    }
-
-    /* 全局滚动条美化 */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
-    ::-webkit-scrollbar-thumb { background: var(--autobot-primary); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--text-bright); }
   </style>
 </head>
 <body>
