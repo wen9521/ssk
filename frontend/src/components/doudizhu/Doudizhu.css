@@ -1,4 +1,4 @@
-/* src/components/doudizhu/Doudizhu.css */
+/* src/components/doudizhu/Doudizhu.css (最终修复版) */
 .ddz-board-container {
   width: 100%;
   height: 100%;
@@ -19,7 +19,7 @@
   margin-bottom: 20px;
 }
 .ddz-quit-btn {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   color: var(--text-secondary);
   font-size: 0.9em;
@@ -111,24 +111,28 @@
   align-items: center;
   gap: 15px;
 }
+
+/* --- 关键修复区域 --- */
 .my-hand-area {
-  display: flex;
+  display: flex; /* 1. 确保是 flex 容器 */
+  flex-direction: row; /* 2. 强制水平排列 */
   justify-content: center;
-  align-items: flex-end; /* 使选中的牌向上移动 */
+  align-items: flex-end; /* 3. 牌底部对齐，实现选中上浮效果 */
   width: 100%;
-  min-height: calc(var(--card-width) * 1.45 + 20px);
-  padding: 0 20px; /* 给手牌留出一些边缘空间 */
+  min-height: calc(var(--card-width) * 1.45 + 30px); /* 增加一点高度给上浮空间 */
+  padding: 0 20px;
   overflow-x: auto; /* 如果牌太多，允许水平滚动 */
-  scrollbar-width: none; /* 隐藏滚动条 for Firefox */
+  scrollbar-width: none;
 }
 .my-hand-area::-webkit-scrollbar {
-  display: none; /* 隐藏滚动条 for Chrome, Safari */
+  display: none;
 }
 .my-hand-area .card-container {
-  /* --- 关键修复：确保卡牌水平排列 --- */
-  flex-shrink: 0; /* 防止卡牌在空间不足时被压缩 */
-  margin-left: -55px; /* 使用之前调整好的间距 */
+  flex-shrink: 0; /* 4. 防止卡牌被压缩 */
+  margin-left: calc(var(--card-width) * -0.70); /* 保持30%的露出间距 */
 }
+/* --- 修复结束 --- */
+
 .my-hand-area .card-container:first-child { margin-left: 0; }
 .my-hand-area .card-container.is-selected {
   transform: translateY(-20px);
@@ -150,15 +154,7 @@
   transition: all 0.2s ease;
 }
 .ddz-btn:hover {
-  background: rgba(255,255,255,0.2);
-  color: #fff;
-}
-.ddz-btn.primary {
-  background: var(--accent-orange);
-  color: #fff;
-  border: none;
-  font-weight: bold;
-}
-.ddz-btn.primary:hover {
-  background: var(--accent-orange-dark);
-}
+  background: rgba(255,255,255,0.2);mekashi
+
+print(default_api.read_file(path="frontend/src/game-logic/doudizhu-rules.js"))
+mekashi
