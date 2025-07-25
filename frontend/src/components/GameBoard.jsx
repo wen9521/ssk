@@ -16,7 +16,18 @@ const sortHandInternal = (hand) => {
   });
 };
 
-export default function GameBoard({ players, myPlayerId, stage, onReady, onCompare, onRestart, onQuit, onUpdateHands, onAutoSplit, gameMode = 'thirteen-cards' }) {
+export default function GameBoard({ 
+  players, 
+  myPlayerId, 
+  stage, 
+  onReady, 
+  onCompare, 
+  onRestart, 
+  onQuit, 
+  onUpdateHands, 
+  onAutoSplit, 
+  gameMode = 'thirteen-cards' 
+}) {
     const me = players.find(p => p.id === myPlayerId);
     
     const [selectedCards, setSelectedCards] = useState([]);
@@ -25,14 +36,15 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     const [showResult, setShowResult] = useState(false);
 
     const isEightCardsMode = gameMode === 'eight-cards';
-    const canManualSplit = !isEightCardsMode && stage === STAGES.PLAYING;
+    // 核心修复：手动理牌的条件是：十三水模式、游戏在玩、且玩家自己尚未提交
+    const canManualSplit = !isEightCardsMode && stage === STAGES.PLAYING && !me?.submitted;
 
     useEffect(() => {
         if (stage === STAGES.FINISHED) {
           setShowResult(true);
           const timer = setTimeout(() => {
             setShowResult(false);
-            onRestart();
+            if(onRestart) onRestart();
           }, 10000);
           return () => clearTimeout(timer);
         } else {
@@ -47,7 +59,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     }, [stage]);
 
     const handleCardClick = (card, area, event) => {
-        if (!canManualSplit || !me) return;
+        if (!canManualSplit) return;
         const cardId = `${card.rank}_${card.suit}`;
         const isSelected = selectedCards.some(c => c.id === cardId);
         if (event.shiftKey) {
@@ -90,7 +102,7 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
         hands.middle = sortHandInternal(hands.middle);
         hands.tail = sortHandInternal(hands.tail);
     
-        onUpdateHands(myPlayerId, hands);
+        if(onUpdateHands) onUpdateHands(myPlayerId, hands);
         setSelectedCards([]);
         setDraggedCards(null);
     };
@@ -98,14 +110,14 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
     const renderSeat = (p) => (
         <div key={p.id} className={`player-seat ${p.id === myPlayerId ? 'player-me' : ''}`}>
           <div className="player-name">{p.name}</div>
-          <div className={`player-status ${p.submitted || (p.isReady && stage !== STAGES.LOBBY) ? 'ready' : ''}`}>
-            {p.submitted ? '已理牌' : (p.isReady ? (p.isAI ? '已理牌' : '已准备') : '等待中')}
+          <div className={`player-status ${p.submitted ? 'ready' : ''}`}>
+             {p.submitted ? '已理牌' : (p.isReady ? (p.isAI ? '思考中...' : '理牌中...') : '等待中')}
           </div>
         </div>
       );
 
     const renderPile = (cards, label, area) => {
-        const isFoulPile = me?.isFoul && (area === 'head' || area === 'middle');
+        const isFoulPile = me?.isFoul && (area === 'head' || area === 'middle' || area === 'tail');
         return (
             <div
                 className={`pai-dun ${dragOverArea === area && canManualSplit ? 'drag-over' : ''} ${isFoulPile ? 'foul' : ''}`}
@@ -142,19 +154,20 @@ export default function GameBoard({ players, myPlayerId, stage, onReady, onCompa
         );
     };
 
-    const renderResultModal = () => { /* ... (保持不变) ... */ };
+    const renderResultModal = () => { /* 保持不变 */ };
     
     if (!me) {
         return <div>加载中...</div>;
     }
-
+    
+    // 核心修复：“开始比牌”按钮的可用条件
     const isReadyForCompare = stage === STAGES.PLAYING &&
         !me.submitted &&
         me.head?.length === 3 &&
         me.middle?.length === 5 &&
         me.tail?.length === 5;
 
-    // --- 核心修改：根元素是一个无样式的 Fragment ---
+    // 渲染根组件
     return (
         <>
             <div className="game-header">
