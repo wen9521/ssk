@@ -4,8 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, user-scalable=no" />
   <title>赛博坦指挥中心</title>
+  
+  <!-- Vite 会在 public 目录中寻找 favicon.ico -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   
+  <!-- 引入项目所需的字体 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
@@ -17,16 +20,34 @@
       --surface-bg: rgba(18, 25, 60, 0.8);
       --surface-border: rgba(127, 199, 255, 0.5);
       
+      /* 阵营色 */
       --autobot-primary: #00b4ff;
       --autobot-secondary: #0076a3;
       
       --decepticon-primary: #a941ff;
       --decepticon-secondary: #67269b;
       
+      /* 行为/高光色 */
       --action-primary: #ffee00;
       --action-secondary: #ffc400;
+
+      /* 状态色 */
+      --ready-color: #00ffab;
+      --foul-color: #ff386a;
+
+      /* 文本色 */
+      --text-color: #d1d9ff;
+      --text-bright: #ffffff;
+      
+      /* 字体 */
+      --font-family-title: 'Orbitron', sans-serif;
+      --font-family-body: 'Rajdhani', sans-serif;
+
+      /* 卡牌尺寸变量 */
+      --card-width: 60px; /* 十三水的基础尺寸，会被其他CSS文件按需覆盖 */
     }
 
+    /* --- 全局重置与基础样式 --- */
     * {
       box-sizing: border-box;
       -webkit-font-smoothing: antialiased;
@@ -45,13 +66,15 @@
       font-family: var(--font-family-body);
       background-color: var(--bg-color);
       color: var(--text-color);
-      /* Vite 会自动将 public 目录下的内容服务到根路径 */
+      
+      /* 背景图片路径 - Vite 会自动从 public 目录提供 */
       background-image: url('/img/background.jpg');
       background-size: cover;
       background-position: center center;
       background-attachment: fixed;
     }
     
+    /* 背景覆盖层，用于增强氛围感并让背景图片透出 */
     body::before {
       content: '';
       position: fixed;
@@ -62,7 +85,8 @@
     }
     
     #root {
-      width: 100%; height: 100%;
+      width: 100%; 
+      height: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -72,6 +96,7 @@
 </head>
 <body>
   <div id="root"></div>
+  <!-- Vite 应用的入口脚本 -->
   <script type="module" src="/src/index.jsx"></script>
 </body>
 </html>
