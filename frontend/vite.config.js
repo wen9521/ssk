@@ -1,23 +1,30 @@
 // frontend/vite.config.js
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from 'path'
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  
+  // 确保所有资源在打包后使用相对路径。
   base: "./", 
+
+  // 明确指定构建输出目录
   build: {
     outDir: 'build'
   },
+
+  // 使用 URL 对象来创建路径别名，不再依赖 Node.js 的 'path' 模块
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': new URL('./src', import.meta.url).pathname,
     },
   },
-  // --- 核心修复：强制使用更宽容的解析器 ---
+
+  // 强制使用 JSX 解析器来处理所有 JS/JSX 文件，以解决之前的顽固问题
   esbuild: {
-    loader: 'jsx', // 将所有 .js 文件作为 .jsx 处理
-    include: /src/.*.jsx?$/, // 仅应用于 src 目录下的 js 和 jsx 文件
+    loader: 'jsx',
+    include: /src\/.*\.jsx?$/,
     exclude: [],
   },
 })
