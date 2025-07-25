@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { SmartSplit } from '../game-logic/ai-logic';
 import Card from './Card';
-import Hand from './Hand';
+import Hand from './Hand'; // --- 核心修复点：引入 Hand 组件 ---
 import './Play.css';
+import './Hand.css'; // --- 核心修复点：引入 Hand 组件的样式 ---
 
 // 定义牌的点数和花色顺序，用于排序
 const ranks = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
@@ -156,6 +157,8 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   // 卡牌移动
   const moveTo = (dest) => {
     if (submitted || !selected.cards.length) return;
+    // --- 核心修复点：确保是从手牌区 'hand' 移动过来的 ---
+    if (selected.area !== 'hand') return;
     const src = selected.area;
     const cardSet = new Set(selected.cards.map(c => c.rank+'_'+c.suit));
 
@@ -208,8 +211,7 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
                      className="card-wrapper-dun"
                      style={{ '--card-index': i, zIndex:i }}>
                   <Card
-                    rank={card.rank}
-                    suit={card.suit}
+                    card={card}
                     isSelected={isSel}
                     onClick={() => handleCardClick(card, area)}
                   />
@@ -225,6 +227,18 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
   // 渲染结果弹窗
   const renderModal = () => {
     if (!showResult || !resultData) return null;
+    
+    // Helper to render piles in modal without click handlers
+    const renderResultPile = (cards) => (
+        <div className="result-hand">
+            {(cards || []).map((card, i) => (
+                <div key={`${card.rank}_${card.suit}_${i}`} className="card-wrapper-dun" style={{ '--card-index': i, zIndex: i }}>
+                    <Card card={card} />
+                </div>
+            ))}
+        </div>
+    );
+
     return (
       <div className="modal-overlay" onClick={() => onRestart && onRestart()}>
         <div className="modal-content" onClick={e=>e.stopPropagation()}>
@@ -236,15 +250,9 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
                 {p.isFoul && <span className="foul-tag"> (倒水)</span>}
                 <span className="player-score"> ({p.score||0}分)</span>
               </div>
-              <div className="result-hand">
-                {renderPile(p.head||[], '', 'result')}
-              </div>
-              <div className="result-hand">
-                {renderPile(p.middle||[], '', 'result')}
-              </div>
-              <div className="result-hand">
-                {renderPile(p.tail||[], '', 'result')}
-              </div>
+              {renderResultPile(p.head)}
+              {renderResultPile(p.middle)}
+              {renderResultPile(p.tail)}
             </div>
           ))}
         </div>
@@ -272,7 +280,16 @@ export default function GameBoard({ players, myPlayerId, onCompare, onRestart, o
         {renderPile(head, '头道', 'head')}
         {renderPile(middle, '中道', 'middle')}
         {renderPile(tail, '尾道', 'tail')}
-
+        
+        {/* --- 核心修复点：添加 Hand 组件以显示玩家手牌 --- */}
+        <div className="my-cards-area">
+          <Hand
+            cards={myCards}
+            selectedCards={selected.area === 'hand' ? selected.cards : []}
+            onCardSelect={(card) => handleCardClick(card, 'hand')}
+          />
+        </div>
+        
         <div className="actions-area">
           <button
             className="btn-action btn-smart-split"
