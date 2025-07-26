@@ -1,49 +1,83 @@
-// src/store/doudizhuStore.js
-// Zustand store for Dou-Di-Zhu game state
-
 import create from 'zustand';
 import { produce } from 'immer';
-import { DoudizhuGame, DoudizhuStage } from '../game-logic';
+import {
+    DoudizhuGame,
+    DoudizhuStage,
+    parseHand,
+    canPlay
+} from '../game-logic'; // 确保从新的 game-logic/index.js 或 doudizhu.rules.js 导出
 
-export const useDoudizhuStore = create((set) => ({
-  // 当前游戏阶段
+// 辅助函数，从游戏实例中提取扁平化的状态
+const getGameState = (game) => ({
+  stage: game.stage,
+  players: game.players,
+  landlordId: game.landlordId,
+  landlordCards: game.landlordCards,
+  currentPlayerId: game.currentPlayerId,
+  currentHandOnTable: game.currentHandOnTable,
+  lastPlayerId: game.lastPlayerId,
+  biddingState: game.biddingState,
+  winnerId: game.winnerId,
+});
+
+export const useDoudizhuStore = create((set, get) => ({
+  // --- State ---
   stage: DoudizhuStage.IDLE,
+  players: [],
+  landlordId: null,
+  landlordCards: [],
+  currentPlayerId: null,
+  currentHandOnTable: null,
+  lastPlayerId: null,
+  biddingState: null,
+  winnerId: null,
+  _gameInstance: null, // 内部保留对游戏实例的引用
 
-  // 游戏实例
-  game: null,
+  // --- Actions ---
+  startGame: () => set(() => {
+    // 假设玩家 ID 是固定的，'player-0' 是人类玩家
+    const game = new DoudizhuGame(['player-0', 'player-1', 'player-2'], 'player-0');
+    return {
+      _gameInstance: game,
+      ...getGameState(game),
+    };
+  }),
 
-  // 初始化游戏：传入玩家 ID 列表和人类玩家 ID
-  initGame: (playerIds, humanPlayerId) =>
-    set(produce((draft) => {
-      draft.game = new DoudizhuGame(playerIds, humanPlayerId);
-      draft.stage = DoudizhuStage.DEAL;
-      draft.currentPlayer = draft.game.currentPlayer;
-      draft.lastPlay = null;
-    })),
+  bid: (playerId, score) => set(produce(draft => {
+    const game = get()._gameInstance;
+    if (game) {
+      game.bid(playerId, score);
+      Object.assign(draft, getGameState(game));
+    }
+  })),
+  
+  passBid: (playerId) => set(produce(draft => {
+    const game = get()._gameInstance;
+    if (game) {
+      game.passBid(playerId);
+      Object.assign(draft, getGameState(game));
+    }
+  })),
 
-  // 玩家出牌
-  playCards: (playerId, cards) =>
-    set(produce((draft) => {
-      const { lastPlay, currentPlayer } = draft.game.playCards(playerId, cards);
-      draft.lastPlay = lastPlay;
-      draft.currentPlayer = currentPlayer;
-      draft.stage = DoudizhuStage.PLAY;
-    })),
+  play: (playerId, cards) => set(produce(draft => {
+    const game = get()._gameInstance;
+    if (game) {
+      const parsedPlay = parseHand(cards);
+      if (canPlay(parsedPlay, game.currentHandOnTable)) {
+         game.play(playerId, cards);
+         Object.assign(draft, getGameState(game));
+      } else {
+        console.error("出牌不合法!");
+        // 可选：在这里设置一个错误状态，让UI显示提示
+      }
+    }
+  })),
 
-  // 玩家不出（过）
-  pass: (playerId) =>
-    set(produce((draft) => {
-      const { currentPlayer } = draft.game.pass(playerId);
-      draft.currentPlayer = currentPlayer;
-      draft.stage = DoudizhuStage.PLAY;
-    })),
-
-  // 重置游戏状态
-  reset: () =>
-    set(() => ({
-      game: null,
-      stage: DoudizhuStage.IDLE,
-      currentPlayer: null,
-      lastPlay: null
-    }))
+  pass: (playerId) => set(produce(draft => {
+    const game = get()._gameInstance;
+    if (game) {
+      game.pass(playerId);
+      Object.assign(draft, getGameState(game));
+    }
+  })),
 }));

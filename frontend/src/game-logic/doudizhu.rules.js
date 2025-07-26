@@ -1,62 +1,71 @@
+// src/game-logic/doudizhu.rules.js (修改后)
+
 /**
- * src/game-logic/doudizhu.rules.js
  * Dou Dizhu 游戏核心规则与工具函数
  */
 
 // 牌面值映射
 export const valueMap = {
-  '3': 3, '4': 4, '5': 5, '6': 6,
-  '7': 7, '8': 8, '9': 9, '10': 10,
+  '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,
   'J': 11, 'Q': 12, 'K': 13, 'A': 14,
-  '2': 16, 'BlackJoker': 17, 'RedJoker': 18
+  '2': 16, // '2' is 16 for sorting purposes
+  'BlackJoker': 17,
+  'RedJoker': 18
 };
 
 // 花色列表
 const SUITS = ['♠', '♥', '♣', '♦'];
+// 大小王常量
+export const JokerRanks = {
+    BLACK_JOKER: 'BlackJoker',
+    RED_JOKER: 'RedJoker'
+};
 
-// 仅大小王常量
-export const JokerRanks = ['BlackJoker', 'RedJoker'];
-
-// 支持的出牌类型枚举
+// 出牌类型枚举
 export const HandType = {
+  INVALID: 'invalid',
   SINGLE: 'single',
   PAIR: 'pair',
   TRIO: 'trio',
   TRIO_WITH_SINGLE: 'trio_with_single',
   TRIO_WITH_PAIR: 'trio_with_pair',
   STRAIGHT: 'straight',
+  STRAIGHT_FLUSH: 'straight_flush', // Although not standard, good to have
   BOMB: 'bomb',
-  ROCKET: 'rocket'
+  ROCKET: 'rocket',
+  // 新增更多牌型
+  SEQUENCE_OF_PAIRS: 'sequence_of_pairs',
+  SEQUENCE_OF_TRIOS: 'sequence_of_trios', // 飞机不带翅膀
+  SEQUENCE_OF_TRIOS_WITH_SINGLES: 'sequence_of_trios_with_singles', // 飞机带单
+  SEQUENCE_OF_TRIOS_WITH_PAIRS: 'sequence_of_trios_with_pairs', // 飞机带对
+  FOUR_WITH_TWO_SINGLES: 'four_with_two_singles',
+  FOUR_WITH_TWO_PAIRS: 'four_with_two_paids',
 };
 
 // 游戏阶段枚举
 export const DoudizhuStage = {
   IDLE: 'idle',
-  DEAL: 'deal',
-  PLAY: 'play',
+  BIDDING: 'bidding',
+  PLAYING: 'playing',
   FINISHED: 'finished',
 };
 
-/**
- * 生成一副完整 54 张牌
- */
-export function generateDeck() {
-  const deck = [];
-  for (let rank in valueMap) {
-    if (JokerRanks.includes(rank)) continue;
-    SUITS.forEach(suit => {
-      deck.push({ rank, suit, value: valueMap[rank] });
-    });
-  }
-  // 添加大小王
-  deck.push({ rank: 'BlackJoker', suit: null, value: valueMap.BlackJoker });
-  deck.push({ rank: 'RedJoker', suit: null, value: valueMap.RedJoker });
-  return deck;
+function createDeck() {
+    const deck = [];
+    // Add standard cards
+    for (const rank in valueMap) {
+        if (rank === JokerRanks.BLACK_JOKER || rank === JokerRanks.RED_JOKER) continue;
+        const value = valueMap[rank];
+        for (const suit of SUITS) {
+            deck.push({ rank, suit, value });
+        }
+    }
+    // Add jokers
+    deck.push({ rank: JokerRanks.BLACK_JOKER, suit: 'Joker', value: valueMap[JokerRanks.BLACK_JOKER] });
+    deck.push({ rank: JokerRanks.RED_JOKER, suit: 'Joker', value: valueMap[JokerRanks.RED_JOKER] });
+    return deck;
 }
 
-/**
- * Fisher–Yates 洗牌算法
- */
 export function shuffleDeck(deck) {
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -65,114 +74,226 @@ export function shuffleDeck(deck) {
   return deck;
 }
 
-/**
- * 按牌面值从小到大排序
- */
-export function sortCards(cards) {
+const sortCards = (cards) => {
   return cards.slice().sort((a, b) => a.value - b.value);
-}
+};
 
-/**
- * 将一手牌解析成 { rankCounts, sortedRanks }
- */
 export function parseHand(cards) {
-  const rankCounts = {};
-  cards.forEach(c => {
-    rankCounts[c.rank] = (rankCounts[c.rank] || 0) + 1;
-  });
-  const sortedRanks = Object.keys(rankCounts).sort(
-    (a, b) => valueMap[a] - valueMap[b]
-  );
-  return { rankCounts, sortedRanks };
+    if (!cards || cards.length === 0) return { type: HandType.INVALID };
+
+    const counts = cards.reduce((acc, card) => {
+        acc[card.rank] = (acc[card.rank] || 0) + 1;
+        return acc;
+    }, {});
+
+    const ranks = Object.keys(counts).sort((a, b) => valueMap[a] - valueMap[b]);
+    const values = ranks.map(r => valueMap[r]);
+    const mainValue = values[values.length - 1];
+
+    // Rocket
+    if (cards.length === 2 && counts[JokerRanks.BLACK_JOKER] && counts[JokerRanks.RED_JOKER]) {
+        return { type: HandType.ROCKET, value: Infinity, length: 2 };
+    }
+    // Bomb
+    if (cards.length === 4 && ranks.length === 1) {
+        return { type: HandType.BOMB, value: mainValue, length: 4 };
+    }
+    // Single
+    if (cards.length === 1) {
+        return { type: HandType.SINGLE, value: mainValue, length: 1 };
+    }
+    // Pair
+    if (cards.length === 2 && ranks.length === 1) {
+        return { type: HandType.PAIR, value: mainValue, length: 2 };
+    }
+    // Trio
+    if (cards.length === 3 && ranks.length === 1) {
+        return { type: HandType.TRIO, value: mainValue, length: 3 };
+    }
+    // Trio with single
+    if (cards.length === 4 && ranks.length === 2 && Object.values(counts).includes(3)) {
+        const trioRank = ranks.find(r => counts[r] === 3);
+        return { type: HandType.TRIO_WITH_SINGLE, value: valueMap[trioRank], length: 4 };
+    }
+    // Trio with pair
+    if (cards.length === 5 && ranks.length === 2 && Object.values(counts).includes(3)) {
+        const trioRank = ranks.find(r => counts[r] === 3);
+        return { type: HandType.TRIO_WITH_PAIR, value: valueMap[trioRank], length: 5 };
+    }
+    
+    // Straight (顺子)
+    const isStraight = (vals) => {
+        if (vals.includes(valueMap['2']) || vals.includes(valueMap[JokerRanks.BLACK_JOKER])) return false;
+        for (let i = 0; i < vals.length - 1; i++) {
+            if (vals[i+1] - vals[i] !== 1) return false;
+        }
+        return true;
+    }
+    if (cards.length >= 5 && ranks.length === cards.length && isStraight(values)) {
+        return { type: HandType.STRAIGHT, value: mainValue, length: cards.length };
+    }
+    
+    // Sequence of pairs (连对)
+    const isSeqOfPairs = (vals) => {
+      if (vals.length < 3) return false;
+      if (vals.includes(valueMap['2']) || vals.includes(valueMap[JokerRanks.BLACK_JOKER])) return false;
+      for (let i = 0; i < vals.length - 1; i++) {
+          if (vals[i+1] - vals[i] !== 1) return false;
+      }
+      return true;
+    }
+    if (cards.length >= 6 && cards.length % 2 === 0 && ranks.length === cards.length / 2 && Object.values(counts).every(c => c === 2) && isSeqOfPairs(values)) {
+      return { type: HandType.SEQUENCE_OF_PAIRS, value: mainValue, length: ranks.length };
+    }
+
+    // TODO: Add other hand types like airplanes, four with two, etc.
+    
+    return { type: HandType.INVALID, value: 0, length: 0 };
 }
 
-/**
- * 判断当前出牌是否合法（骨架，需补全各种牌型识别逻辑）
- */
-export function canPlay(prevPlay, currentPlay) {
-  // TODO: 针对 HandType 做完整牌型识别与比较
-  // 比如：rocket > bomb > [straight, trio, pair, single]
-  return true;
+export function canPlay(newPlay, lastPlay) {
+    if (!lastPlay) { // First player to play
+        return newPlay.type !== HandType.INVALID;
+    }
+
+    // Rocket can beat anything
+    if (newPlay.type === HandType.ROCKET) return true;
+
+    // Bomb can beat anything except a bigger bomb or rocket
+    if (newPlay.type === HandType.BOMB) {
+        if (lastPlay.type === HandType.ROCKET) return false;
+        if (lastPlay.type === HandType.BOMB) return newPlay.value > lastPlay.value;
+        return true;
+    }
+    
+    // Must play the same type and length
+    if (newPlay.type !== lastPlay.type || newPlay.length !== lastPlay.length) {
+        return false;
+    }
+
+    // Compare values for same type
+    return newPlay.value > lastPlay.value;
 }
 
-/**
- * 随机选地主示例（可替换为叫分逻辑）
- */
-export function chooseLandlord(playerIds) {
-  const idx = Math.floor(Math.random() * playerIds.length);
-  return playerIds[idx];
-}
-
-/**
- * Dou Dizhu 游戏主类
- */
 export class DoudizhuGame {
-  constructor(playerIds = [], humanPlayerId = null) {
-    this.playerIds = playerIds;
-    this.humanPlayerId = humanPlayerId;
+  constructor(playerIds, humanPlayerId) {
+    this.players = playerIds.map((id, index) => ({
+      id,
+      name: id === humanPlayerId ? '你' : `AI-${index+1}`,
+      isAI: id !== humanPlayerId,
+      hand: [],
+    }));
+    this.stage = DoudizhuStage.IDLE;
     this.landlordId = null;
-    this.landlordExtraCards = [];
-    this.hands = {};
-    this.lastPlay = null;
-    this.currentPlayer = null;
-    this.initGame();
+    this.landlordCards = [];
+    this.currentPlayerId = null;
+    this.currentHandOnTable = null;
+    this.lastPlayerId = null;
+    this.winnerId = null;
+    this.passCount = 0;
+    
+    this.biddingState = {
+        highestBid: 0,
+        highestBidder: null,
+        bids: {},
+        currentPlayerId: null,
+        turn: 0
+    };
+    
+    this.deal();
   }
 
-  initGame() {
-    let deck = generateDeck();
-    shuffleDeck(deck);
+  deal() {
+    const deck = shuffleDeck(createDeck());
+    this.landlordCards = deck.slice(0, 3);
+    const playerDeck = deck.slice(3);
 
-    // 留 3 张底牌
-    this.landlordExtraCards = deck.slice(-3);
-    deck = deck.slice(0, -3);
-
-    // 发每人 17 张
-    this.playerIds.forEach((pid, idx) => {
-      this.hands[pid] = sortCards(deck.slice(idx * 17, (idx + 1) * 17));
+    this.players.forEach((p, i) => {
+      p.hand = sortCards(playerDeck.slice(i * 17, (i + 1) * 17));
     });
 
-    // 选地主并补底牌
-    this.landlordId = chooseLandlord(this.playerIds);
-    this.hands[this.landlordId] = sortCards(
-      this.hands[this.landlordId].concat(this.landlordExtraCards)
-    );
-    this.currentPlayer = this.landlordId;
+    this.stage = DoudizhuStage.BIDDING;
+    this.biddingState.currentPlayerId = this.players[Math.floor(Math.random() * 3)].id;
+  }
+  
+  bid(playerId, score) {
+      if (this.stage !== DoudizhuStage.BIDDING || playerId !== this.biddingState.currentPlayerId) return;
+      if (score <= this.biddingState.highestBid || score < 1 || score > 3) return;
+
+      this.biddingState.bids[playerId] = score;
+      this.biddingState.highestBid = score;
+      this.biddingState.highestBidder = playerId;
+      this.biddingState.turn++;
+      this.nextBidder();
   }
 
-  playCards(playerId, cards) {
-    if (playerId !== this.currentPlayer) {
-      throw new Error('当前不在此玩家回合');
+  passBid(playerId) {
+      if (this.stage !== DoudizhuStage.BIDDING || playerId !== this.biddingState.currentPlayerId) return;
+      this.biddingState.bids[playerId] = 'pass';
+      this.biddingState.turn++;
+      this.nextBidder();
+  }
+
+  nextBidder() {
+      if (this.biddingState.highestBid === 3 || this.biddingState.turn === this.players.length) {
+          this.endBidding();
+          return;
+      }
+      const currentIndex = this.players.findIndex(p => p.id === this.biddingState.currentPlayerId);
+      this.biddingState.currentPlayerId = this.players[(currentIndex + 1) % this.players.length].id;
+  }
+  
+  endBidding() {
+    if (this.biddingState.highestBidder) {
+        this.landlordId = this.biddingState.highestBidder;
+        const landlord = this.players.find(p => p.id === this.landlordId);
+        landlord.hand = sortCards([...landlord.hand, ...this.landlordCards]);
+        this.currentPlayerId = this.landlordId;
+        this.stage = DoudizhuStage.PLAYING;
+    } else {
+        // Everyone passed, redeal
+        this.deal();
     }
-    if (!canPlay(this.lastPlay, cards)) {
-      throw new Error('出牌不合法');
-    }
-    // 移除已出的牌
-    this.hands[playerId] = this.hands[playerId].filter(c =>
-      !cards.some(pc => pc.rank === c.rank && pc.suit === c.suit)
-    );
-    this.lastPlay = { playerId, cards };
-    this.currentPlayer = this.getNextPlayer(playerId);
-    return { lastPlay: this.lastPlay, currentPlayer: this.currentPlayer };
+  }
+
+  play(playerId, cards) {
+      if (this.stage !== DoudizhuStage.PLAYING || playerId !== this.currentPlayerId) return;
+      const player = this.players.find(p => p.id === playerId);
+      
+      // Remove cards from hand
+      player.hand = player.hand.filter(handCard => 
+          !cards.some(playCard => playCard.rank === handCard.rank && playCard.suit === handCard.suit)
+      );
+
+      this.currentHandOnTable = parseHand(cards);
+      this.lastPlayerId = playerId;
+      this.passCount = 0;
+      
+      if (player.hand.length === 0) {
+          this.winnerId = playerId;
+          this.stage = DoudizhuStage.FINISHED;
+      } else {
+          this.nextPlayer();
+      }
   }
 
   pass(playerId) {
-    if (playerId !== this.currentPlayer) {
-      throw new Error('当前不在此玩家回合');
-    }
-    this.currentPlayer = this.getNextPlayer(playerId);
-    return { lastPlay: this.lastPlay, currentPlayer: this.currentPlayer };
-  }
+      if (this.stage !== DoudizhuStage.PLAYING || playerId !== this.currentPlayerId) return;
+      // You can't pass if you are starting a new round
+      if (this.lastPlayerId === null || this.lastPlayerId === playerId) return;
 
-  getNextPlayer(pid) {
-    const idx = this.playerIds.indexOf(pid);
-    return this.playerIds[(idx + 1) % this.playerIds.length];
+      this.passCount++;
+      // If two players pass, the last player who played gets to start a new round
+      if (this.passCount === 2) {
+          this.currentHandOnTable = null;
+          this.lastPlayerId = null;
+          this.passCount = 0;
+      }
+      this.nextPlayer();
   }
-
-  isGameOver() {
-    return this.playerIds.some(pid => this.hands[pid].length === 0);
-  }
-
-  getWinner() {
-    return this.playerIds.find(pid => this.hands[pid].length === 0) || null;
+  
+  nextPlayer() {
+      const currentIndex = this.players.findIndex(p => p.id === this.currentPlayerId);
+      this.currentPlayerId = this.players[(currentIndex + 1) % this.players.length].id;
   }
 }

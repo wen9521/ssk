@@ -1,14 +1,15 @@
-// src/store/thirteenWaterStore.js
 import { create } from 'zustand';
 import { produce } from 'immer';
-import { 
-  createDeck, 
-  shuffleDeck, 
+import {
+  createDeck,
+  shuffleDeck,
   dealCards,
-  SmartSplit,
-  calcSSSAllScores, 
-  isFoul 
-} from '../game-logic';
+} from '../game-logic/deck'; // 导入十三水的发牌逻辑
+import { SmartSplit } from '../game-logic/ai-logic'; // 导入十三水的AI逻辑
+import {
+    calcSSSAllScores,
+    isFoul
+} from '../game-logic/thirteen-water-rules'; // 导入十三水的规则
 
 export const STAGES = {
   LOBBY: 'lobby',
@@ -18,36 +19,15 @@ export const STAGES = {
   FINISHED: 'finished',
 };
 
-// 工具函数，确保 rank 映射包含 'T'
-const toCardString = (card) => {
-  if (!card || !card.rank || !card.suit) return '';
-  const rankMap = { 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', 'T': '10' };
-  const rankStr = rankMap[card.rank] || String(card.rank).toLowerCase();
-  return `${rankStr}_of_${card.suit}`;
-};
-
-const toCardObject = (str) => {
-  if (!str) return null;
-  const parts = str.split('_of_');
-  if (parts.length < 2) return null;
-  const rev = { ace: 'A', king: 'K', queen: 'Q', jack: 'J', '10': 'T' };
-  const rank = rev[parts[0]] || parts[0].toUpperCase();
-  return { rank, suit: parts[1] };
-};
-
-const toHandStrings = (hand) => ({
-  head: (hand.head || []).map(toCardString).filter(Boolean),
-  middle: (hand.middle || []).map(toCardString).filter(Boolean),
-  tail: (hand.tail || []).map(toCardString).filter(Boolean)
-});
+// 不再需要 toCardString 和 toCardObject
 
 export const useThirteenWaterStore = create((set, get) => ({
   stage: STAGES.LOBBY,
   players: [
-    { id: 'player1', name: '你', submitted: false, isReady: false, points: 100, isFoul: false, head: [], middle: [], tail: [] },
-    { id: 'player2', name: 'AI·擎天柱', submitted: false, isReady: true, points: 100, isAI: true, head: [], middle: [], tail: [] },
-    { id: 'player3', name: 'AI·大黄蜂', submitted: false, isReady: true, points: 100, isAI: true, head: [], middle: [], tail: [] },
-    { id: 'player4', name: 'AI·威震天', submitted: false, isReady: true, points: 100, isAI: true, head: [], middle: [], tail: [] },
+    { id: 'player1', name: '你', submitted: false, isReady: false, points: 100, isFoul: false, hand: [], head: [], middle: [], tail: [] },
+    { id: 'player2', name: 'AI·擎天柱', submitted: false, isReady: true, points: 100, isAI: true, hand: [], head: [], middle: [], tail: [] },
+    { id: 'player3', name: 'AI·大黄蜂', submitted: false, isReady: true, points: 100, isAI: true, hand: [], head: [], middle: [], tail: [] },
+    { id: 'player4', name: 'AI·威震天', submitted: false, isReady: true, points: 100, isAI: true, hand: [], head: [], middle: [], tail: [] },
   ],
 
   resetRound: () => set(produce(state => {
@@ -56,6 +36,7 @@ export const useThirteenWaterStore = create((set, get) => ({
       p.submitted = false;
       p.isReady = !!p.isAI;
       p.isFoul = false;
+      p.hand = [];
       p.head = [];
       p.middle = [];
       p.tail = [];
@@ -70,40 +51,27 @@ export const useThirteenWaterStore = create((set, get) => ({
       const deck = createDeck();
       const shuffled = shuffleDeck(deck);
       const playerCount = get().players.length;
-      const cardsPerPlayer = 13;
-      const playerHands = dealCards(shuffled, cardsPerPlayer, playerCount);
-
-      if (!Array.isArray(playerHands) || playerHands.length < playerCount) {
-        get().resetRound();
-        return;
-      }
+      const hands = dealCards(shuffled, playerCount);
 
       set(produce(state => {
         state.players.forEach((player, index) => {
-            const handOfObjects = playerHands[index];
-            if (!Array.isArray(handOfObjects) || handOfObjects.length !== 13) {
-              player.head = []; player.middle = []; player.tail = [];
-              player.isFoul = true;
-              player.submitted = !!player.isAI;
-              return;
-            }
+            player.hand = hands[index] || [];
             
-            const handOfStrings = handOfObjects.map(toCardString);
-            const splitResultStrings = SmartSplit(handOfStrings)[0];
-
-            if (splitResultStrings && splitResultStrings.head && splitResultStrings.middle && splitResultStrings.tail) {
-                player.isFoul = isFoul(splitResultStrings.head, splitResultStrings.middle, splitResultStrings.tail);
-                player.head = splitResultStrings.head.map(toCardObject).filter(Boolean);
-                player.middle = splitResultStrings.middle.map(toCardObject).filter(Boolean);
-                player.tail = splitResultStrings.tail.map(toCardObject).filter(Boolean);
-            } else { 
+            // AI 玩家自动理牌
+            if (player.isAI && player.hand.length === 13) {
+                const splitResult = SmartSplit(player.hand)[0];
+                if (splitResult) {
+                    player.head = splitResult.head;
+                    player.middle = splitResult.middle;
+                    player.tail = splitResult.tail;
+                    player.isFoul = isFoul(player.head, player.middle, player.tail);
+                    player.submitted = true;
+                }
+            } else { // 玩家的手牌需要自己摆
                 player.head = [];
                 player.middle = [];
-                player.tail = handOfObjects;
-                player.isFoul = true;
+                player.tail = [...player.hand]; // 默认全放在尾道
             }
-            
-            player.submitted = !!player.isAI;
         });
         state.stage = STAGES.PLAYING;
       }));
@@ -127,26 +95,21 @@ export const useThirteenWaterStore = create((set, get) => ({
       player.head = newHands.head || [];
       player.middle = newHands.middle || [];
       player.tail = newHands.tail || [];
-      
-      const handStrings = toHandStrings(newHands);
-      player.isFoul = isFoul(handStrings.head, handStrings.middle, handStrings.tail);
+      player.isFoul = isFoul(player.head, player.middle, player.tail);
     }
   })),
   
   autoSplitForPlayer: (playerId) => set(produce(state => {
       const player = state.players.find(p => p.id === playerId);
       if (player) {
-        const allCardsObjects = [...(player.head || []), ...(player.middle || []), ...(player.tail || [])];
-        
-        if (allCardsObjects.length === 13) {
-            const allCardStrings = allCardsObjects.map(toCardString);
-            const splitResultStrings = SmartSplit(allCardStrings)[0];
-            
-            if (splitResultStrings) {
-              player.isFoul = isFoul(splitResultStrings.head, splitResultStrings.middle, splitResultStrings.tail);
-              player.head = splitResultStrings.head.map(toCardObject).filter(Boolean);
-              player.middle = splitResultStrings.middle.map(toCardObject).filter(Boolean);
-              player.tail = splitResultStrings.tail.map(toCardObject).filter(Boolean);
+        const allCards = [...player.head, ...player.middle, ...player.tail];
+        if (allCards.length === 13) {
+            const splitResult = SmartSplit(allCards)[0];
+            if (splitResult) {
+              player.head = splitResult.head;
+              player.middle = splitResult.middle;
+              player.tail = splitResult.tail;
+              player.isFoul = isFoul(player.head, player.middle, player.tail);
             }
         }
       }
@@ -157,7 +120,7 @@ export const useThirteenWaterStore = create((set, get) => ({
     if (stage !== STAGES.PLAYING) return;
     
     const me = players.find(p => p.id === 'player1');
-    if (me.isFoul && !window.confirm("当前牌型为倒水，确定要提交吗？")) {
+    if (me.isFoul && !window.confirm("当前牌型为倒水(相公)，确定要提交吗？")) {
       return;
     }
 
@@ -171,8 +134,10 @@ export const useThirteenWaterStore = create((set, get) => ({
         set({ stage: STAGES.SUBMITTING });
         setTimeout(() => {
           const handsForScoring = get().players.map(p => ({
-            ...toHandStrings(p),
-            isFoul: p.isFoul
+            front: p.head,
+            middle: p.middle,
+            back: p.tail,
+            isFoul: p.isFoul,
           }));
           const scoresArray = calcSSSAllScores(handsForScoring);
           set(produce(state => {

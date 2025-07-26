@@ -1,67 +1,64 @@
-// src/components/doudizhu/DoudizhuPlay.jsx
 import React, { useState } from 'react';
+import { useDoudizhuStore } from '../../store/doudizhuStore';
 import { DoudizhuStage } from '../../game-logic';
 
 export default function DoudizhuPlay({
-  me,
+  me, // 仍然需要知道'我'是谁
+  // 从父组件接收状态
   stage,
   biddingState,
   currentHandOnTable,
   lastPlayerId,
   winnerId,
   landlordId,
-  bid,
-  passBid,
-  play,
-  pass,
-  startGame
+  currentPlayerId
 }) {
-  const [selected, setSelected] = useState([]);
+  // 让组件自己管理选中的牌
+  const [selectedCards, setSelectedCards] = useState([]);
+  
+  // 从Store中获取actions
+  const { bid, passBid, play, pass, startGame } = useDoudizhuStore();
 
   if (!me) return null;
 
-  const myTurn =
-    me.id ===
-    (stage === DoudizhuStage.BIDDING
-      ? biddingState.currentPlayerId
-      : me.id);
+  // 修复后的回合判断逻辑
+  const isMyBidTurn = stage === DoudizhuStage.BIDDING && me.id === biddingState?.currentPlayerId;
+  const isMyPlayTurn = stage === DoudizhuStage.PLAYING && me.id === currentPlayerId;
 
   // 叫分阶段
-  if (stage === DoudizhuStage.BIDDING && myTurn) {
+  if (isMyBidTurn) {
+    const availableBids = [1, 2, 3].filter(n => n > biddingState.highestBid);
     return (
       <div className="controls">
         <button onClick={() => passBid(me.id)}>不叫</button>
-        { [1, 2, 3].map(n => 
-            biddingState.highestBid < n && (
-              <button key={n} onClick={() => bid(me.id, n)}>
-                {n} 分
-              </button>
-            )
-          )
-        }
+        {availableBids.map(n => (
+          <button key={n} onClick={() => bid(me.id, n)}>
+            {n} 分
+          </button>
+        ))}
       </div>
     );
   }
 
   // 出牌阶段
-  if (stage === DoudizhuStage.PLAYING && myTurn) {
+  if (isMyPlayTurn) {
+    const canPass = currentHandOnTable !== null && lastPlayerId !== me.id;
     return (
       <div className="controls">
-        <button
-          disabled={!currentHandOnTable || lastPlayerId === me.id}
-          onClick={() => {
-            setSelected([]);
-            pass(me.id);
-          }}
-        >
+        <button disabled={!canPass} onClick={() => pass(me.id)}>
           不出
         </button>
-        <button className="hint">提示</button>
         <button
-          disabled={selected.length === 0}
+          className="hint"
+          // onClick={...} // 提示功能的逻辑
+        >
+          提示
+        </button>
+        <button
+          disabled={selectedCards.length === 0} // 假设selectedCards是通过点击Hand组件更新的
           onClick={() => {
-            play(me.id, selected);
-            setSelected([]);
+            play(me.id, selectedCards);
+            setSelectedCards([]);
           }}
         >
           出牌
@@ -72,18 +69,20 @@ export default function DoudizhuPlay({
 
   // 游戏结束
   if (stage === DoudizhuStage.FINISHED) {
-    const win = winnerId === me.id;
-    const camp = landlordId === winnerId ? '地主' : '农民';
+    const isLandlord = me.id === landlordId;
+    const landlordCampWon = winnerId === landlordId;
+    const myCampWon = isLandlord === landlordCampWon;
+
     return (
       <div className="controls">
         <div className="result">
-          {win ? '胜利' : '失败'} — {camp} 获胜
+          {myCampWon ? '胜利' : '失败'} — {landlordCampWon ? '地主' : '农民'} 获胜
         </div>
         <button onClick={startGame}>再来一局</button>
       </div>
     );
   }
 
-  // 其他状态
-  return <div className="controls">等待回合…</div>;
+  // 其他情况（不是我的回合）
+  return <div className="controls"><span>等待其他玩家...</span></div>;
 }
