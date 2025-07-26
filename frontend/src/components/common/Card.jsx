@@ -1,30 +1,31 @@
+// frontend/src/components/common/Card.jsx
 import React from 'react';
-import { getCardImage } from '../../utils/card-utils';
-import './Card.css'; // 确保这个CSS文件存在并包含 is-selected, is-dragging 等样式
+import { useDrag } from 'react-dnd';
+import './Card.css';
 
-export default function Card({ card, isSelected, isDragging, onClick }) {
-  if (!card || !card.rank) {
-    // 渲染一个空的占位符或返回null
-    return <div className="card-container empty"></div>;
-  }
-  
-  const { rank, suit } = card;
-  const imgSrc = getCardImage(card);
+const ItemTypes = {
+  CARD: 'card',
+};
 
-  const classNames = [
-    'card-container',
-    isSelected ? 'is-selected' : '',
-    isDragging ? 'is-dragging' : '',
-  ].filter(Boolean).join(' ');
+const Card = ({ card, type = ItemTypes.CARD }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type,
+    item: { card },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }));
+
+  const cardStyle = {
+    opacity: isDragging ? 0.5 : 1,
+    backgroundImage: `url(/cards/${card.rank}_of_${card.suit}.svg)`, // Assuming SVG card images
+  };
 
   return (
-    <div className={classNames} onClick={onClick}>
-      <img
-        src={imgSrc}
-        alt={`${rank} of ${suit}`}
-        className="card-image"
-        draggable="false"
-      />
+    <div ref={drag} className="card" style={cardStyle}>
+      {/* Card content can be displayed here if not using background images */}
     </div>
   );
-}
+};
+
+export default Card;

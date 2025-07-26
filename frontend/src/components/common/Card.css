@@ -1,36 +1,21 @@
-/* src/components/Card.css */
-.card-container {
-  width: var(--card-width, 60px);
-  aspect-ratio: 0.7;
-  position: relative;
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
+/* frontend/src/components/common/Card.css */
+.card {
+  /* ... existing styles ... */
+  transition: all 0.3s ease-in-out; /* Animate all property changes */
 }
 
-.card-image {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background-color: #fff;
+/* Add a class for the dealing animation */
+@keyframes deal-in {
+  from {
+    transform: translateY(-200px) rotate(180deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) rotate(0);
+    opacity: 1;
+  }
 }
 
-.card-container.is-selected {
-  transform: translateY(-15px) scale(1.05);
-  box-shadow: 0 0 15px 5px rgba(243, 156, 18, 0.7);
-  z-index: 100 !important;
-}
-
-.card-container.is-dragging {
-  opacity: 0.5;
-  transform: scale(0.95) rotate(3deg);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-}
-
-.card-container.empty {
-  background: transparent;
-  box-shadow: none;
+.card.deal-in {
+  animation: deal-in 0.5s ease-out forwards;
 }

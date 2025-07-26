@@ -1,0 +1,19 @@
+/* frontend/src/games/doudizhu/ui/Doudizhu.css */
+.doudizhu-board {
+  /* REMOVED background property */
+  background-color: transparent;
+  color: var(--text-color);
+  font-family: var(--font-family-title);
+  padding: 15px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+/* ... rest of the styles remain the same ... */
+.landlord-cards-area {
+  background-color: var(--bg-color-translucent); /* Keep card backgrounds */
+  border: 1px solid var(--danger-color);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}

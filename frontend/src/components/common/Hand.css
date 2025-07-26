@@ -1,48 +1,16 @@
-/* frontend/src/components/Hand.css (新样式文件) */
-.hand-container {
-  width: 100%;
-  min-height: calc(var(--card-width) * var(--card-aspect-ratio) + 40px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px 0;
-  background: rgba(0, 0, 0, 0.2);
-  border-top: 1px solid var(--surface-border);
-  box-shadow: inset 0 5px 15px rgba(0,0,0,0.4);
-  position: relative;
-}
-
+/* frontend/src/components/common/Hand.css */
 .hand {
   display: flex;
   justify-content: center;
-  padding: 0 40px;
+  align-items: center;
+  padding: 10px;
+  min-height: 125px;
 }
 
-.card-wrapper {
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  margin-left: calc(var(--card-width) * -0.65);
-  transform-origin: bottom center;
+.card-container {
+  transition: transform 0.2s ease-out;
 }
 
-.card-wrapper:first-child {
-  margin-left: 0;
-}
-
-.hand:hover .card-wrapper {
-  margin-left: calc(var(--card-width) * -0.5);
-  transform: translateY(-10px);
-}
-
-.card-wrapper:hover {
-  transform: translateY(-30px) scale(1.1) !important;
-  z-index: 100;
-}
-
-.empty-hand-message {
-  color: var(--ready-color);
-  font-family: var(--font-family-title);
-  font-size: 1.5em;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  text-shadow: 0 0 10px var(--ready-color);
+.card-container.selected {
+  transform: translateY(-20px);
 }

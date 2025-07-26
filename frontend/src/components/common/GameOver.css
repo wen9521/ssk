@@ -1,0 +1,54 @@
+/* frontend/src/components/common/GameOver.css */
+.game-over-overlay {
+  /* ... existing styles ... */
+  backdrop-filter: blur(5px); /* Add a blur effect to the background */
+}
+
+.game-over-modal {
+  padding: 40px;
+  border-radius: 15px;
+  text-align: center;
+  font-family: var(--font-family-title);
+  border: 2px solid;
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  transform: scale(0.8);
+  animation: modal-pop-in 0.3s ease-out forwards;
+}
+
+@keyframes modal-pop-in {
+  to {
+    transform: scale(1);
+  }
+}
+
+.game-over-modal.win {
+  background-color: rgba(29, 211, 168, 0.1); /* Translucent ready color */
+  border-color: var(--ready-color);
+  color: var(--text-bright);
+  text-shadow: 0 0 10px var(--ready-color);
+}
+
+.game-over-modal.lose {
+  background-color: rgba(255, 56, 106, 0.1); /* Translucent foul color */
+  border-color: var(--foul-color);
+  color: #999;
+}
+
+.result-title {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.restart-button {
+  background-color: var(--secondary-color);
+  color: var(--text-bright);
+  padding: 15px 30px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.restart-button:hover {
+  box-shadow: 0 0 20px var(--secondary-color);
+}

@@ -1,0 +1,20 @@
+/* frontend/src/games/thirteenWater/ui/Play.css */
+.thirteen-water-board {
+  /* REMOVED background property */
+  background-color: transparent;
+  color: var(--text-color);
+  font-family: var(--font-family-title);
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+/* ... rest of the styles remain the same ... */
+.opponent-area, .player-area {
+  background-color: var(--bg-color-translucent); /* Keep card backgrounds */
+  border: 1px solid var(--primary-color-dark);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
