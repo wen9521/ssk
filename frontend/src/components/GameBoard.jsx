@@ -16,17 +16,17 @@ const sortHandInternal = (hand) => {
   });
 };
 
-export default function GameBoard({ 
-  players, 
-  myPlayerId, 
-  stage, 
-  onReady, 
-  onCompare, 
-  onRestart, 
-  onQuit, 
-  onUpdateHands, 
-  onAutoSplit, 
-  gameMode = 'thirteen-cards' 
+export default function GameBoard({
+  players,
+  myPlayerId,
+  stage,
+  onReady,
+  onCompare,
+  onRestart,
+  onQuit,
+  onUpdateHands,
+  onAutoSplit
+  // gameMode 属性已移除
 }) {
     const me = players.find(p => p.id === myPlayerId);
     
@@ -35,9 +35,8 @@ export default function GameBoard({
     const [dragOverArea, setDragOverArea] = useState(null);
     const [showResult, setShowResult] = useState(false);
 
-    const isEightCardsMode = gameMode === 'eight-cards';
-    // 核心修复：手动理牌的条件是：十三水模式、游戏在玩、且玩家自己尚未提交
-    const canManualSplit = !isEightCardsMode && stage === STAGES.PLAYING && !me?.submitted;
+    // 核心修复：简化手动理牌的条件，不再需要判断游戏模式
+    const canManualSplit = stage === STAGES.PLAYING && !me?.submitted;
 
     useEffect(() => {
         if (stage === STAGES.FINISHED) {
@@ -160,14 +159,12 @@ export default function GameBoard({
         return <div>加载中...</div>;
     }
     
-    // 核心修复：“开始比牌”按钮的可用条件
     const isReadyForCompare = stage === STAGES.PLAYING &&
         !me.submitted &&
         me.head?.length === 3 &&
         me.middle?.length === 5 &&
         me.tail?.length === 5;
 
-    // 渲染根组件
     return (
         <>
             <div className="game-header">

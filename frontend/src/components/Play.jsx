@@ -18,7 +18,6 @@ export default function Play() {
     return <div>Loading...</div>;
   }
 
-  // --- 核心修改：父组件负责构建完整的布局结构 ---
   return (
     <div className="play-container">
       <div className="game-wrapper">
@@ -32,7 +31,7 @@ export default function Play() {
           onQuit={() => navigate('/')}
           onUpdateHands={store.updatePlayerHands}
           onAutoSplit={store.autoSplitForPlayer}
-          gameMode="thirteen-cards"
+          // gameMode="thirteen-cards" 属性已移除
         />
       </div>
     </div>

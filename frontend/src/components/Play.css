@@ -15,7 +15,6 @@
   max-width: 450px;
   max-height: 900px;
   margin: auto;
-  /* background: var(--glass-bg); */ /* GameBoard.jsx中已有，此处移除避免重复 */
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
   border: 1px solid var(--surface-border);
@@ -25,7 +24,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  background: var(--surface-bg); /* 确保背景色存在 */
+  background: var(--surface-bg);
 }
 
 /* --- 顶部 Header --- */
@@ -94,7 +93,7 @@
 }
 .player-seat.player-me,
 .player-status.ready {
-  background: rgba(0, 180, 255, 0.15); /* 使用主题蓝色调 */
+  background: rgba(0, 180, 255, 0.15);
   border: 1px solid var(--autobot-primary);
   color: var(--text-bright);
 }
@@ -194,12 +193,7 @@
   transform: none;
 }
 
-/* --- 新增：为6人游戏模式（如八张）特别设计的玩家区域布局 --- */
-.game-wrapper.six-players .players-area {
-  grid-template-columns: repeat(2, 1fr); /* 强制为两列 */
-  grid-auto-rows: min-content; /* 行高由内容决定 */
-  gap: 12px; /* 调整间距 */
-}
+/* --- 为6人游戏模式设计的样式已被移除 --- */
 
 /* --- 结果弹窗 --- */
 .modal-overlay {
