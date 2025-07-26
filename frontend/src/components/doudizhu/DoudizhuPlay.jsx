@@ -19,6 +19,7 @@ export default function DoudizhuPlay({
   const [selected, setSelected] = useState([]);
 
   if (!me) return null;
+
   const myTurn =
     me.id ===
     (stage === DoudizhuStage.BIDDING
@@ -30,13 +31,14 @@ export default function DoudizhuPlay({
     return (
       <div className="controls">
         <button onClick={() => passBid(me.id)}>不叫</button>
-        {[1, 2, 3].map((n) =>
-          biddingState.highestBid < n && (
-            <button key={n} onClick={() => bid(me.id, n)}>
-              {n} 分
-            </button>
+        { [1, 2, 3].map(n => 
+            biddingState.highestBid < n && (
+              <button key={n} onClick={() => bid(me.id, n)}>
+                {n} 分
+              </button>
+            )
           )
-        )}
+        }
       </div>
     );
   }
@@ -63,7 +65,7 @@ export default function DoudizhuPlay({
           }}
         >
           出牌
-        >
+        </button>
       </div>
     );
   }
@@ -82,5 +84,6 @@ export default function DoudizhuPlay({
     );
   }
 
+  // 其他状态
   return <div className="controls">等待回合…</div>;
 }
