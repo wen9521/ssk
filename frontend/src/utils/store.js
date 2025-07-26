@@ -13,6 +13,7 @@ export const STAGES = {
   FINISHED: 'finished',
 };
 
+// 工具函数保持不变
 const toCardString = (card) => {
   if (!card || !card.rank || !card.suit) return '';
   const rankMap = { 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', 'T': '10' };
@@ -58,21 +59,35 @@ const useGameStore = create((set, get) => ({
     });
   })),
   
+  // 使用了您的建议重构了 startGame 函数，使其更清晰和健壮
   startGame: () => {
     set({ stage: STAGES.DEALING });
     setTimeout(() => {
       const deck = createDeck();
       const shuffled = shuffleDeck(deck);
+
+      // 明确参数含义，避免混淆
+      const playerCount = get().players.length;
+      const cardsPerPlayer = 13;
       
-      // 关键修复：确保 dealCards 的返回值被正确处理，获取所有玩家的手牌列表
-      const playerHands = dealCards(shuffled, 13, 4);
+      // 正确调用发牌函数
+      const playerHands = dealCards(shuffled, cardsPerPlayer, playerCount);
 
       set(produce(state => {
         state.players.forEach((player, index) => {
-            const playerHandObjects = playerHands[index]; // 现在这一定是一个手牌数组
+            const hand = playerHands[index];
+
+            // 增加您建议的断言，确保手牌是数组
+            if (!Array.isArray(hand)) {
+              console.error(`发牌失败：第 ${index} 位玩家的手牌不是一个有效的数组!`, hand);
+              // 提供一个空手牌以避免程序崩溃
+              player.tail = []; 
+              player.isFoul = true;
+              return; // 跳过此玩家的处理
+            }
             
-            // 为所有玩家（包括人类玩家）进行一次初始的智能理牌
-            const playerHandStrings = playerHandObjects.map(toCardString);
+            // 为所有玩家进行一次初始的智能理牌
+            const playerHandStrings = hand.map(toCardString);
             const splitResult = SmartSplit(playerHandStrings)[0];
 
             if (splitResult) {
@@ -84,7 +99,7 @@ const useGameStore = create((set, get) => ({
                 // 如果智能理牌失败，则将所有牌放入尾道以防崩溃
                 player.head = [];
                 player.middle = [];
-                player.tail = playerHandObjects;
+                player.tail = hand;
                 player.isFoul = true;
             }
 
