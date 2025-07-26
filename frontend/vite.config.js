@@ -11,7 +11,8 @@ export default defineConfig({
     },
   },
   build: {
-    // 指定构建输出目录为 'dist'
     outDir: 'dist',
   },
+  // 新增：设置基础路径为相对路径，解决安卓WebView资源加载问题
+  base: './',
 })
