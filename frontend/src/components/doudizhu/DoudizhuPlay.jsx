@@ -1,7 +1,7 @@
 // src/components/doudizhu/DoudizhuPlay.jsx
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDoudizhuStore } from '@/utils/doudizhu.store.js';
+import { useDoudizhuStore } from '../../store/doudizhuStore.js';
 import DoudizhuBoard from './DoudizhuBoard';
 import './Doudizhu.css';
 

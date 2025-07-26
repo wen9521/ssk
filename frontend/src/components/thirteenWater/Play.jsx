@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GameBoard from './GameBoard'; // 相对路径导入
-import { useThirteenWaterStore } from '@/store/thirteenWaterStore'; // 从新的Store导入
+import { useThirteenWaterStore } from '../../store/thirteenWaterStore'; // 从新的Store导入
 import './Play.css'; // 相对路径导入
 
 export default function ThirteenWaterPlay() { // 重命名组件以示区分

@@ -1,7 +1,7 @@
 // src/components/Card.jsx
 import React from 'react';
 import './Card.css'; // <--- **添加这一行，加载样式！**
-import { cardToImageName, cardToDisplayName } from '../utils/card-utils';
+import { cardToImageName, cardToDisplayName } from '../../utils/card-utils';
 
 const Card = React.memo(({
   card,

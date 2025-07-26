@@ -1,8 +1,8 @@
 // src/components/doudizhu/DoudizhuBoard.jsx
 import React, { useState } from 'react';
-import Card from '@/components/Card';
+import Card from '../common/Card';
 import './Doudizhu.css';
-import { useDoudizhuStore, DoudizhuStage } from '@/utils/doudizhu.store.js'; // 更新导入路径
+import { useDoudizhuStore, DoudizhuStage } from '../../store/doudizhuStore.js'; // 更新导入路径
 
 const PlayerPosition = {
   BOTTOM: 'bottom',

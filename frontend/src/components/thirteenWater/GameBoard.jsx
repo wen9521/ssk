@@ -1,7 +1,7 @@
 // src/components/GameBoard.jsx
 import React, { useState, useEffect } from 'react';
-import Card from './Card';
-import { STAGES } from '../utils/store'; 
+import Card from '../common/Card';
+import { STAGES } from '../../store/thirteenWaterStore'; 
 
 const ranks = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
 const suits = ['diamonds','clubs','hearts','spades'];
