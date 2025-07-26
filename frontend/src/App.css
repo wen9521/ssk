@@ -2,6 +2,7 @@
 
 /* --- App 容器通用样式 (用于子菜单等) --- */
 #root .app-container {
+  /* ... (此部分保持不变) ... */
   background: var(--surface-bg);
   border: 1px solid var(--surface-border);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
@@ -21,6 +22,7 @@
 
 /* --- 主界面 Lobby 的特殊样式 --- */
 #root .lobby-container {
+  /* ... (此部分保持不变) ... */
   background: none;
   border: none;
   box-shadow: none;
@@ -33,6 +35,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 90%;
+  max-width: 500px;
 }
 
 @keyframes title-glow {
@@ -40,20 +44,41 @@
   50% { text-shadow: 0 0 15px #fff, 0 0 30px var(--autobot-primary), 0 0 50px var(--autobot-primary); }
 }
 
-#root .lobby-container h1 {
+/* 优化: 将 h1 选择器改为更具体的 .home-title */
+#root .lobby-container .home-title {
   font-family: var(--font-family-title);
   font-weight: 900;
-  font-size: 3em;
+  font-size: clamp(2.5em, 8vw, 3.5em); /* 响应式字体大小 */
   margin: 0 0 20px;
   color: var(--text-bright);
   text-transform: uppercase;
   animation: title-glow 3s infinite linear;
+  text-align: center;
 }
+
+/* --- 新增：游戏链接容器和单个链接的样式 --- */
+.game-links {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  width: 100%;
+}
+
+.game-link {
+  text-decoration: none; /* 移除链接下划线 */
+  color: inherit; /* 继承父元素颜色 */
+  display: block; /* 使链接填满其容器 */
+  transition: transform 0.2s ease-out;
+}
+
+.game-link:hover {
+  transform: scale(1.02); /* 轻微放大效果 */
+}
+/* ------------------------------------------- */
 
 /* 游戏选项卡样式 */
 #root .game-section {
   width: 100%;
-  max-width: 400px;
   background: var(--surface-bg);
   border: 1px solid;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
@@ -64,12 +89,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 10px; /* 调整卡片内间距 */
   transition: all 0.3s ease;
+  cursor: pointer;
+  text-align: center;
 }
 
 #root .game-section:hover {
-  transform: translateY(-8px) scale(1.03);
+  transform: translateY(-8px); /* 保持原有的悬浮效果 */
 }
 
 #root .game-section h2 {
@@ -80,6 +107,26 @@
   color: var(--text-bright);
 }
 
-/* 不同游戏入口的颜色 */
-#root .thirteen-cards-section { border-color: var(--autobot-primary); }
-#root .thirteen-cards-section:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--autobot-primary); }
+/* 新增：游戏描述文字样式 */
+#root .game-section .game-description {
+  font-size: 1em;
+  color: var(--text-color);
+  margin: 0;
+  font-weight: 400;
+}
+
+/* 十三水入口颜色 */
+#root .thirteen-cards-section {
+  border-color: var(--autobot-primary);
+}
+#root .thirteen-cards-section:hover {
+  box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--autobot-primary);
+}
+
+/* --- 新增：斗地主入口颜色 (使用霸天虎主题色) --- */
+#root .doudizhu-section {
+  border-color: var(--decepticon-primary);
+}
+#root .doudizhu-section:hover {
+  box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 25px var(--decepticon-primary);
+}
