@@ -29,6 +29,14 @@ export const HandType = {
   ROCKET: 'rocket'
 };
 
+// 游戏阶段枚举
+export const DoudizhuStage = {
+  IDLE: 'idle',
+  DEAL: 'deal',
+  PLAY: 'play',
+  FINISHED: 'finished',
+};
+
 /**
  * 生成一副完整 54 张牌
  */
