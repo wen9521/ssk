@@ -230,7 +230,7 @@ function cardValue(card) {
     return { head: sorted.slice(0, 3), middle: sorted.slice(3, 8), tail: sorted.slice(8, 13) };
   }
 
-  export function isFoul(head, mid, tail) {
+  function isFoulForAI(head, mid, tail) {
     const headRank = handTypeRankForAI(head, 'head');
     const midRank = handTypeRankForAI(mid, 'middle');
     const tailRank = handTypeRankForAI(tail, 'tail');
@@ -250,7 +250,7 @@ function cardValue(card) {
   }
   
   // ==== 核心导出：同花顺必做尾道 + 全局最优 ====
-  export function getSmartSplits(cards13, opts = {}) {
+  function getSmartSplits(cards13, opts = {}) {
     console.log('getSmartSplits input:', cards13);
     const special = detectAllSpecialSplits(cards13);
     if (special) return [special];
@@ -262,7 +262,7 @@ function cardValue(card) {
         for (const mid of combinations(left8, 5)) {
           const head = left8.filter(c => !mid.includes(c));
           if (head.length !== 3) continue;
-          if (isFoul(head, mid, tail)) continue;
+          if (isFoulForAI(head, mid, tail)) continue;
           const score = scoreSplit(head, mid, tail);
           if (score > bestScore) {
             bestScore = score;
@@ -290,7 +290,7 @@ function cardValue(card) {
       for (const { mid } of midComb) {
         const head = left8.filter(c => !mid.includes(c));
         if (head.length !== 3) continue;
-        if (isFoul(head, mid, tail)) continue;
+        if (isFoulForAI(head, mid, tail)) continue;
         const score = scoreSplit(head, mid, tail);
         let tieBreaker = 0;
         if (handTypeForAI(head, 'head') === '三条') tieBreaker += 1000;
@@ -322,5 +322,3 @@ function cardValue(card) {
         : p
     );
   }
-  
-  export { isFoul as isFoulForAI };
