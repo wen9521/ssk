@@ -130,7 +130,7 @@ export const useDoudizhuStore = create((set, get) => ({
     set(produce(state => {
       const player = state.players.find(p => p.id === playerId);
       if (player) {
-          player.hand = player.hand.filter(cInHand => !cards.find(cToPlay => cToPlay.rank === cInHand.rank && cToPlay.suit === cInHand.suit));
+          player.hand = player.hand.filter(cInHand => !cards.find(cToPlay => cToPlay.rank === cInHand.rank && cToPlay.suit === cToPlay.suit));
       }
       state.currentHandOnTable = newHand;
       state.lastPlayerId = playerId;

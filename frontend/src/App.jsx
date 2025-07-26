@@ -1,12 +1,10 @@
 // src/App.jsx
 import React from 'react';
 import { HashRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
-import Play from './components/Play';
-import DoudizhuPlay from './components/doudizhu/DoudizhuPlay';
-// import EightCardsPlay from './components/EightCardsPlay'; // <-- 1. 已删除此行
+import ThirteenWaterPlay from './components/thirteenWater/Play'; // 更新路径
+import DoudizhuPlay from './components/doudizhu/DoudizhuPlay'; // 更新路径
 import './App.css';
 
-// 游戏大厅（首页），包含三个游戏
 function Lobby() {
   return (
     <div className="app-container lobby-container">
@@ -19,16 +17,9 @@ function Lobby() {
         <h2>斗地主对决</h2>
         <Link to="/doudizhu" className="btn btn-action">进入战场</Link>
       </div>
-      <div className="game-section eight-cards-section">
-        <h2>八张突袭</h2>
-        {/* --- 2. 修改链接，指向 coming-soon --- */}
-        <Link to="/coming-soon" className="btn btn-primary">进入战区</Link>
-      </div>
     </div>
   );
 }
-
-// ... (ComingSoon 和 ThirteenCardsMenu 组件保持不变) ...
 
 function ComingSoon() {
   const navigate = useNavigate();
@@ -57,16 +48,14 @@ function ThirteenCardsMenu() {
   );
 }
 
-
 function App() {
   return (
     <HashRouter>
       <Routes>
         <Route path="/" element={<Lobby />} />
         <Route path="/thirteen-cards-menu" element={<ThirteenCardsMenu />} />
-        <Route path="/play" element={<Play />} />
+        <Route path="/play" element={<ThirteenWaterPlay />} />
         <Route path="/doudizhu" element={<DoudizhuPlay />} /> 
-        {/* <Route path="/eight-cards" element={<EightCardsPlay />} /> */} {/* <-- 3. 已删除此路由 */}
         <Route path="/coming-soon" element={<ComingSoon />} />
       </Routes>
     </HashRouter>

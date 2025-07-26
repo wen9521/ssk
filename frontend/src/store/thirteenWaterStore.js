@@ -1,4 +1,4 @@
-// src/utils/store.js
+// src/store/thirteenWaterStore.js
 import { create } from 'zustand';
 import { produce } from 'immer';
 import { createDeck, shuffleDeck, dealCards } from '@/game-logic/deck';
@@ -13,7 +13,7 @@ export const STAGES = {
   FINISHED: 'finished',
 };
 
-// 工具函数保持不变
+// 工具函数
 const toCardString = (card) => {
   if (!card || !card.rank || !card.suit) return '';
   const rankMap = { 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', 'T': '10' };
@@ -36,13 +36,14 @@ const toHandStrings = (hand) => ({
   tail: (hand.tail || []).map(toCardString)
 });
 
-const useGameStore = create((set, get) => ({
+// 重命名为 useThirteenWaterStore
+export const useThirteenWaterStore = create((set, get) => ({
   stage: STAGES.LOBBY,
   players: [
     { id: 'player1', name: '你', submitted: false, isReady: false, points: 100, isFoul: false, head: [], middle: [], tail: [] },
-    { id: 'player2', name: '小明', submitted: false, isReady: true, points: 100, isAI: true, head: [], middle: [], tail: [] },
-    { id: 'player3', name: '小红', submitted: false, isReady: true, points: 100, isAI: true, head: [], middle: [], tail: [] },
-    { id: 'player4', name: '小刚', submitted: false, isReady: true, points: 100, isAI: true, head: [], middle: [], tail: [] },
+    { id: 'player2', name: 'AI·擎天柱', submitted: false, isReady: true, points: 100, isAI: true, head: [], middle: [], tail: [] },
+    { id: 'player3', name: 'AI·大黄蜂', submitted: false, isReady: true, points: 100, isAI: true, head: [], middle: [], tail: [] },
+    { id: 'player4', name: 'AI·威震天', submitted: false, isReady: true, points: 100, isAI: true, head: [], middle: [], tail: [] },
   ],
 
   resetRound: () => set(produce(state => {
@@ -59,34 +60,37 @@ const useGameStore = create((set, get) => ({
     });
   })),
   
-  // 使用了您的建议重构了 startGame 函数，使其更清晰和健壮
   startGame: () => {
     set({ stage: STAGES.DEALING });
     setTimeout(() => {
       const deck = createDeck();
       const shuffled = shuffleDeck(deck);
-
-      // 明确参数含义，避免混淆
+      
       const playerCount = get().players.length;
       const cardsPerPlayer = 13;
       
       // 正确调用发牌函数
       const playerHands = dealCards(shuffled, cardsPerPlayer, playerCount);
 
+      // 增加您建议的健壮性检查
+      if (!Array.isArray(playerHands) || playerHands.length < playerCount) {
+        console.error('严重错误：发牌结果格式不符或数量不足！', playerHands);
+        // 此处可以重置游戏或显示错误信息，避免崩溃
+        get().resetRound();
+        return;
+      }
+
       set(produce(state => {
         state.players.forEach((player, index) => {
             const hand = playerHands[index];
 
-            // 增加您建议的断言，确保手牌是数组
             if (!Array.isArray(hand)) {
-              console.error(`发牌失败：第 ${index} 位玩家的手牌不是一个有效的数组!`, hand);
-              // 提供一个空手牌以避免程序崩溃
-              player.tail = []; 
+              console.error(`发牌失败：玩家 ${player.name} 的手牌不是一个有效的数组!`, hand);
+              player.tail = [];
               player.isFoul = true;
-              return; // 跳过此玩家的处理
+              return;
             }
             
-            // 为所有玩家进行一次初始的智能理牌
             const playerHandStrings = hand.map(toCardString);
             const splitResult = SmartSplit(playerHandStrings)[0];
 
@@ -96,14 +100,12 @@ const useGameStore = create((set, get) => ({
                 player.tail = splitResult.tail.map(toCardObject).filter(Boolean);
                 player.isFoul = isFoul(splitResult.head, splitResult.middle, splitResult.tail);
             } else { 
-                // 如果智能理牌失败，则将所有牌放入尾道以防崩溃
                 player.head = [];
                 player.middle = [];
                 player.tail = hand;
                 player.isFoul = true;
             }
-
-            // AI玩家自动设为已提交，人类玩家需要手动提交
+            
             player.submitted = !!player.isAI;
         });
         state.stage = STAGES.PLAYING;
@@ -111,6 +113,7 @@ const useGameStore = create((set, get) => ({
     }, 500);
   },
   
+  // 其他方法保持不变...
   setPlayerReady: (playerId) => set(produce(state => {
     const player = state.players.find(p => p.id === playerId);
     if (player && state.stage === STAGES.LOBBY) {
@@ -190,5 +193,3 @@ const useGameStore = create((set, get) => ({
     }
   },
 }));
-
-export { useGameStore };
