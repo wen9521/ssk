@@ -6,7 +6,7 @@ import {
   shuffleDeck, 
   dealCards,
   SmartSplit,
-  calcSSSAllScores, 
+  calcSSSAllScores,
   isFoul 
 } from '../game-logic';
 
@@ -18,7 +18,7 @@ export const STAGES = {
   FINISHED: 'finished',
 };
 
-// 工具函数
+// 工具函数 (保持不变)
 const toCardString = (card) => {
   if (!card || !card.rank || !card.suit) return '';
   const rankMap = { 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', 'T': '10' };
@@ -84,30 +84,41 @@ export const useThirteenWaterStore = create((set, get) => ({
 
       set(produce(state => {
         state.players.forEach((player, index) => {
-            const hand = playerHands[index];
+            const handOfObjects = playerHands[index];
 
-            if (!Array.isArray(hand)) {
-              console.error(`发牌失败：玩家 ${player.name} 的手牌不是一个有效的数组!`, hand);
-              player.tail = [];
+            if (!Array.isArray(handOfObjects) || handOfObjects.length !== 13) {
+              console.error(`发牌失败：玩家 ${player.name} 的手牌不是一个有效的13张牌数组!`, handOfObjects);
+              player.tail = []; // 避免渲染错误
               player.isFoul = true;
+              player.submitted = !!player.isAI; // 确保AI能继续流程
               return;
             }
             
-            const playerHandStrings = hand.map(toCardString);
-            const splitResult = SmartSplit(playerHandStrings)[0];
+            // 将对象手牌转换为AI需要的字符串数组
+            const handOfStrings = handOfObjects.map(toCardString);
+            
+            // AI进行智能分牌，得到的是字符串格式的牌墩
+            const splitResultStrings = SmartSplit(handOfStrings)[0];
 
-            if (splitResult) {
-                player.head = splitResult.head.map(toCardObject).filter(Boolean);
-                player.middle = splitResult.middle.map(toCardObject).filter(Boolean);
-                player.tail = splitResult.tail.map(toCardObject).filter(Boolean);
-                player.isFoul = isFoul(splitResult.head, splitResult.middle, splitResult.tail);
-            } else { 
+            if (splitResultStrings) {
+                // 【核心修复】: isFoul 函数需要字符串格式的牌墩
+                player.isFoul = isFoul(splitResultStrings.head, splitResultStrings.middle, splitResultStrings.tail);
+                
+                // 将字符串牌墩转换回对象格式，用于UI渲染
+                player.head = splitResultStrings.head.map(toCardObject).filter(Boolean);
+                player.middle = splitResultStrings.middle.map(toCardObject).filter(Boolean);
+                player.tail = splitResultStrings.tail.map(toCardObject).filter(Boolean);
+
+            } else {
+                // 如果AI分牌失败，进行容错处理
                 player.head = [];
                 player.middle = [];
-                player.tail = hand;
+                // 将所有牌放入尾道，并标记为倒水
+                player.tail = handOfObjects;
                 player.isFoul = true;
             }
             
+            // 只有AI玩家在发牌后自动提交
             player.submitted = !!player.isAI;
         });
         state.stage = STAGES.PLAYING;
@@ -120,44 +131,52 @@ export const useThirteenWaterStore = create((set, get) => ({
     if (player && state.stage === STAGES.LOBBY) {
       player.isReady = !player.isReady;
     }
+    // 检查是否所有玩家都准备好了
     const allReady = state.players.every(p => p.isReady);
     if (allReady && state.stage === STAGES.LOBBY) {
       get().startGame();
     }
   })),
 
+  // updatePlayerHands 保持不变
   updatePlayerHands: (playerId, newHands) => set(produce(state => {
     const player = state.players.find(p => p.id === playerId);
     if (player) {
       player.head = newHands.head;
       player.middle = newHands.middle;
       player.tail = newHands.tail;
+      // 在这里手动理牌时，也需要传递字符串格式给 isFoul
       const handStrings = toHandStrings(newHands);
       player.isFoul = isFoul(handStrings.head, handStrings.middle, handStrings.tail);
     }
   })),
   
+  // autoSplitForPlayer 保持不变，但我们确保其逻辑健壮
   autoSplitForPlayer: (playerId) => set(produce(state => {
       const player = state.players.find(p => p.id === playerId);
       if (player) {
-        const allCards = [
+        // 整合所有手牌
+        const allCardsObjects = [
           ...(player.head || []),
           ...(player.middle || []),
           ...(player.tail || [])
-        ].map(toCardString);
-
-        if (allCards.length === 13) {
-            const splitResult = SmartSplit(allCards)[0];
-            if (splitResult) {
-              player.head = splitResult.head.map(toCardObject).filter(Boolean);
-              player.middle = splitResult.middle.map(toCardObject).filter(Boolean);
-              player.tail = splitResult.tail.map(toCardObject).filter(Boolean);
-              player.isFoul = isFoul(splitResult.head, splitResult.middle, splitResult.tail);
+        ];
+        
+        if (allCardsObjects.length === 13) {
+            const allCardStrings = allCardsObjects.map(toCardString);
+            const splitResultStrings = SmartSplit(allCardStrings)[0];
+            
+            if (splitResultStrings) {
+              player.isFoul = isFoul(splitResultStrings.head, splitResultStrings.middle, splitResultStrings.tail);
+              player.head = splitResultStrings.head.map(toCardObject).filter(Boolean);
+              player.middle = splitResultStrings.middle.map(toCardObject).filter(Boolean);
+              player.tail = splitResultStrings.tail.map(toCardObject).filter(Boolean);
             }
         }
       }
   })),
 
+  // submitHands 保持不变
   submitHands: () => {
     const { players } = get();
     const me = players.find(p => p.id === 'player1');
