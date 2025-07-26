@@ -46,20 +46,33 @@ function cardValue(card) {
     }
     return null;
   }
+  
+  // 【重大修复】 修复了六对半的牌墩组合逻辑
   function detectSixPairs(cards13) {
     const byVal = groupBy(cards13, cardValue);
     const pairs = Object.values(byVal).filter(g => g.length === 2);
-    if (pairs.length === 6) {
-      let head = pairs[0].concat(pairs[1][0]);
-      let used = new Set(head);
-      let mid = pairs[1].slice(1).concat(pairs[2], pairs[3][0]);
-      used = new Set([...head, ...mid]);
-      let tail = cards13.filter(c => !used.has(c));
-      if (head.length === 3 && mid.length === 5 && tail.length === 5)
-        return { head, middle: mid, tail, type: '六对半' };
+    const single = Object.values(byVal).find(g => g.length === 1);
+    
+    if (pairs.length === 6 && single) {
+      const sortedPairs = pairs.sort((a, b) => cardValue(b[0]) - cardValue(a[0]));
+      
+      const tail = [...sortedPairs[0], ...sortedPairs[1], single[0]];
+      const middle = [...sortedPairs[2], ...sortedPairs[3], sortedPairs[4][0]];
+      const head = [sortedPairs[4][1], ...sortedPairs[5]];
+      
+      // 确保牌墩大小正确
+      if (head.length === 3 && middle.length === 5 && tail.length === 5) {
+        return { 
+          head: sortCardsForAI(head), 
+          middle: sortCardsForAI(middle), 
+          tail: sortCardsForAI(tail), 
+          type: '六对半' 
+        };
+      }
     }
     return null;
   }
+
   function detectThreeStraight(cards13) {
     const comb3 = combinations(cards13, 3);
     for (const head of comb3) {
@@ -96,7 +109,6 @@ function cardValue(card) {
       || null;
   }
 
-  // 【修复】优化顺子判断逻辑
   function isStraightForAI(cards) {
     if (!cards || cards.length < 3) return false;
     const vals = uniq(cards.map(cardValue)).sort((a, b) => a - b);
@@ -123,7 +135,6 @@ function cardValue(card) {
     return cards.every(c => cardSuit(c) === suit);
   }
   
-  // ==== 牌型判定/倒水/评分 ====
   function handTypeForAI(cards, area) {
     if (!cards || cards.length < 3) return "高牌";
     const vals = cards.map(cardValue), suits = cards.map(cardSuit),
@@ -146,6 +157,7 @@ function cardValue(card) {
     }
     return "高牌";
   }
+
   function handTypeScoreForAI(cards, area) {
     const t = handTypeForAI(cards, area);
     switch (t) {
@@ -153,6 +165,7 @@ function cardValue(card) {
       case "三条": return 3; case "两对": return 2; case "对子": return 1; default: return 0;
     }
   }
+
   function handTypeRankForAI(cards, area) {
     if (area === 'head') {
       const t = handTypeForAI(cards, area);
@@ -161,7 +174,6 @@ function cardValue(card) {
     return handTypeScoreForAI(cards, area);
   }
   
-  // ==== compareArea（同步sssScore.js核心） ====
   function compareAreaForAI(a, b, area) {
     const typeA = handTypeForAI(a, area), typeB = handTypeForAI(b, area);
     const rankA = handTypeRankForAI(a, area), rankB = handTypeRankForAI(b, area);
@@ -209,7 +221,6 @@ function cardValue(card) {
     return 0;
   }
   
-  // ==== 头道/尾道评分 ====
   function evalHead(head) {
     const t = handTypeForAI(head, 'head');
     let score = 0;
@@ -222,7 +233,7 @@ function cardValue(card) {
   function evalTail(tail) {
     const t = handTypeForAI(tail, 'tail');
     let score = 0;
-    if (t === "同花顺") score += 10000; // 强制极高分
+    if (t === "同花顺") score += 10000;
     if (t === "铁支") score += 240;
     else if (t === "葫芦") score += 130;
     else if (t === "顺子") score += 85;
@@ -235,15 +246,12 @@ function cardValue(card) {
     return score;
   }
   
-  // ==== 均衡分法 ====
-  // 【修复】确保调用 sortCardsForAI 进行排序
   function balancedSplit(cards) {
     const sorted = sortCardsForAI(cards);
     return { head: sorted.slice(0, 3), middle: sorted.slice(3, 8), tail: sorted.slice(8, 13) };
   }
 
   function isFoulForAI(head, mid, tail) {
-    // 牌墩数量不合法也是倒水
     if (!head || !mid || !tail || head.length !== 3 || mid.length !== 5 || tail.length !== 5) {
       return true;
     }
@@ -266,7 +274,6 @@ function cardValue(card) {
     return score;
   }
   
-  // ==== 核心导出：同花顺必做尾道 + 全局最优 ====
   function getSmartSplits(cards13, opts = {}) {
     console.log('getSmartSplits input:', cards13);
     const special = detectAllSpecialSplits(cards13);
@@ -278,7 +285,6 @@ function cardValue(card) {
         let best = null, bestScore = -Infinity;
         for (const mid of combinations(left8, 5)) {
           const head = left8.filter(c => !mid.includes(c));
-          if (head.length !== 3) continue;
           if (isFoulForAI(head, mid, tail)) continue;
           const score = scoreSplit(head, mid, tail);
           if (score > bestScore) {
@@ -306,7 +312,6 @@ function cardValue(card) {
   
       for (const { mid } of midComb) {
         const head = left8.filter(c => !mid.includes(c));
-        if (head.length !== 3) continue;
         if (isFoulForAI(head, mid, tail)) continue;
         const score = scoreSplit(head, mid, tail);
         let tieBreaker = 0;

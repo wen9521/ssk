@@ -41,7 +41,6 @@ const toHandStrings = (hand) => ({
   tail: (hand.tail || []).map(toCardString).filter(Boolean)
 });
 
-// 重命名为 useThirteenWaterStore
 export const useThirteenWaterStore = create((set, get) => ({
   stage: STAGES.LOBBY,
   players: [
@@ -75,7 +74,6 @@ export const useThirteenWaterStore = create((set, get) => ({
       const playerHands = dealCards(shuffled, cardsPerPlayer, playerCount);
 
       if (!Array.isArray(playerHands) || playerHands.length < playerCount) {
-        console.error('严重错误：发牌结果格式不符或数量不足！', playerHands);
         get().resetRound();
         return;
       }
@@ -84,33 +82,24 @@ export const useThirteenWaterStore = create((set, get) => ({
         state.players.forEach((player, index) => {
             const handOfObjects = playerHands[index];
             if (!Array.isArray(handOfObjects) || handOfObjects.length !== 13) {
-              console.error(`发牌失败：玩家 ${player.name} 的手牌不是一个有效的13张牌数组!`, handOfObjects);
               player.head = []; player.middle = []; player.tail = [];
               player.isFoul = true;
               player.submitted = !!player.isAI;
               return;
             }
             
-            //无论是AI还是玩家，发牌时都先用AI理一次牌
-            // 1. 转换成字符串数组给AI
             const handOfStrings = handOfObjects.map(toCardString);
-            
-            // 2. AI返回字符串格式的牌墩
             const splitResultStrings = SmartSplit(handOfStrings)[0];
 
             if (splitResultStrings && splitResultStrings.head && splitResultStrings.middle && splitResultStrings.tail) {
-                // 3. 用字符串牌墩判断是否倒水
                 player.isFoul = isFoul(splitResultStrings.head, splitResultStrings.middle, splitResultStrings.tail);
-                
-                // 4. 将字符串牌墩转回对象，存入state
                 player.head = splitResultStrings.head.map(toCardObject).filter(Boolean);
                 player.middle = splitResultStrings.middle.map(toCardObject).filter(Boolean);
                 player.tail = splitResultStrings.tail.map(toCardObject).filter(Boolean);
             } else { 
-                // AI分牌失败的容错处理
                 player.head = [];
                 player.middle = [];
-                player.tail = handOfObjects; // 将所有牌放入尾道
+                player.tail = handOfObjects;
                 player.isFoul = true;
             }
             
@@ -135,12 +124,10 @@ export const useThirteenWaterStore = create((set, get) => ({
   updatePlayerHands: (playerId, newHands) => set(produce(state => {
     const player = state.players.find(p => p.id === playerId);
     if (player) {
-      // newHands 是从UI传来的对象数组，直接赋值
       player.head = newHands.head || [];
       player.middle = newHands.middle || [];
       player.tail = newHands.tail || [];
       
-      // 【关键修复】调用 isFoul 前，必须将对象数组转为字符串数组
       const handStrings = toHandStrings(newHands);
       player.isFoul = isFoul(handStrings.head, handStrings.middle, handStrings.tail);
     }
@@ -184,7 +171,7 @@ export const useThirteenWaterStore = create((set, get) => ({
         set({ stage: STAGES.SUBMITTING });
         setTimeout(() => {
           const handsForScoring = get().players.map(p => ({
-            ...toHandStrings(p), // 确保传给计分函数的是字符串牌墩
+            ...toHandStrings(p),
             isFoul: p.isFoul
           }));
           const scoresArray = calcSSSAllScores(handsForScoring);

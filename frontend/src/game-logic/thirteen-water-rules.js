@@ -20,26 +20,20 @@ const groupBy = (arr, fn) => {
 };
 
 // --- 牌型判断函数 ---
-
-// 【修复】优化顺子判断逻辑
 function isStraight(cards) {
     if (!cards || cards.length < 3) return false;
     const vals = uniq(cards.map(cardValue)).sort((a, b) => a - b);
     if (vals.length !== cards.length) return false;
   
-    // 检查 A-5 顺子 (10-J-Q-K-A 在下面会被正常逻辑覆盖)
-    // 将 A(14) 替换为 1 来判断
     const isAceLow = vals.includes(14) && vals.includes(2);
     if (isAceLow) {
         const tempVals = vals.map(v => v === 14 ? 1 : v).sort((a,b) => a - b);
-        // 检查转换后的值是否连续
         for (let i = 0; i < tempVals.length - 1; i++) {
           if (tempVals[i+1] !== tempVals[i] + 1) return false;
         }
         return true;
     }
   
-    // 检查普通顺子
     for (let i = 0; i < vals.length - 1; i++) {
         if (vals[i+1] !== vals[i] + 1) return false;
     }
@@ -86,7 +80,6 @@ function getHandRank(cards, area) {
   const rankMap = { "同花顺": 9, "铁支": 8, "葫芦": 7, "同花": 6, "顺子": 5, "三条": 4, "两对": 3, "对子": 2, "高牌": 1 };
   
   if (area === 'head') {
-    // 头道的三条比对子大，但牌型等级上，三条(4) > 对子(2) > 高牌(1)
     if (type === "三条") return 4;
     if (type === "对子") return 2;
     return 1;
@@ -95,12 +88,10 @@ function getHandRank(cards, area) {
   return rankMap[type] || 1;
 }
 
-// --- 核心比牌函数 ---
 function compareArea(a, b, area) {
     const rankA = getHandRank(a, area), rankB = getHandRank(b, area);
     if (rankA !== rankB) return rankA - rankB;
 
-    // 牌型相同时，比较牌值
     const getSortedGroup = (cards) => Object.entries(groupBy(cards, cardValue))
         .map(([val, group]) => ({ val: Number(val), count: group.length, cards: group }))
         .sort((x, y) => y.count - x.count || y.val - x.val);
@@ -111,12 +102,11 @@ function compareArea(a, b, area) {
     for (let i = 0; i < groupA.length; i++) {
         if (groupA[i].val !== groupB[i].val) return groupA[i].val - groupB[i].val;
     }
-    return 0; // 完全相同
+    return 0;
 }
 
-// --- 倒水判断 ---
 export function isFoul(head, middle, tail) {
-  if (!head || !middle || !tail || head.length !== 3 || middle.length !== 5 || tail.length !== 5) return true; // 牌数不对也是倒水
+  if (!head || !middle || !tail || head.length !== 3 || middle.length !== 5 || tail.length !== 5) return true;
   const headRank = getHandRank(head, 'head');
   const midRank = getHandRank(middle, 'middle');
   const tailRank = getHandRank(tail, 'tail');
@@ -127,7 +117,6 @@ export function isFoul(head, middle, tail) {
   return false;
 }
 
-// --- 计分逻辑 ---
 function getSpecialType(p) {
   const allCards = [...p.head, ...p.middle, ...p.tail];
   if (allCards.length !== 13) return null;
@@ -135,11 +124,11 @@ function getSpecialType(p) {
   if (uniq(allCards.map(cardValue)).length === 13) return '一条龙';
   if (Object.values(groupBy(allCards, cardValue)).filter(g => g.length === 2).length === 6) return '六对半';
   if (isFlush(p.head) && isFlush(p.middle) && isFlush(p.tail)) return '三同花';
-  // 特殊三顺子判断需要更严谨，这里简化为依赖 getHandType
+  
   const headType = getHandType(p.head, 'head');
   const midType = getHandType(p.middle, 'middle');
   const tailType = getHandType(p.tail, 'tail');
-  if (headType === '顺子' && midType === '顺子' && tailType === '顺子') return '三顺子';
+  if ( (headType === '顺子' || headType === '高牌') && midType === '顺子' && tailType === '顺子') return '三顺子';
   
   return null;
 }
@@ -156,7 +145,7 @@ function getAreaBaseScore(cards, area) {
       if (type === '铁支') return SCORES.TAIL['铁支'];
       if (type === '同花顺') return SCORES.TAIL['同花顺'];
   }
-  return 1; // 基础分
+  return 1;
 }
 
 export function calcSSSAllScores(playersData) {
@@ -177,9 +166,9 @@ export function calcSSSAllScores(playersData) {
       let roundScore = 0;
 
       if (p1.isFoul && !p2.isFoul) {
-        roundScore = -3 - (SCORES.SPECIAL[p2.specialType] || 0);
+        roundScore = -6 - (SCORES.SPECIAL[p2.specialType] || 0);
       } else if (!p1.isFoul && p2.isFoul) {
-        roundScore = 3 + (SCORES.SPECIAL[p1.specialType] || 0);
+        roundScore = 6 + (SCORES.SPECIAL[p1.specialType] || 0);
       } else if (p1.isFoul && p2.isFoul) {
         roundScore = 0;
       } else if (p1.specialType || p2.specialType) {
@@ -197,7 +186,6 @@ export function calcSSSAllScores(playersData) {
         const tailScore = (compareArea(p1.tail, p2.tail, 'tail') > 0) ? getAreaBaseScore(p1.tail, 'tail') : -getAreaBaseScore(p2.tail, 'tail');
         roundScore = headScore + middleScore + tailScore;
         
-        // 打枪（全垒打）判断
         if (p1WinCount === 3) roundScore *= 2;
         if (p1WinCount === 0) roundScore *= 2;
       }
