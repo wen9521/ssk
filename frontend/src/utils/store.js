@@ -64,8 +64,10 @@ const useGameStore = create((set, get) => ({
       const deck = createDeck();
       const shuffled = shuffleDeck(deck);
       
-      // --- 核心修复：移除错误的 [0] 索引，使其行为与 eight-cards.store.js 一致 ---
+      // ========================== 核心修复点 ==========================
+      // 移除错误的 [0] 索引，以获取所有玩家手牌的列表。
       const playerHands = dealCards(shuffled, 13, 4);
+      // ===============================================================
 
       set(produce(state => {
         state.players.forEach((player, index) => {
