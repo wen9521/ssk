@@ -3,27 +3,40 @@ import React, { useState } from 'react';
 import { DoudizhuStage } from '../../store/doudizhuStore';
 
 export default function DoudizhuPlay({
-  me, stage, biddingState,
-  currentHandOnTable, lastPlayerId,
-  winnerId, landlordId,
-  bid, passBid, play, pass, startGame
+  me,
+  stage,
+  biddingState,
+  currentHandOnTable,
+  lastPlayerId,
+  winnerId,
+  landlordId,
+  bid,
+  passBid,
+  play,
+  pass,
+  startGame
 }) {
   const [selected, setSelected] = useState([]);
 
   if (!me) return null;
-  const myTurn = me.id === (stage === DoudizhuStage.BIDDING
-    ? biddingState.currentPlayerId
-    : me.id);
+  const myTurn =
+    me.id ===
+    (stage === DoudizhuStage.BIDDING
+      ? biddingState.currentPlayerId
+      : me.id);
 
   // 叫分阶段
   if (stage === DoudizhuStage.BIDDING && myTurn) {
     return (
       <div className="controls">
-        <button onClick={()=>passBid(me.id)}>不叫</button>
-        {[1,2,3].map(n=>(n          biddingState.highestBid < n && (
-            <button key={n} onClick={()=>bid(me.id, n)}>{n} 分</button>
+        <button onClick={() => passBid(me.id)}>不叫</button>
+        {[1, 2, 3].map((n) =>
+          biddingState.highestBid < n && (
+            <button key={n} onClick={() => bid(me.id, n)}>
+              {n} 分
+            </button>
           )
-        ))}
+        )}
       </div>
     );
   }
@@ -34,20 +47,23 @@ export default function DoudizhuPlay({
       <div className="controls">
         <button
           disabled={!currentHandOnTable || lastPlayerId === me.id}
-          onClick={()=>{ setSelected([]); pass(me.id); }}
+          onClick={() => {
+            setSelected([]);
+            pass(me.id);
+          }}
         >
           不出
         </button>
         <button className="hint">提示</button>
         <button
-          disabled={!selected.length}
-          onClick={()=>{
+          disabled={selected.length === 0}
+          onClick={() => {
             play(me.id, selected);
             setSelected([]);
           }}
         >
           出牌
-        </button>
+        >
       </div>
     );
   }
