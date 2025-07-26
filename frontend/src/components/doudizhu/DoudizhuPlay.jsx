@@ -1,6 +1,6 @@
 // src/components/doudizhu/DoudizhuPlay.jsx
 import React, { useState } from 'react';
-import { DoudizhuStage } from '../../store/doudizhuStore';
+import { DoudizhuStage } from '../../game-logic';
 
 export default function DoudizhuPlay({
   me,
