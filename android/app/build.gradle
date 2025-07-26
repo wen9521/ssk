@@ -81,7 +81,7 @@ task copyWebAppAssets(type: Copy) {
         delete fileTree(dir: 'src/main/assets/www', include: '**')
     }
 
-    from file("$rootDir/frontend/build")
+    from file("$rootDir/frontend/dist")
     into file("$projectDir/src/main/assets/www")
 
     doLast {
@@ -89,8 +89,8 @@ task copyWebAppAssets(type: Copy) {
         if (!file("$www/index.html").exists()) {
             throw new GradleException("❌ index.html 未能复制到 assets/www！")
         }
-        if (!fileTree(dir: "$www/static/js", include: '*.js').files) {
-            throw new GradleException("❌ static/js 目录为空，请检查前端构建或路径配置！")
+        if (!fileTree(dir: "$www/assets", include: '*.js').files) {
+            throw new GradleException("❌ assets 目录为空，请检查前端构建或路径配置！")
         }
     }
 }
