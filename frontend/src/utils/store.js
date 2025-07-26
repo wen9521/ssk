@@ -64,12 +64,14 @@ const useGameStore = create((set, get) => ({
       const deck = createDeck();
       const shuffled = shuffleDeck(deck);
       
-      // 恢复正确的动态发牌逻辑
+      // 关键修复：确保 dealCards 的返回值被正确处理，获取所有玩家的手牌列表
       const playerHands = dealCards(shuffled, 13, 4);
 
       set(produce(state => {
         state.players.forEach((player, index) => {
-            const playerHandObjects = playerHands[index];
+            const playerHandObjects = playerHands[index]; // 现在这一定是一个手牌数组
+            
+            // 为所有玩家（包括人类玩家）进行一次初始的智能理牌
             const playerHandStrings = playerHandObjects.map(toCardString);
             const splitResult = SmartSplit(playerHandStrings)[0];
 
@@ -78,19 +80,16 @@ const useGameStore = create((set, get) => ({
                 player.middle = splitResult.middle.map(toCardObject).filter(Boolean);
                 player.tail = splitResult.tail.map(toCardObject).filter(Boolean);
                 player.isFoul = isFoul(splitResult.head, splitResult.middle, splitResult.tail);
-            } else { // Fallback in case SmartSplit fails
+            } else { 
+                // 如果智能理牌失败，则将所有牌放入尾道以防崩溃
                 player.head = [];
                 player.middle = [];
                 player.tail = playerHandObjects;
                 player.isFoul = true;
             }
 
-            // AI玩家自动提交，人类玩家不提交
-            if (player.isAI) {
-                player.submitted = true;
-            } else {
-                player.submitted = false;
-            }
+            // AI玩家自动设为已提交，人类玩家需要手动提交
+            player.submitted = !!player.isAI;
         });
         state.stage = STAGES.PLAYING;
       }));
