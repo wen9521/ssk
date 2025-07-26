@@ -1,38 +1,55 @@
 /**
  * src/game-logic/doudizhu.rules.js
- * Dou Dizhu 游戏规则逻辑
+ * Dou Dizhu 游戏核心规则与工具函数
  */
 
-// 牌面值与花色定义
-const CARD_VALUES = {
+// 牌面值映射
+export const valueMap = {
   '3': 3, '4': 4, '5': 5, '6': 6,
   '7': 7, '8': 8, '9': 9, '10': 10,
   'J': 11, 'Q': 12, 'K': 13, 'A': 14,
   '2': 16, 'BlackJoker': 17, 'RedJoker': 18
 };
 
+// 花色列表
 const SUITS = ['♠', '♥', '♣', '♦'];
 
+// 仅大小王常量
+export const JokerRanks = ['BlackJoker', 'RedJoker'];
+
+// 支持的出牌类型枚举
+export const HandType = {
+  SINGLE: 'single',
+  PAIR: 'pair',
+  TRIO: 'trio',
+  TRIO_WITH_SINGLE: 'trio_with_single',
+  TRIO_WITH_PAIR: 'trio_with_pair',
+  STRAIGHT: 'straight',
+  BOMB: 'bomb',
+  ROCKET: 'rocket'
+};
+
 /**
- * 生成一副牌（54 张）
+ * 生成一副完整 54 张牌
  */
-function generateDeck() {
+export function generateDeck() {
   const deck = [];
-  for (let rank in CARD_VALUES) {
-    if (rank === 'BlackJoker' || rank === 'RedJoker') continue;
+  for (let rank in valueMap) {
+    if (JokerRanks.includes(rank)) continue;
     SUITS.forEach(suit => {
-      deck.push({ suit, rank, value: CARD_VALUES[rank] });
+      deck.push({ rank, suit, value: valueMap[rank] });
     });
   }
-  deck.push({ rank: 'BlackJoker', value: CARD_VALUES.BlackJoker });
-  deck.push({ rank: 'RedJoker', value: CARD_VALUES.RedJoker });
+  // 添加大小王
+  deck.push({ rank: 'BlackJoker', suit: null, value: valueMap.BlackJoker });
+  deck.push({ rank: 'RedJoker', suit: null, value: valueMap.RedJoker });
   return deck;
 }
 
 /**
- * 随机洗牌
+ * Fisher–Yates 洗牌算法
  */
-function shuffleDeck(deck) {
+export function shuffleDeck(deck) {
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -41,30 +58,45 @@ function shuffleDeck(deck) {
 }
 
 /**
- * 对手牌进行排序
+ * 按牌面值从小到大排序
  */
-function sortCards(cards) {
+export function sortCards(cards) {
   return cards.slice().sort((a, b) => a.value - b.value);
 }
 
 /**
- * 判断本次出牌是否合法（骨架，需要补充具体牌型逻辑）
+ * 将一手牌解析成 { rankCounts, sortedRanks }
  */
-function isValidPlay(prevPlay, currentPlay) {
-  // TODO: 实现牌型识别与大小比较
+export function parseHand(cards) {
+  const rankCounts = {};
+  cards.forEach(c => {
+    rankCounts[c.rank] = (rankCounts[c.rank] || 0) + 1;
+  });
+  const sortedRanks = Object.keys(rankCounts).sort(
+    (a, b) => valueMap[a] - valueMap[b]
+  );
+  return { rankCounts, sortedRanks };
+}
+
+/**
+ * 判断当前出牌是否合法（骨架，需补全各种牌型识别逻辑）
+ */
+export function canPlay(prevPlay, currentPlay) {
+  // TODO: 针对 HandType 做完整牌型识别与比较
+  // 比如：rocket > bomb > [straight, trio, pair, single]
   return true;
 }
 
 /**
- * 抢地主或叫分逻辑（示例：随机选地主）
+ * 随机选地主示例（可替换为叫分逻辑）
  */
-function chooseLandlord(playerIds) {
+export function chooseLandlord(playerIds) {
   const idx = Math.floor(Math.random() * playerIds.length);
   return playerIds[idx];
 }
 
 /**
- * DoudizhuGame 类
+ * Dou Dizhu 游戏主类
  */
 export class DoudizhuGame {
   constructor(playerIds = [], humanPlayerId = null) {
@@ -82,16 +114,16 @@ export class DoudizhuGame {
     let deck = generateDeck();
     shuffleDeck(deck);
 
-    // 底牌 3 张
+    // 留 3 张底牌
     this.landlordExtraCards = deck.slice(-3);
     deck = deck.slice(0, -3);
 
-    // 每人 17 张
+    // 发每人 17 张
     this.playerIds.forEach((pid, idx) => {
       this.hands[pid] = sortCards(deck.slice(idx * 17, (idx + 1) * 17));
     });
 
-    // 确定地主并给底牌
+    // 选地主并补底牌
     this.landlordId = chooseLandlord(this.playerIds);
     this.hands[this.landlordId] = sortCards(
       this.hands[this.landlordId].concat(this.landlordExtraCards)
@@ -99,30 +131,22 @@ export class DoudizhuGame {
     this.currentPlayer = this.landlordId;
   }
 
-  /**
-   * 玩家出牌
-   */
   playCards(playerId, cards) {
     if (playerId !== this.currentPlayer) {
       throw new Error('当前不在此玩家回合');
     }
-    if (!isValidPlay(this.lastPlay, cards)) {
+    if (!canPlay(this.lastPlay, cards)) {
       throw new Error('出牌不合法');
     }
-
-    // 从手牌中移除已出的牌
+    // 移除已出的牌
     this.hands[playerId] = this.hands[playerId].filter(c =>
       !cards.some(pc => pc.rank === c.rank && pc.suit === c.suit)
     );
-
     this.lastPlay = { playerId, cards };
     this.currentPlayer = this.getNextPlayer(playerId);
     return { lastPlay: this.lastPlay, currentPlayer: this.currentPlayer };
   }
 
-  /**
-   * 玩家选择不出
-   */
   pass(playerId) {
     if (playerId !== this.currentPlayer) {
       throw new Error('当前不在此玩家回合');
@@ -131,34 +155,16 @@ export class DoudizhuGame {
     return { lastPlay: this.lastPlay, currentPlayer: this.currentPlayer };
   }
 
-  /**
-   * 获取下一个玩家
-   */
-  getNextPlayer(playerId) {
-    const idx = this.playerIds.indexOf(playerId);
+  getNextPlayer(pid) {
+    const idx = this.playerIds.indexOf(pid);
     return this.playerIds[(idx + 1) % this.playerIds.length];
   }
 
-  /**
-   * 判断游戏是否结束
-   */
   isGameOver() {
     return this.playerIds.some(pid => this.hands[pid].length === 0);
   }
 
-  /**
-   * 返回赢家
-   */
   getWinner() {
     return this.playerIds.find(pid => this.hands[pid].length === 0) || null;
   }
 }
-
-// 其他工具函数按需导出
-export {
-  generateDeck,
-  shuffleDeck,
-  sortCards,
-  isValidPlay,
-  chooseLandlord
-};
