@@ -1,30 +1,15 @@
-// src/components/Card.jsx
 import React from 'react';
-import './Card.css'; // <--- **添加这一行，加载样式！**
-import { cardToImageName, cardToDisplayName } from '../../utils/card-utils';
+import { getCardImage } from '../../utils/card-utils';
+import './Card.css';
 
-const Card = React.memo(({
-  card,
-  isSelected,
-  isDragging,
-  onClick
-}) => {
-  if (!card) {
-    return <div className="card-container empty"></div>;
-  }
-  const imageName = cardToImageName(card);
-  const displayName = cardToDisplayName(card);
-  const imageUrl = `assets/cards/${imageName}`;
-  const containerClasses = ['card-container', isSelected ? 'is-selected' : '', isDragging ? 'is-dragging' : ''].join(' ').trim();
+export default function Card({ rank, suit, code }) {
+  const imgSrc = code
+    ? getCardImage(code)
+    : getCardImage({ rank, suit });
+
   return (
-    <div className={containerClasses} onClick={onClick}>
-      <img
-        src={imageUrl}
-        alt={displayName}
-        className="card-image"
-        draggable="false"
-      />
+    <div className="card">
+      <img src={imgSrc} alt={code || `${rank} of ${suit}`} draggable="false" />
     </div>
   );
-});
-export default Card;
+}

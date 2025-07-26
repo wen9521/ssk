@@ -1,40 +1,21 @@
-// src/utils/card-utils.js
-export function cardToImageName(card) {
-  if (!card || !card.rank || !card.suit) {
-    return 'back.svg';
-  }
+// card-utils.js
+const cardModules = import.meta.glob('../assets/cards/*.svg', { eager: true, as: 'url' });
 
-  // --- 关键修复：优先处理大小鬼 ---
-  if (card.rank === 'Red Joker') {
-    return 'red_joker.svg';
-  }
-  if (card.rank === 'Black Joker') {
-    return 'black_joker.svg';
-  }
-  // --------------------------------
+// 生成映射： 'ace_of_spades' → '/assets/cards/ace_of_spades.abc123.svg'
+export const cardMap = Object.fromEntries(
+  Object.entries(cardModules).map(([filePath, url]) => {
+    const filename = filePath.split('/').pop().replace('.svg', '');
+    return [filename, url];
+  })
+);
 
-  const rankMap = {
-    'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', 'T': '10',
-    '10': '10', '9': '9', '8': '8', '7': '7', '6': '6', '5': '5', '4': '4', '3': '3', '2': '2'
-  };
-  
-  const rankStr = rankMap[card.rank];
-  if (!rankStr) {
-    console.warn("Cannot map card rank to image name:", card);
-    return 'back.svg';
+// 根据传入的卡牌对象或代码字符串获取图片 URL
+export function getCardImage(card) {
+  if (card.rank && card.suit) {
+    const rankStr = String(card.rank).toLowerCase();
+    const suitStr = String(card.suit).toLowerCase();
+    const code = `${rankStr}_of_${suitStr}`;
+    return cardMap[code];
   }
-  return `${rankStr.toLowerCase()}_of_${card.suit}.svg`;
-}
-
-export function cardToDisplayName({ rank, suit }) {
-  // --- 关键修复：处理大小鬼中文名 ---
-  if (rank === 'Red Joker') return '大鬼';
-  if (rank === 'Black Joker') return '小鬼';
-  // ----------------------------------
-
-  const suitMap = {
-    spades: '黑桃', hearts: '红桃', clubs: '梅花', diamonds: '方块'
-  };
-  const rankName = rank === 'T' ? '10' : rank;
-  return `${suitMap[suit] || ''}${rankName || ''}`;
+  return cardMap[card] || '';
 }
