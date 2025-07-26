@@ -1,9 +1,9 @@
 // src/store/thirteenWaterStore.js
 import { create } from 'zustand';
 import { produce } from 'immer';
-import { createDeck, shuffleDeck, dealCards } from '@/game-logic/deck';
-import { SmartSplit } from '@/game-logic/ai-logic';
-import { calcSSSAllScores, isFoul } from '@/game-logic/thirteen-water-rules';
+import { createDeck, shuffleDeck, dealCards } from '../game-logic/deck';
+import { SmartSplit } from '../game-logic/ai-logic';
+import { calcSSSAllScores, isFoul } from '../game-logic/thirteen-water-rules';
 
 export const STAGES = {
   LOBBY: 'lobby',
