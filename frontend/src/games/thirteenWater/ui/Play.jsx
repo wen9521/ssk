@@ -13,7 +13,7 @@ const ThirteenWaterPlay = () => {
     dealCards, setPlayerArrangement 
   } = useThirteenWaterStore();
 
-  // --- THIS IS THE FIX ---
+  // --- THIS IS THE FIX --定义的牌组为空，请检查规则或发牌逻辑
   // On component mount, if the game hasn't started, deal the cards.
   useEffect(() => {
     if (gameState === 'waiting') {
