@@ -95,19 +95,30 @@ function cardValue(card) {
       || detectThreeFlush(cards13)
       || null;
   }
+
+  // 【修复】优化顺子判断逻辑
   function isStraightForAI(cards) {
+    if (!cards || cards.length < 3) return false;
     const vals = uniq(cards.map(cardValue)).sort((a, b) => a - b);
     if (vals.length !== cards.length) return false;
-    for (let i = 1; i < vals.length; ++i) if (vals[i] !== vals[i - 1] + 1) return false;
-    if (vals.includes(14) && vals[0] === 2 && vals[1] === 3) {
-      const t = vals.slice(); t[t.indexOf(14)] = 1; t.sort((a, b) => a - b);
-      for (let i = 1; i < t.length; ++i) if (t[i] !== t[i - 1] + 1) return false;
-      return true;
+  
+    const isAceLow = vals.includes(14) && vals.includes(2);
+    if (isAceLow) {
+        const tempVals = vals.map(v => v === 14 ? 1 : v).sort((a,b) => a - b);
+        for (let i = 0; i < tempVals.length - 1; i++) {
+          if (tempVals[i+1] !== tempVals[i] + 1) return false;
+        }
+        return true;
+    }
+    
+    for (let i = 0; i < vals.length - 1; i++) {
+        if (vals[i+1] !== vals[i] + 1) return false;
     }
     return true;
   }
+  
   function isFlushForAI(cards) {
-    if (!cards.length) return false;
+    if (!cards || !cards.length) return false;
     const suit = cardSuit(cards[0]);
     return cards.every(c => cardSuit(c) === suit);
   }
@@ -225,16 +236,22 @@ function cardValue(card) {
   }
   
   // ==== 均衡分法 ====
+  // 【修复】确保调用 sortCardsForAI 进行排序
   function balancedSplit(cards) {
-    const sorted = [...cards];
+    const sorted = sortCardsForAI(cards);
     return { head: sorted.slice(0, 3), middle: sorted.slice(3, 8), tail: sorted.slice(8, 13) };
   }
 
   function isFoulForAI(head, mid, tail) {
+    // 牌墩数量不合法也是倒水
+    if (!head || !mid || !tail || head.length !== 3 || mid.length !== 5 || tail.length !== 5) {
+      return true;
+    }
     const headRank = handTypeRankForAI(head, 'head');
     const midRank = handTypeRankForAI(mid, 'middle');
     const tailRank = handTypeRankForAI(tail, 'tail');
-    if (!(headRank <= midRank && midRank <= tailRank)) return true;
+    
+    if (headRank > midRank || midRank > tailRank) return true;
     if (headRank === midRank && compareAreaForAI(head, mid, 'head') > 0) return true;
     if (midRank === tailRank && compareAreaForAI(mid, tail, 'middle') > 0) return true;
     return false;
@@ -316,8 +333,6 @@ function cardValue(card) {
   export function fillAiPlayers(playersArr) {
     return playersArr.map(p =>
       p.isAI && Array.isArray(p.cards13) && p.cards13.length === 13
-        // --- 核心修正 ---
-        // 错误地调用了 aiSmartSplit，应改为 SmartSplit
         ? { ...p, ...SmartSplit(p.cards13)[0] } 
         : p
     );

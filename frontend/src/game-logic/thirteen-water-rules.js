@@ -1,5 +1,3 @@
-// frontend/src/game-logic/thirteen-water-rules.js
-
 const VALUE_ORDER = {
   '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
   '10': 10, 'jack': 11, 'queen': 12, 'king': 13, 'ace': 14
@@ -21,7 +19,39 @@ const groupBy = (arr, fn) => {
   return g;
 };
 
-// --- 牌型判断函数 (从 ai-logic.js 移植并统一) ---
+// --- 牌型判断函数 ---
+
+// 【修复】优化顺子判断逻辑
+function isStraight(cards) {
+    if (!cards || cards.length < 3) return false;
+    const vals = uniq(cards.map(cardValue)).sort((a, b) => a - b);
+    if (vals.length !== cards.length) return false;
+  
+    // 检查 A-5 顺子 (10-J-Q-K-A 在下面会被正常逻辑覆盖)
+    // 将 A(14) 替换为 1 来判断
+    const isAceLow = vals.includes(14) && vals.includes(2);
+    if (isAceLow) {
+        const tempVals = vals.map(v => v === 14 ? 1 : v).sort((a,b) => a - b);
+        // 检查转换后的值是否连续
+        for (let i = 0; i < tempVals.length - 1; i++) {
+          if (tempVals[i+1] !== tempVals[i] + 1) return false;
+        }
+        return true;
+    }
+  
+    // 检查普通顺子
+    for (let i = 0; i < vals.length - 1; i++) {
+        if (vals[i+1] !== vals[i] + 1) return false;
+    }
+    
+    return true;
+}
+
+function isFlush(cards) {
+  if (!cards || cards.length === 0) return false;
+  return uniq(cards.map(c => c.split('_')[2])).length === 1;
+}
+
 function getHandType(cards, area) {
   if (!cards || cards.length < 3) return "高牌";
   const vals = cards.map(cardValue), suits = cards.map(c => c.split('_')[2]),
@@ -53,37 +83,24 @@ function getHandType(cards, area) {
 
 function getHandRank(cards, area) {
   const type = getHandType(cards, area);
+  const rankMap = { "同花顺": 9, "铁支": 8, "葫芦": 7, "同花": 6, "顺子": 5, "三条": 4, "两对": 3, "对子": 2, "高牌": 1 };
+  
   if (area === 'head') {
-    if (type === "三条") return 3;
+    // 头道的三条比对子大，但牌型等级上，三条(4) > 对子(2) > 高牌(1)
+    if (type === "三条") return 4;
     if (type === "对子") return 2;
     return 1;
   }
-  const rankMap = { "同花顺": 9, "铁支": 8, "葫芦": 7, "同花": 6, "顺子": 5, "三条": 4, "两对": 3, "对子": 2, "高牌": 1 };
-  return rankMap[type];
+  
+  return rankMap[type] || 1;
 }
 
-function isStraight(cards) {
-  const vals = uniq(cards.map(cardValue)).sort((a, b) => a - b);
-  if (vals.length !== cards.length) return false;
-  // A2345 (Ace-low)
-  if (JSON.stringify(vals) === '[2,3,4,14]' && cards.length === 4) return true; // for special cases
-  if (JSON.stringify(vals) === '[2,3,4,5,14]') return true; 
-
-  const isNormal = vals[vals.length - 1] - vals[0] === cards.length - 1;
-  return isNormal;
-}
-
-function isFlush(cards) {
-  if (!cards || cards.length === 0) return false;
-  return uniq(cards.map(c => c.split('_')[2])).length === 1;
-}
-
-// --- 核心比牌函数 (从 ai-logic.js 移植并统一) ---
+// --- 核心比牌函数 ---
 function compareArea(a, b, area) {
     const rankA = getHandRank(a, area), rankB = getHandRank(b, area);
     if (rankA !== rankB) return rankA - rankB;
 
-    const type = getHandType(a, area);
+    // 牌型相同时，比较牌值
     const getSortedGroup = (cards) => Object.entries(groupBy(cards, cardValue))
         .map(([val, group]) => ({ val: Number(val), count: group.length, cards: group }))
         .sort((x, y) => y.count - x.count || y.val - x.val);
@@ -99,7 +116,7 @@ function compareArea(a, b, area) {
 
 // --- 倒水判断 ---
 export function isFoul(head, middle, tail) {
-  if (head.length !== 3 || middle.length !== 5 || tail.length !== 5) return true; // 牌数不对也是倒水
+  if (!head || !middle || !tail || head.length !== 3 || middle.length !== 5 || tail.length !== 5) return true; // 牌数不对也是倒水
   const headRank = getHandRank(head, 'head');
   const midRank = getHandRank(middle, 'middle');
   const tailRank = getHandRank(tail, 'tail');
@@ -118,7 +135,12 @@ function getSpecialType(p) {
   if (uniq(allCards.map(cardValue)).length === 13) return '一条龙';
   if (Object.values(groupBy(allCards, cardValue)).filter(g => g.length === 2).length === 6) return '六对半';
   if (isFlush(p.head) && isFlush(p.middle) && isFlush(p.tail)) return '三同花';
-  if (isStraight(p.head) && isStraight(p.middle) && isStraight(p.tail)) return '三顺子';
+  // 特殊三顺子判断需要更严谨，这里简化为依赖 getHandType
+  const headType = getHandType(p.head, 'head');
+  const midType = getHandType(p.middle, 'middle');
+  const tailType = getHandType(p.tail, 'tail');
+  if (headType === '顺子' && midType === '顺子' && tailType === '顺子') return '三顺子';
+  
   return null;
 }
 
@@ -155,7 +177,7 @@ export function calcSSSAllScores(playersData) {
       let roundScore = 0;
 
       if (p1.isFoul && !p2.isFoul) {
-        roundScore = -3 - (SCORES.SPECIAL[p2.specialType] || 0); // 倒水赔三道基础分和特殊牌型分
+        roundScore = -3 - (SCORES.SPECIAL[p2.specialType] || 0);
       } else if (!p1.isFoul && p2.isFoul) {
         roundScore = 3 + (SCORES.SPECIAL[p1.specialType] || 0);
       } else if (p1.isFoul && p2.isFoul) {
@@ -165,10 +187,19 @@ export function calcSSSAllScores(playersData) {
         const score2 = SCORES.SPECIAL[p2.specialType] || 0;
         roundScore = score1 - score2;
       } else {
+        let p1WinCount = 0;
+        if(compareArea(p1.head, p2.head, 'head') > 0) p1WinCount++;
+        if(compareArea(p1.middle, p2.middle, 'middle') > 0) p1WinCount++;
+        if(compareArea(p1.tail, p2.tail, 'tail') > 0) p1WinCount++;
+        
         const headScore = (compareArea(p1.head, p2.head, 'head') > 0) ? getAreaBaseScore(p1.head, 'head') : -getAreaBaseScore(p2.head, 'head');
         const middleScore = (compareArea(p1.middle, p2.middle, 'middle') > 0) ? getAreaBaseScore(p1.middle, 'middle') : -getAreaBaseScore(p2.middle, 'middle');
         const tailScore = (compareArea(p1.tail, p2.tail, 'tail') > 0) ? getAreaBaseScore(p1.tail, 'tail') : -getAreaBaseScore(p2.tail, 'tail');
         roundScore = headScore + middleScore + tailScore;
+        
+        // 打枪（全垒打）判断
+        if (p1WinCount === 3) roundScore *= 2;
+        if (p1WinCount === 0) roundScore *= 2;
       }
       playerScores[i] += roundScore;
       playerScores[j] -= roundScore;
