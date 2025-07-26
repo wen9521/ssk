@@ -39,3 +39,15 @@ export function dealCards(deck, numCards, numPlayers) {
 
   return [ ...hands, remainingDeck ];
 }
+
+// Sort cards by rank and suit
+export function sortCards(cards) {
+  const rankValue = (rank) => ranks.indexOf(rank);
+  const suitValue = (suit) => suits.indexOf(suit);
+
+  return [...cards].sort((a, b) => {
+    const rankDiff = rankValue(b.rank) - rankValue(a.rank);
+    if (rankDiff !== 0) return rankDiff;
+    return suitValue(b.suit) - suitValue(a.suit);
+  });
+}

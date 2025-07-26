@@ -1,0 +1,6 @@
+{
+  "appId": "com.example.app",
+  "appName": "thirteen-water-and-doudizhu",
+  "webDir": "frontend/build",
+  "bundledWebRuntime": false
+}

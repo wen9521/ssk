@@ -1,65 +1,27 @@
 // src/App.jsx
 import React from 'react';
-import { HashRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
-import ThirteenWaterPlay from './components/thirteenWater/Play'; // 更新路径
-import DoudizhuPlay from './components/doudizhu/DoudizhuPlay'; // 更新路径
+import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { DoudizhuPlay, ThirteenWaterPlay } from './components';
 import './App.css';
 
-function Lobby() {
-  return (
-    <div className="app-container lobby-container">
-      <h1>指挥中心</h1>
-      <div className="game-section thirteen-cards-section">
-        <h2>十三张战役</h2>
-        <Link to="/thirteen-cards-menu" className="btn btn-primary">部署部队</Link>
-      </div>
-      <div className="game-section doudizhu-section">
-        <h2>斗地主对决</h2>
-        <Link to="/doudizhu" className="btn btn-action">进入战场</Link>
-      </div>
+const Home = () => (
+  <div className="home-container">
+    <h1 className="home-title">棋牌游戏中心</h1>
+    <div className="game-links">
+      <Link to="/thirteen-water" className="game-link">十三水</Link>
+      <Link to="/doudizhu" className="game-link">斗地主</Link>
     </div>
-  );
-}
+  </div>
+);
 
-function ComingSoon() {
-  const navigate = useNavigate();
+export default function App() {
   return (
-    <div className="app-container">
-      <h2>任务锁定</h2>
-      <p>新的战斗模式正在解锁中...</p>
-      <button className="btn btn-secondary" onClick={() => navigate(-1)}>返回指挥中心</button>
-    </div>
-  );
-}
-
-function ThirteenCardsMenu() {
-  const navigate = useNavigate();
-  return (
-    <div className="app-container">
-      <h2>战役模式选择</h2>
-      <div className="menu">
-        <Link to="/play" className="btn btn-primary">离线模拟战</Link>
-        <Link to="/coming-soon" className="btn btn-secondary">全球战网</Link>
-        <Link to="/coming-soon" className="btn btn-secondary">加密通讯</Link>
-      </div>
-      <br/>
-      <button className="btn btn-secondary" onClick={() => navigate('/')}>返回</button>
-    </div>
-  );
-}
-
-function App() {
-  return (
-    <HashRouter>
+    <Router>
       <Routes>
-        <Route path="/" element={<Lobby />} />
-        <Route path="/thirteen-cards-menu" element={<ThirteenCardsMenu />} />
-        <Route path="/play" element={<ThirteenWaterPlay />} />
-        <Route path="/doudizhu" element={<DoudizhuPlay />} /> 
-        <Route path="/coming-soon" element={<ComingSoon />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/thirteen-water" element={<ThirteenWaterPlay />} />
+        <Route path="/doudizhu" element={<DoudizhuPlay />} />
       </Routes>
-    </HashRouter>
+    </Router>
   );
 }
-
-export default App;

@@ -1,5 +1,7 @@
 // frontend/src/game-logic/doudizhu.rules.js
 
+import { createDeck, shuffleDeck, sortCards } from './deck';
+
 const Ranks = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
 export const JokerRanks = { BLACK_JOKER: 'Black Joker', RED_JOKER: 'Red Joker' };
 
@@ -89,4 +91,112 @@ export function canPlay(newHand, currentHand) {
     return false;
   }
   return newHand.value > currentHand.value;
+}
+
+export class DoudizhuGame {
+  constructor(playerIds, humanPlayerId) {
+    this.players = playerIds.map(id => ({ id, hand: [] }));
+    this.humanPlayerId = humanPlayerId;
+    this.landlordId = null;
+    this.landlordCards = [];
+    this.currentPlayerId = null;
+    this.currentHand = null;
+    this.lastPlayerId = null;
+    this.winnerId = null;
+    this.biddingState = {
+      bids: {},
+      highestBid: 0,
+      currentPlayerId: playerIds[0],
+      passes: 0,
+    };
+  }
+
+  deal() {
+    const deck = shuffleDeck(createDeck());
+    let handIndex = 0;
+    for (let i = 0; i < 51; i++) {
+      this.players[handIndex].hand.push(deck[i]);
+      handIndex = (handIndex + 1) % 3;
+    }
+    this.landlordCards = deck.slice(51);
+    this.players.forEach(p => {
+      p.hand = sortCards(p.hand);
+    });
+  }
+
+  bid(playerId, amount) {
+    if (playerId !== this.biddingState.currentPlayerId || amount <= this.biddingState.highestBid) {
+      return false;
+    }
+    this.biddingState.bids[playerId] = amount;
+    this.biddingState.highestBid = amount;
+    this.landlordId = playerId;
+    if (amount === 3) {
+      this._finalizeBidding();
+    } else {
+      this._nextBidder();
+    }
+    return true;
+  }
+
+  passBid(playerId) {
+    if (playerId !== this.biddingState.currentPlayerId) return false;
+    this.biddingState.passes++;
+    if (this.biddingState.passes === 3) {
+        if(this.landlordId) this._finalizeBidding();
+        else this.deal(); // Re-deal if no one bids
+    } else {
+        this._nextBidder();
+        if (this.biddingState.passes === 2 && this.landlordId) {
+             this._finalizeBidding();
+        }
+    }
+    return true;
+  }
+  
+  _nextBidder() {
+      const currentIndex = this.players.findIndex(p => p.id === this.biddingState.currentPlayerId);
+      this.biddingState.currentPlayerId = this.players[(currentIndex + 1) % 3].id;
+  }
+
+  _finalizeBidding() {
+    const landlord = this.players.find(p => p.id === this.landlordId);
+    landlord.hand.push(...this.landlordCards);
+    landlord.hand = sortCards(landlord.hand);
+    this.currentPlayerId = this.landlordId;
+    this.biddingState = null; // Bidding is over
+  }
+  
+  play(playerId, cards) {
+    if (playerId !== this.currentPlayerId || this.winnerId) return false;
+    const player = this.players.find(p => p.id === playerId);
+    const newHand = parseHand(cards);
+
+    if (newHand.type === HandType.INVALID || !canPlay(newHand, this.lastPlayerId === playerId ? null : this.currentHand)) {
+        return false;
+    }
+
+    const remainingHand = player.hand.filter(c => !cards.some(pc => pc.rank === c.rank && pc.suit === c.suit));
+    if (remainingHand.length + cards.length !== player.hand.length) return false;
+
+    player.hand = remainingHand;
+    this.currentHand = newHand;
+    this.lastPlayerId = playerId;
+
+    if (player.hand.length === 0) {
+      this.winnerId = playerId;
+      this.currentPlayerId = null;
+    } else {
+      const currentIndex = this.players.findIndex(p => p.id === this.currentPlayerId);
+      this.currentPlayerId = this.players[(currentIndex + 1) % 3].id;
+    }
+    return true;
+  }
+
+  pass(playerId) {
+    if (playerId !== this.currentPlayerId || this.lastPlayerId === null || this.lastPlayerId === playerId) return false;
+    const currentIndex = this.players.findIndex(p => p.id === this.currentPlayerId);
+    this.currentPlayerId = this.players[(currentIndex + 1) % 3].id;
+    return true;
+  }
 }

@@ -1,9 +1,14 @@
 // src/store/thirteenWaterStore.js
 import { create } from 'zustand';
 import { produce } from 'immer';
-import { createDeck, shuffleDeck, dealCards } from '../game-logic/deck';
-import { SmartSplit } from '../game-logic/ai-logic';
-import { calcSSSAllScores, isFoul } from '../game-logic/thirteen-water-rules';
+import { 
+  createDeck, 
+  shuffleDeck, 
+  dealCards,
+  SmartSplit,
+  calcSSSAllScores, 
+  isFoul 
+} from '../game-logic';
 
 export const STAGES = {
   LOBBY: 'lobby',
@@ -69,13 +74,10 @@ export const useThirteenWaterStore = create((set, get) => ({
       const playerCount = get().players.length;
       const cardsPerPlayer = 13;
       
-      // 正确调用发牌函数
       const playerHands = dealCards(shuffled, cardsPerPlayer, playerCount);
 
-      // 增加您建议的健壮性检查
       if (!Array.isArray(playerHands) || playerHands.length < playerCount) {
         console.error('严重错误：发牌结果格式不符或数量不足！', playerHands);
-        // 此处可以重置游戏或显示错误信息，避免崩溃
         get().resetRound();
         return;
       }
@@ -113,7 +115,6 @@ export const useThirteenWaterStore = create((set, get) => ({
     }, 500);
   },
   
-  // 其他方法保持不变...
   setPlayerReady: (playerId) => set(produce(state => {
     const player = state.players.find(p => p.id === playerId);
     if (player && state.stage === STAGES.LOBBY) {
