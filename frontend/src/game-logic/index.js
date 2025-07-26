@@ -1,12 +1,23 @@
-// frontend/src/game-logic/index.js
+// src/game-logic/index.js
 
-// Deck and Card Utilities
-export * from './deck.js';
+/**
+ * Game Logic 入口
+ * 将十三水与斗地主两套逻辑统一出口
+ */
 
-// Thirteen Water Game Logic
-export * from './thirteen-water-rules.js';
-export * from './ai-logic.js';
+/*
+ * 十三水（Thirteen-Water）牌相关工具
+ */
+export { createDeck, shuffleDeck, dealCards, SmartSplit } from './deck.js';
 
-// DouDiZhu Game Logic
-export * from './doudizhu.rules.js';
-export * from './doudizhu.ai.js';
+/*
+ * 斗地主（Dou-Dizhu）相关工具与主类
+ */
+export {
+  DoudizhuGame,
+  parseHand,
+  canPlay,
+  valueMap,
+  JokerRanks,
+  HandType
+} from './doudizhu.rules.js';
