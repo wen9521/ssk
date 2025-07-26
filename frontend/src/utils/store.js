@@ -64,16 +64,14 @@ const useGameStore = create((set, get) => ({
       const deck = createDeck();
       const shuffled = shuffleDeck(deck);
       
-      // ========================== 核心修复点 ==========================
-      // 移除错误的 [0] 索引，以获取所有玩家手牌的列表，而不是仅获取第一个玩家的手牌。
+      // --- 核心修复：移除错误的 [0] 索引，使其行为与 eight-cards.store.js 一致 ---
       const playerHands = dealCards(shuffled, 13, 4);
-      // ===============================================================
 
       set(produce(state => {
         state.players.forEach((player, index) => {
-            const playerHandObjects = playerHands[index]; // 现在 playerHandObjects 是一个包含13张牌的数组
+            const playerHandObjects = playerHands[index]; 
             if (player.isAI) {
-                const playerHandStrings = playerHandObjects.map(toCardString); // .map() 现在可以正常工作
+                const playerHandStrings = playerHandObjects.map(toCardString);
                 const splitResult = SmartSplit(playerHandStrings)[0];
                 
                 player.head = splitResult.head.map(toCardObject).filter(Boolean);
