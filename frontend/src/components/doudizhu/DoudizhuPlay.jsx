@@ -1,65 +1,70 @@
 // src/components/doudizhu/DoudizhuPlay.jsx
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useDoudizhuStore } from '../../store/doudizhuStore.js';
-import DoudizhuBoard from './DoudizhuBoard';
-import './Doudizhu.css';
+import React, { useState } from 'react';
+import { DoudizhuStage } from '../../store/doudizhuStore';
 
-// --- 全屏和横屏辅助函数 ---
-const requestLandscape = async () => {
-  try {
-    if (document.documentElement.requestFullscreen) {
-      await document.documentElement.requestFullscreen();
-    }
-    // 尝试锁定为横屏
-    if (screen.orientation && screen.orientation.lock) {
-      await screen.orientation.lock('landscape');
-    }
-  } catch (err) {
-    console.warn("请求横屏失败:", err);
-  }
-};
+export default function DoudizhuPlay({
+  me, stage, biddingState,
+  currentHandOnTable, lastPlayerId,
+  winnerId, landlordId,
+  bid, passBid, play, pass, startGame
+}) {
+  const [selected, setSelected] = useState([]);
 
-const exitLandscape = async () => {
-  try {
-    if (screen.orientation && screen.orientation.unlock) {
-      screen.orientation.unlock();
-    }
-    if (document.exitFullscreen) {
-      await document.exitFullscreen();
-    }
-  } catch (err) {
-    console.warn("退出横屏失败:", err);
-  }
-};
+  if (!me) return null;
+  const myTurn = me.id === (stage === DoudizhuStage.BIDDING
+    ? biddingState.currentPlayerId
+    : me.id);
 
-export default function DoudizhuPlay() {
-  const navigate = useNavigate();
-  const startGame = useDoudizhuStore(state => state.startGame);
-
-  useEffect(() => {
-    // 组件加载时开始游戏并请求横屏
-    startGame();
-    requestLandscape();
-
-    // 组件卸载时退出横屏模式
-    return () => {
-      exitLandscape();
-    };
-  }, [startGame]);
-
-  const handleQuit = () => {
-    navigate('/');
-  };
-
-  return (
-    // 添加一个遮罩层，用于在竖屏时提示用户
-    <>
-      <div className="force-landscape-overlay">
-        <p>为了最佳游戏体验</p>
-        <p>请旋转您的设备</p>
+  // 叫分阶段
+  if (stage === DoudizhuStage.BIDDING && myTurn) {
+    return (
+      <div className="controls">
+        <button onClick={()=>passBid(me.id)}>不叫</button>
+        {[1,2,3].map(n=>(n          biddingState.highestBid < n && (
+            <button key={n} onClick={()=>bid(me.id, n)}>{n} 分</button>
+          )
+        ))}
       </div>
-      <DoudizhuBoard onQuit={handleQuit} />
-    </>
-  );
+    );
+  }
+
+  // 出牌阶段
+  if (stage === DoudizhuStage.PLAYING && myTurn) {
+    return (
+      <div className="controls">
+        <button
+          disabled={!currentHandOnTable || lastPlayerId === me.id}
+          onClick={()=>{ setSelected([]); pass(me.id); }}
+        >
+          不出
+        </button>
+        <button className="hint">提示</button>
+        <button
+          disabled={!selected.length}
+          onClick={()=>{
+            play(me.id, selected);
+            setSelected([]);
+          }}
+        >
+          出牌
+        </button>
+      </div>
+    );
+  }
+
+  // 游戏结束
+  if (stage === DoudizhuStage.FINISHED) {
+    const win = winnerId === me.id;
+    const camp = landlordId === winnerId ? '地主' : '农民';
+    return (
+      <div className="controls">
+        <div className="result">
+          {win ? '胜利' : '失败'} — {camp} 获胜
+        </div>
+        <button onClick={startGame}>再来一局</button>
+      </div>
+    );
+  }
+
+  return <div className="controls">等待回合…</div>;
 }

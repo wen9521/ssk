@@ -1,237 +1,97 @@
 /* src/components/doudizhu/Doudizhu.css */
 
-.ddz-board-container {
-  width: 100%;
-  height: 100%;
-  padding: 20px;
+/* 变量定义 */
+:root {
+  --board-bg: #2e7d32;
+  --seat-bg: rgba(255,255,255,0.1);
+  --primary: #ffca28;
+  --text-color: #fff;
+  --gap: 12px;
+  --btn-bg: #1976d2;
+  --btn-hover: #1565c0;
+  --btn-radius: 4px;
+  --transition: .2s ease;
+}
+
+/* 整体板 */
+.ddz-board {
   display: flex;
   flex-direction: column;
-  color: var(--text-primary);
-  
-  background: var(--surface-bg);
-  border: 1px solid var(--surface-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 20px;
-  
-  /* 为旋转做准备 */
-  transition: transform 0.3s ease;
-  transform-origin: center center;
+  height: 100vh;
+  background: var(--board-bg);
+  color: var(--text-color);
 }
 
-/* --- 横屏提示遮罩层 (默认隐藏) --- */
-.force-landscape-overlay {
-  display: none; /* 默认不显示 */
-  position: fixed;
-  inset: 0;
-  background-color: var(--bg-color);
-  color: var(--text-bright);
-  z-index: 9999;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  font-size: 1.2em;
-  font-family: var(--font-family-title);
-}
-.force-landscape-overlay::before {
-  content: '⟳'; /* 旋转图标 */
-  font-size: 3em;
-  margin-bottom: 20px;
-  display: block;
-}
-
-
-/* 
-  核心逻辑: 当屏幕为竖屏时 (高度 > 宽度)，并且是移动设备 (max-width: 768px)
-*/
-@media screen and (orientation: portrait) and (max-width: 1024px) {
-  /* 1. 显示提示遮罩层，告知用户旋转设备 */
-  .force-landscape-overlay {
-    display: flex;
-  }
-  
-  /* 2. 隐藏游戏内容，防止用户在竖屏下误操作 */
-  .ddz-board-container {
-    display: none;
-  }
-}
-
-/* 默认横屏样式 (大部分样式放在这里) */
-.ddz-top-bar {
+/* 头部 */
+.ddz-header {
+  padding: var(--gap);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 10px;
-  flex-shrink: 0;
-  margin-bottom: 10px; /* 减小间距以适应横屏 */
 }
-.ddz-quit-btn {
-  background: none; 
-  border: 1px solid var(--surface-border);
-  color: var(--text-secondary); 
-  font-size: 0.9em; 
-  padding: 8px 16px;
-  border-radius: 20px; 
-  cursor: pointer; 
-  transition: all 0.2s ease;
-}
-.ddz-quit-btn:hover { 
-  background: rgba(255,255,255,0.2); 
-  color: #fff;
-  border-color: var(--autobot-primary);
-}
-.landlord-cards-display { 
-  display: flex; 
-  gap: 8px; 
-  background: rgba(0,0,0,0.2);
-  padding: 8px;
-  border-radius: 8px;
-}
-.landlord-cards-display .card-container { 
-  width: 45px;
-  box-shadow: none; 
-}
-.room-info { 
-  font-size: 0.9em; 
-  color: var(--text-secondary); 
-}
-.ddz-main-area {
-  flex-grow: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center; /* 垂直居中对齐 */
-  padding: 10px 0; /* 减小间距 */
-}
-.center-table {
-  flex-grow: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.played-cards-area { 
-  display: flex; 
-  justify-content: center;
-  gap: 8px;
-  min-height: 100px; /* 调整高度 */
-  padding: 10px;
-  background: rgba(0,0,0,0.15);
-  border-radius: 12px;
-}
-.played-cards-area .card-container {
-  margin-left: -25px; /* 调整重叠 */
-}
-.played-cards-area .card-container:first-child {
-  margin-left: 0;
-}
-
-.ddz-player-seat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  transition: all 0.3s ease;
-}
-.player-avatar {
-  background: rgba(0,0,0,0.2);
-  border: 1px solid transparent;
-  padding: 10px 20px;
-  border-radius: 12px;
-  position: relative;
-  min-width: 80px;
-  text-align: center;
-}
-.ddz-player-seat.is-current .player-avatar {
-  border-color: var(--action-primary);
-  box-shadow: 0 0 15px var(--action-primary);
-}
-.landlord-icon {
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  background: var(--autobot-primary);
-  color: #000;
-  font-size: 10px;
+.landlord-cards span {
+  margin-left: 4px;
   padding: 2px 6px;
-  border-radius: 5px;
-  font-weight: bold;
-}
-.card-count {
-  font-size: 1.5em;
-  font-weight: bold;
-  font-family: var(--font-family-title);
-}
-.ddz-player-area {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-}
-.my-hand-area {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: flex-end;
-  width: 100%;
-  min-height: calc(var(--card-width) * 1.45 + 30px);
-  padding: 0 20px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.my-hand-area::-webkit-scrollbar { display: none; }
-
-.my-hand-area .card-container {
-  flex-shrink: 0;
-  margin-left: calc(var(--card-width) * -0.667);
-}
-
-.my-hand-area .card-container:first-child { margin-left: 0; }
-.my-hand-area .card-container.is-selected { transform: translateY(-20px); }
-
-.action-buttons { display: flex; gap: 15px; }
-
-.action-buttons-placeholder {
-  color: var(--text-secondary);
-  font-style: italic;
-  padding: 12px 30px;
-}
-
-.ddz-btn {
-  font-size: 1.1em;
-  font-weight: 500;
-  padding: 12px 30px;
-  border-radius: 10px;
-  border: 1px solid var(--surface-border);
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.ddz-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  transform: translateY(-2px);
-}
-.ddz-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.ddz-btn.primary {
-  background: var(--autobot-primary);
+  background: var(--primary);
+  border-radius: 3px;
   color: #000;
-  border: none;
-  font-weight: bold;
-}
-.ddz-btn.primary:hover:not(:disabled) {
-  background: #36c8ff;
-  box-shadow: 0 0 15px var(--autobot-primary);
 }
 
-.game-over-message {
-  font-family: var(--font-family-title);
-  font-size: 1.5em;
-  color: var(--action-primary);
-  text-shadow: 0 0 10px var(--action-primary);
+/* 主区域 */
+.ddz-main {
+  flex: 1;
+  position: relative;
+}
+.seat {
+  position: absolute;
+  width: 60px;
+  text-align: center;
+  background: var(--seat-bg);
+  padding: 8px;
+  border-radius: 6px;
+  transition: border var(--transition);
+}
+.seat.active {
+  border: 2px solid var(--primary);
+}
+.seat-0 { bottom: var(--gap); left: 50%; transform: translateX(-50%); }
+.seat-1 { top: var(--gap); left: var(--gap); }
+.seat-2 { top: var(--gap); right: var(--gap); }
+
+.tag {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.8em;
+  color: var(--primary);
+}
+
+/* 底部操作区 */
+.ddz-footer {
+  padding: var(--gap);
+  background: var(--seat-bg);
+}
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: var(--gap);
+}
+.controls button {
+  background: var(--btn-bg);
+  border: none;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: var(--btn-radius);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.controls button:hover:not(:disabled) {
+  background: var(--btn-hover);
+}
+.controls button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.result {
+  margin-right: var(--gap);
+  font-size: 1.1em;
 }

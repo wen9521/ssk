@@ -1,149 +1,81 @@
 // src/components/doudizhu/DoudizhuBoard.jsx
-import React, { useState } from 'react';
-import Card from '../common/Card';
+import React, { useEffect } from 'react';
+import { useDoudizhuStore, DoudizhuStage } from '../../store/doudizhuStore';
+import DoudizhuPlay from './DoudizhuPlay';
+import { decideBid, decidePlay } from '../../game-logic/doudizhu.ai';
 import './Doudizhu.css';
-import { useDoudizhuStore, DoudizhuStage } from '../../store/doudizhuStore.js'; // 更新导入路径
 
-const PlayerPosition = {
-  BOTTOM: 'bottom',
-  LEFT: 'left',
-  RIGHT: 'right',
-};
-
-const PlayerSeat = ({ player, position, isLandlord, isCurrent }) => (
-  <div className={`ddz-player-seat ${position} ${isCurrent ? 'is-current' : ''}`}>
-    <div className="player-avatar">
-      {isLandlord && <div className="landlord-icon">地主</div>}
-      <span>{player.name}</span>
-    </div>
-    <div className="card-count">{player.hand.length}</div>
-  </div>
-);
-
-export default function DoudizhuBoard({ onQuit }) {
-  const { 
-    stage, players, landlordId, landlordCards, currentPlayerId, currentHandOnTable, winnerId,
-    playerBid, playerPassBid, playCards, passTurn, startGame
+export default function DoudizhuBoard() {
+  const {
+    stage, players, landlordId, landlordCards,
+    currentPlayerId, currentHandOnTable, lastPlayerId,
+    biddingState, winnerId,
+    startGame, bid, passBid, play, pass
   } = useDoudizhuStore();
-  
-  const [selectedCards, setSelectedCards] = useState([]);
 
-  const me = players.find(p => p.id === 'player1');
-  const leftPlayer = players.find(p => p.id === 'player2');
-  const rightPlayer = players.find(p => p.id === 'player3');
+  useEffect(() => {
+    startGame();
+  }, [startGame]);
 
-  const handleCardClick = (card) => {
-    if (stage !== DoudizhuStage.PLAYING) return;
-    setSelectedCards(prev => 
-      prev.some(c => c.rank === card.rank && c.suit === card.suit)
-        ? prev.filter(c => !(c.rank === card.rank && c.suit === card.suit))
-        : [...prev, card]
-    );
-  };
-  
-  const handlePlay = () => {
-    if (selectedCards.length > 0) {
-      const success = playCards('player1', selectedCards);
-      if (success) {
-        setSelectedCards([]);
+  // AI自动出牌/叫分
+  useEffect(() => {
+    const cur = players.find(p=>p.id===currentPlayerId);
+    if (!cur?.isAI) return;
+    const t = setTimeout(() => {
+      if (stage === DoudizhuStage.BIDDING) {
+        const score = decideBid(cur.hand, biddingState.highestBid);
+        score ? bid(cur.id, score) : passBid(cur.id);
+      } else if (stage === DoudizhuStage.PLAYING) {
+        const cards = decidePlay(cur.hand, currentHandOnTable);
+        cards ? play(cur.id, cards) : pass(cur.id);
       }
-    }
-  };
-  const handlePass = () => {
-    setSelectedCards([]);
-    passTurn('player1');
-  };
-  const handleBid = (bid) => playerBid('player1', bid);
-  const handlePassBid = () => playerPassBid('player1');
-
-  if (!me || !leftPlayer || !rightPlayer) return null;
-
-  const renderActionButtons = () => {
-    const myTurn = currentPlayerId === me.id;
-    if (!myTurn && stage !== DoudizhuStage.FINISHED) {
-      return <div className="action-buttons-placeholder">等待 {players.find(p=>p.id === currentPlayerId)?.name} 操作...</div>;
-    }
-
-    if (stage === DoudizhuStage.BIDDING) {
-      const bidState = useDoudizhuStore.getState().biddingState;
-      return (
-        <div className="action-buttons">
-          <button className="ddz-btn" onClick={handlePassBid}>不叫</button>
-          {bidState.highestBid < 1 && <button className="ddz-btn primary" onClick={() => handleBid(1)}>1分</button>}
-          {bidState.highestBid < 2 && <button className="ddz-btn primary" onClick={() => handleBid(2)}>2分</button>}
-          {bidState.highestBid < 3 && <button className="ddz-btn primary" onClick={() => handleBid(3)}>3分</button>}
-        </div>
-      );
-    }
-
-    if (stage === DoudizhuStage.PLAYING) {
-      const canPass = !!currentHandOnTable && currentPlayerId !== (useDoudizhuStore.getState().lastPlayerId || currentPlayerId);
-      return (
-        <div className="action-buttons">
-          <button className="ddz-btn" onClick={handlePass} disabled={!canPass}>不出</button>
-          <button className="ddz-btn">提示</button>
-          <button className="ddz-btn primary" onClick={handlePlay} disabled={selectedCards.length === 0}>出牌</button>
-        </div>
-      );
-    }
-
-    if (stage === DoudizhuStage.FINISHED) {
-        const isWinner = winnerId === me.id;
-        const isLandlordWinner = winnerId === landlordId;
-        const amILandlord = me.id === landlordId;
-        const message = (isWinner) ? "胜利！" : "失败";
-        const finalMessage = `${message} - ${ (amILandlord === isLandlordWinner) ? "地主" : "农民" }阵营获胜`;
-
-        return (
-            <div className="action-buttons">
-                <div className="game-over-message">{finalMessage}</div>
-                <button className="ddz-btn primary" onClick={startGame}>再来一局</button>
-            </div>
-        );
-    }
-    return null;
-  }
+    }, 600);
+    return ()=>clearTimeout(t);
+  }, [currentPlayerId, stage]);
 
   return (
-    <div className="ddz-board-container">
-      <div className="ddz-top-bar">
-        <button className="ddz-quit-btn" onClick={onQuit}>{'< 返回大厅'}</button>
-        <div className="landlord-cards-display">
-          {stage === DoudizhuStage.PLAYING && landlordCards.map((card, i) => <Card key={i} card={card} />)}
-        </div>
-        <div className="room-info"></div>
-      </div>
-
-      <div className="ddz-main-area">
-        <PlayerSeat player={leftPlayer} position="left" isLandlord={landlordId === leftPlayer.id} isCurrent={currentPlayerId === leftPlayer.id} />
-        
-        <div className="center-table">
-          <div className="played-cards-area">
-            {currentHandOnTable && currentHandOnTable.cards.map(card => (
-                <Card key={`${card.rank}-${card.suit}`} card={card} />
-            ))}
-          </div>
-        </div>
-        
-        <PlayerSeat player={rightPlayer} position="right" isLandlord={landlordId === rightPlayer.id} isCurrent={currentPlayerId === rightPlayer.id} />
-      </div>
-
-      <div className="ddz-player-area">
-        <PlayerSeat player={me} position="bottom" isLandlord={landlordId === me.id} isCurrent={currentPlayerId === me.id} />
-        
-        <div className="my-hand-area">
-          {me.hand.map(card => (
-            <Card 
-              key={`${card.rank}-${card.suit}`}
-              card={card}
-              isSelected={selectedCards.some(c => c.rank === card.rank && c.suit === card.suit)}
-              onClick={() => handleCardClick(card)}
-            />
+    <div className="ddz-board">
+      <header className="ddz-header">
+        <button onClick={startGame}>重置</button>
+        <div className="landlord-cards">
+          {stage === DoudizhuStage.PLAYING && landlordCards.map((c,i)=>(n            <span key={i}>{c.rank}</span>
           ))}
         </div>
-        
-        {renderActionButtons()}
-      </div>
+      </header>
+      <main className="ddz-main">
+        {players.map((p, idx)=>(n          <div
+            key={p.id}
+            className={`seat seat-${idx} ${p.id===currentPlayerId?'active':''}`}
+          >
+            <div className="seat-info">
+              <span>{p.name}</span>
+              {p.id === landlordId && <span className="tag">地主</span>}
+            </div>
+            <div className="seat-cards">
+              {idx===0
+                ? p.hand.map((c,i)=><span key={i}>{c.rank}</span>)
+                : <span>×{p.hand.length}</span>
+              }
+            </div>
+          </div>
+        ))}
+      </main>
+      <footer className="ddz-footer">
+        <DoudizhuPlay
+          me={players[0]}
+          stage={stage}
+          biddingState={biddingState}
+          currentHandOnTable={currentHandOnTable}
+          lastPlayerId={lastPlayerId}
+          winnerId={winnerId}
+          landlordId={landlordId}
+          bid={bid}
+          passBid={passBid}
+          play={play}
+          pass={pass}
+          startGame={startGame}
+        />
+      </footer>
     </div>
   );
 }
