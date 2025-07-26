@@ -1,21 +1,90 @@
 /* src/pages/lobby/Lobby.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
 .lobby-container {
-  /* REMOVED background property */
-  background-color: transparent; /* Let global background show through */
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem;
+  padding: 40px 20px;
   width: 100%;
-  height: 100%;
-  font-family: var(--font-family-title);
+  min-height: 100vh; /* Use min-height to ensure full page background */
+  background: linear-gradient(to bottom right, #4a00e0, #8e2de2); /* Gradient background */
+  color: #fff; /* White text for contrast */
+  font-family: 'Roboto', sans-serif;
 }
-/* ... rest of the styles remain the same ... */
+
+.home-title {
+  font-size: 3em;
+  margin-bottom: 40px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.game-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive grid */
+  gap: 30px;
+  width: 100%;
+  max-width: 1000px; /* Limit max width */
+}
+
+.game-link {
+  text-decoration: none; /* Remove underline from links */
+  color: inherit; /* Inherit text color */
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.game-link:hover {
+  transform: translateY(-10px); /* Lift effect on hover */
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+}
+
 .game-section {
-  background-color: var(--bg-color-translucent); /* Keep card backgrounds */
-  border: 1px solid var(--primary-color-dark);
-  border-radius: 10px;
-  padding: 2rem;
+  background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent white background */
+  padding: 30px 20px;
   text-align: center;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  height: 100%; /* Ensure equal height cards */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle border */
+}
+
+.game-section h2 {
+  font-size: 2em;
+  margin-bottom: 10px;
+}
+
+.game-description {
+  font-size: 1em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Specific backgrounds for each game (optional, add images to assets and update paths) */
+.thirteen-water-section {
+  /* background-image: url('../assets/thirteen-water-bg.jpg'); */
+  background-size: cover;
+  background-position: center;
+}
+
+.doudizhu-section {
+  /* background-image: url('../assets/doudizhu-bg.jpg'); */
+  background-size: cover;
+  background-position: center;
+}
+
+.eight-cards-section {
+  /* background-image: url('../assets/eight-cards-bg.jpg'); */
+  background-size: cover;
+  background-position: center;
+}
+
+.big-two-section {
+  /* background-image: url('../assets/big-two-bg.jpg'); */
+  background-size: cover;
+  background-position: center;
 }

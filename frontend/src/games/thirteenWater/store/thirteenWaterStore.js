@@ -10,18 +10,24 @@ const useThirteenWaterStore = create((set, get) => ({
 
   moveCard: (cardToMove, toZone) => {
     set((state) => {
-      // 1. 从所有可能的位置移除这张牌
-      const newPlayerHand = state.playerHand.filter(c => c.rank !== cardToMove.rank || c.suit !== cardToMove.suit);
-      const newFront = state.playerArrangement.front.filter(c => c.rank !== cardToMove.rank || c.suit !== cardToMove.suit);
-      // ... (remove from middle and back as well)
+      // --- THIS IS THE FIX ---
+      // 1. Remove the card from ALL possible previous locations to prevent duplication.
+      const newPlayerHand = state.playerHand.filter(c => !(c.rank === cardToMove.rank && c.suit === cardToMove.suit));
+      const newFront = state.playerArrangement.front.filter(c => !(c.rank === cardToMove.rank && c.suit === cardToMove.suit));
+      const newMiddle = state.playerArrangement.middle.filter(c => !(c.rank === cardToMove.rank && c.suit === cardToMove.suit));
+      const newBack = state.playerArrangement.back.filter(c => !(c.rank === cardToMove.rank && c.suit === cardToMove.suit));
 
-      // 2. 将牌添加到新的区域
-      const arrangement = { ...state.playerArrangement };
-      arrangement[toZone] = [...arrangement[toZone], cardToMove];
+      // 2. Add the card to its new zone.
+      const newArrangement = {
+        front: newFront,
+        middle: newMiddle,
+        back: newBack,
+      };
+      newArrangement[toZone] = [...newArrangement[toZone], cardToMove];
       
       return {
         playerHand: newPlayerHand,
-        playerArrangement: arrangement
+        playerArrangement: newArrangement,
       };
     });
   },

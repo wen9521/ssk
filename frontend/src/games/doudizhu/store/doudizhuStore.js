@@ -24,8 +24,11 @@ const useDoudizhuStore = create((set, get) => ({
   aiTurn: () => {
     const { currentPlayer, players, lastPlay, turnWinner } = get();
     const isLandlord = players[currentPlayer].isLandlord;
-    const nextPlayer = getNextPlayer(currentPlayer);
-    const nextPlayerRole = players[nextPlayer].isLandlord ? 'landlord' : 'farmer';
+    
+    // --- THIS IS THE FIX ---
+    // Correctly determine the role of the *next* player for the AI's decision.
+    const nextPlayerIndex = getNextPlayer(currentPlayer);
+    const nextPlayerRole = players[nextPlayerIndex].isLandlord ? 'landlord' : 'farmer';
 
     if (players[currentPlayer].isLandlord !== undefined) { 
       setTimeout(() => {
