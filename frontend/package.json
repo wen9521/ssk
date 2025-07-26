@@ -7,13 +7,13 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "react": "^18.3.1",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.25.1",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4",
-    "zustand": "^4.5.4",
-    "react-dnd": "^16.0.1",
-    "react-dnd-html5-backend": "^16.0.1"
+    "zustand": "^4.5.4"
   },
   "scripts": {
     "start": "vite",
@@ -37,5 +37,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
   }
 }

@@ -4,16 +4,20 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // 已移除 Firebase Performance Monitoring 插件
-        // classpath 'com.google.firebase:perf-plugin:1.4.3'
+        // Firebase Performance Monitoring plugin
+        classpath 'com.google.firebase:perf-plugin:1.4.3'
     }
 
-    // 已移除 Guava 强制锁定，避免资源和依赖冲突
-    // configurations.all {
-    //     resolutionStrategy {
-    //         force 'com.google.guava:guava:27.0.1-android'
-    //     }
-    // }
+    // Explicitly exclude the conflicting Guava dependency from the perf plugin
+    configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'com.google.firebase' && details.requested.name == 'perf-plugin') {
+                details.useVersion '1.4.3'
+                details.because 'Aligning with project requirements'
+                details.exclude group: 'com.google.guava', module: 'guava'
+            }
+        }
+    }
 }
 
 plugins {

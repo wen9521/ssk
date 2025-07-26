@@ -10,4 +10,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  build: {
+    // 指定构建输出目录为 'dist'
+    outDir: 'dist',
+  },
 })
