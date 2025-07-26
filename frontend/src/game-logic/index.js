@@ -1,5 +1,4 @@
 // src/game-logic/index.js
-// Game Logic 统一出口
 
 // Thirteen-Water（十三水）相关
 export {
@@ -18,5 +17,6 @@ export {
   canPlay,
   valueMap,
   JokerRanks,
-  HandType
+  HandType,
+  DoudizhuStage       // ← 添加这一行
 } from './doudizhu.rules.js';

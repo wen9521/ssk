@@ -1,9 +1,9 @@
 // src/store/doudizhuStore.js
 // Zustand store for Dou-Di-Zhu game state
 
-import { create } from 'zustand';
-import { produce } from 'immer';                      // ← 改为命名导入
-import { DoudizhuGame, DoudizhuStage } from '../game-logic';  
+import create from 'zustand';
+import { produce } from 'immer';
+import { DoudizhuGame, DoudizhuStage } from '../game-logic';
 
 export const useDoudizhuStore = create((set) => ({
   // 当前游戏阶段
