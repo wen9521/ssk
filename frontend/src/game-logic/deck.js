@@ -1,53 +1,62 @@
-// frontend/src/game-logic/deck.js
+// src/game-logic/deck.js
+// Thirteen‐Water（十三水）牌组相关工具
 
-const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
-const suits = ['clubs', 'diamonds', 'hearts', 'spades'];
+// 花色与点数顺序定义
+const SUITS = ['♠', '♥', '♣', '♦'];
+const RANKS = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
 
-// Create a standard 52-card deck
+/**
+ * 生成一副 52 张牌（十三水）
+ * @returns {Array<{ rank: string, suit: string, value: number }>}
+ */
 export function createDeck() {
   const deck = [];
-  for (const suit of suits) {
-    for (const rank of ranks) {
-      deck.push({ suit, rank });
-    }
+  RANKS.forEach((rank, idx) => {
+    SUITS.forEach(suit => {
+      deck.push({ rank, suit, value: idx + 1 });
+    });
+  });
+  return deck;
+}
+
+/**
+ * Fisher–Yates 洗牌算法
+ * @param {Array} deck
+ * @returns {Array} 洗好的牌堆（就地乱序）
+ */
+export function shuffleDeck(deck) {
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
   }
   return deck;
 }
 
-// Shuffle the deck using the Fisher-Yates algorithm
-export function shuffleDeck(deck) {
-  const shuffled = [...deck];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
-// Deal cards to players
-export function dealCards(deck, numCards, numPlayers) {
-  const hands = Array(numPlayers).fill(null).map(() => []);
-  const remainingDeck = [...deck];
-  
-  for (let i = 0; i < numCards; i++) {
-    for (let j = 0; j < numPlayers; j++) {
-      if(remainingDeck.length > 0) {
-        hands[j].push(remainingDeck.pop());
-      }
-    }
-  }
-
-  return [ ...hands, remainingDeck ];
-}
-
-// Sort cards by rank and suit
-export function sortCards(cards) {
-  const rankValue = (rank) => ranks.indexOf(rank);
-  const suitValue = (suit) => suits.indexOf(suit);
-
-  return [...cards].sort((a, b) => {
-    const rankDiff = rankValue(b.rank) - rankValue(a.rank);
-    if (rankDiff !== 0) return rankDiff;
-    return suitValue(b.suit) - suitValue(a.suit);
+/**
+ * 发牌：将整副牌平均发给 playerCount 名玩家
+ * @param {Array} deck
+ * @param {number} playerCount
+ * @returns {Array<Array>} 每个玩家的手牌数组
+ */
+export function dealCards(deck, playerCount = 4) {
+  const hands = Array.from({ length: playerCount }, () => []);
+  deck.forEach((card, idx) => {
+    hands[idx % playerCount].push(card);
   });
+  return hands;
+}
+
+/**
+ * 智能拆牌：将 13 张手牌拆分成 前墩(3)、中墩(5)、后墩(5)
+ * 简单策略：按点数排序后依次切分
+ * @param {Array} cards - 13 张手牌
+ * @returns {{ front: Array, middle: Array, back: Array }}
+ */
+export function SmartSplit(cards) {
+  const sorted = cards.slice().sort((a, b) => a.value - b.value);
+  return {
+    front: sorted.slice(0, 3),
+    middle: sorted.slice(3, 8),
+    back:   sorted.slice(8, 13)
+  };
 }
