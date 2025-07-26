@@ -251,6 +251,7 @@ function cardValue(card) {
   
   // ==== 核心导出：同花顺必做尾道 + 全局最优 ====
   export function getSmartSplits(cards13, opts = {}) {
+    console.log('getSmartSplits input:', cards13);
     const special = detectAllSpecialSplits(cards13);
     if (special) return [special];
   
@@ -306,7 +307,9 @@ function cardValue(card) {
   }
   
   export function SmartSplit(cards13, opts) {
+    console.log('SmartSplit input:', cards13);
     const splits = getSmartSplits(cards13, opts);
+    console.log('SmartSplit output:', splits);
     return splits;
   }
   
