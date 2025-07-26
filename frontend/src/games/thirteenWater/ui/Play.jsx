@@ -1,5 +1,5 @@
 // frontend/src/games/thirteenWater/ui/Play.jsx
-import React, { useEffect } from 'react'; // Import useEffect
+import React, { useEffect } from 'react';
 import useThirteenWaterStore from '../store/thirteenWaterStore';
 import { Hand } from '../../../components';
 import GameOver from '../../../components/common/GameOver';
@@ -13,19 +13,20 @@ const ThirteenWaterPlay = () => {
     dealCards, setPlayerArrangement 
   } = useThirteenWaterStore();
 
-  // --- THIS IS THE FIX --定义的牌组为空，请检查规则或发牌逻辑
-  // On component mount, if the game hasn't started, deal the cards.
   useEffect(() => {
     if (gameState === 'waiting') {
       dealCards();
     }
-  }, [gameState, dealCards]); // Dependencies ensure this runs only when needed
+  }, [gameState, dealCards]);
+
+  // --- THIS IS THE FIX ---
+  // Add checks to ensure playerHand and playerArrangement are defined before rendering.
 
   // ... (event handlers)
 
   return (
     <div className="game-board thirteen-water-board">
-      {gameState === 'finished' && (
+      {gameState === 'finished' && winner && scores && (
         <GameOver
           result={winner === 'player' ? 'win' : 'lose'}
           score={scores.player}
@@ -33,15 +34,26 @@ const ThirteenWaterPlay = () => {
         />
       )}
 
-      {/* ... rest of the game board will now render correctly ... */}
-      <div className="opponent-area">
-        {/* ... */}
-      </div>
+      {/* Example of conditional rendering for player hand */}
       <div className="player-area">
         <h2>你的牌</h2>
-        <Hand cards={playerHand} />
-        {/* ... arrangement zones and actions ... */}
+        {playerHand && Array.isArray(playerHand) && <Hand cards={playerHand} />}
+
+        {/* Add similar checks for playerArrangement zones and other data structures used in rendering */}
+        {/* For example: */}
+        {/* {playerArrangement?.front && Array.isArray(playerArrangement.front) && <ArrangementZone cards={playerArrangement.front} zone="front" />} */}
+        {/* {playerArrangement?.middle && Array.isArray(playerArrangement.middle) && <ArrangementZone cards={playerArrangement.middle} zone="middle" />} */}
+        {/* {playerArrangement?.back && Array.isArray(playerArrangement.back) && <ArrangementZone cards={playerArrangement.back} zone="back" />} */}
+
       </div>
+
+      {/* Add checks for opponent areas if they exist in the component */}
+      {/* For example: */}
+      {/* <div className="opponent-area"> */}
+      {/*   {opponentHand && Array.isArray(opponentHand) && <OpponentHand cards={opponentHand} />} */}
+      {/* </div> */}
+
+      {/* ... rest of the game board will now render correctly ... */}
     </div>
   );
 };

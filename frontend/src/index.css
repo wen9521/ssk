@@ -1,0 +1,24 @@
+/* frontend/src/index.css */
+
+:root {
+  --primary-color: #6200ee; /* Example primary color */
+  --primary-color-dark: #3700b3; /* Example dark primary color */
+  --secondary-color: #03dac6; /* Example secondary color */
+  --background-color: #121212; /* Example dark background */
+  --text-color: #ffffff; /* Example light text color */
+  --bg-color-translucent: rgba(255, 255, 255, 0.05); /* Example translucent background */
+  --font-family-title: 'Roboto', sans-serif; /* Example title font */
+  --font-family-body: 'Roboto', sans-serif; /* Example body font */
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family-body);
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
