@@ -64,13 +64,14 @@ const useGameStore = create((set, get) => ({
       const deck = createDeck();
       const shuffled = shuffleDeck(deck);
       
-      // --- 核心修复：正确解构 dealCards 的返回结果 ---
-      // dealCards 返回的是一个数组，第一个元素是手牌数组，第二个是剩余牌堆
-      const playerHands = dealCards(shuffled, 13, 4)[0]; // 我们只需要手牌数组
+      // --- 核心修复：移除错误的 [0] 索引 ---
+      // dealCards 返回一个包含所有玩家手牌及剩余牌的数组：[[hand1], [hand2], ..., [remaining]]
+      // 我们需要的是整个手牌列表，而不是只取第一个玩家的手牌
+      const playerHands = dealCards(shuffled, 13, 4);
 
       set(produce(state => {
         state.players.forEach((player, index) => {
-            const playerHandObjects = playerHands[index];
+            const playerHandObjects = playerHands[index]; // 现在 playerHandObjects 是一个手牌数组
             if (player.isAI) {
                 const playerHandStrings = playerHandObjects.map(toCardString);
                 const splitResult = SmartSplit(playerHandStrings)[0];
